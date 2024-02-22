@@ -1,6 +1,6 @@
 {
-"spider":"https://pan.shangui.cc/f/50jJCA/fm.jar;md5;1ff3df38a66ee5378031e4fac1799596",
-
+//"spider":"https://pan.shangui.cc/f/50jJCA/fm.jar;md5;1ff3df38a66ee5378031e4fac1799596",
+"spider":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar;md5;6695B4FE705A1EEDCAE352ABE5412640",
 "wallpaper":"http://maoyingshi.cc/api.php",
 "sites":[
 {"key": "js豆瓣","name": "🌎爽翻天 影视推荐 QQ群:855827389","type": 3,"api":"https://agit.ai/30215429/TVBox/raw/branch/master/JS/lib/drpy2.min.js","ext": "https://pan.shangui.cc/f/RqDNIz/drpy.js"},
