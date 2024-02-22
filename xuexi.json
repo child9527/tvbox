@@ -1,9 +1,9 @@
 {
 "sites": [
 {"key": "YGFXZ","name": "💖淞淞涵涵💯分💖","type": 3,"api": "csp_Local","searchable": 0,"quickSearch": 0,"filterable": 0},
-{"key":"小学课堂","name":"📚小学课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://raw.kkgithub.com/child9527/tvbox/main/小学课堂.json"},
-{"key":"初中课堂","name":"📚初中课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://raw.kkgithub.com/child9527/tvbox/main/初中课堂.json"},
-{"key":"高中教育","name":"📚高中课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://raw.kkgithub.com/child9527/tvbox/main/高中课堂.json"},
+{"key":"小学课堂","name":"📚小学课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://agit.ai/fantaiying/fty/raw/branch/master/json/小学课堂.json"},
+{"key":"初中课堂","name":"📚初中课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://agit.ai/fantaiying/fty/raw/branch/master/json/初中课堂.json"},
+{"key":"高中教育","name":"📚高中课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://agit.ai/fantaiying/fty/raw/branch/master/json/高中课堂.json"},
 {"key": "应用商店","name": "🏫应用商店","type": 3,"api": "csp_Market","searchable": 0,"changeable": 0,"ext":"https://agit.ai/30215429/TVBox/raw/branch/master/yy/yysc.json","jar":"https://pan.shangui.cc/f/PQGeUK/%E5%BA%94%E7%94%A8%E5%B8%82%E5%9C%BA.jar"}
 ],
 
