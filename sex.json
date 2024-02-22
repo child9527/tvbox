@@ -1,5 +1,5 @@
 {
-"spider":"https://pan.shangui.cc/f/50jJCA/fm.jar;md5;1ff3df38a66ee5378031e4fac1799596",
+
 "sites": [
 {"key":"pwd_袜子","name":"袜子","type":0,"api":"https://www.msnii.com/api/xml.php","searchable":1,"quickSearch":1},
 {"key": "*环亚","name": "环亚","type": 0,"api": "http://wmcj8.com/inc/sapi.php?ac=videolist"},
