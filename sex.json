@@ -1,4 +1,5 @@
 {
+"spider":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar;md5;6695B4FE705A1EEDCAE352ABE5412640",
 "sites": [
 {"key":"pwd_袜子","name":"袜子","type":0,"api":"https://www.msnii.com/api/xml.php","searchable":1,"quickSearch":1},
 {"key": "*环亚","name": "环亚","type": 0,"api": "http://wmcj8.com/inc/sapi.php?ac=videolist"},
