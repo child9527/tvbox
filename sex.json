@@ -17,6 +17,13 @@
 {"key": "❤老鸭资源","name": "😡老鸭资源","type": 1,"api": "https://api.apilyzy.com/api.php/provide/vod/","searchable": 0,"quickSearch": 0,"filterable": 0}
 ],
 
+
+  "lives":[
+  {"name":"ipv6","url":"https://raw.kkgithub.com/child9527/tvbox/main/hlive.txt"},
+//{"name":"live","type":0,"url":"https://raw.kkgithub.com/ssili126/tv/main/itvlist.txt","playerType":1,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"},
+  ],
+  
+  
   "ads": [
     "mimg.0c1q0l.cn",
     "www.googletagmanager.com",
