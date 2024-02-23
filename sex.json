@@ -19,8 +19,8 @@
 
 
   "lives":[
-  {"name":"live","url":"https://raw.kkgithub.com/child9527/tvbox/main/hlive.txt"}
-//{"name":"live","type":0,"url":"https://raw.kkgithub.com/ssili126/tv/main/itvlist.txt","playerType":1,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"}
+  {"name":"live","url":"https://raw.kkgithub.com/child9527/tvbox/main/hlive.txt"},
+  {"name":"live","type":0,"url":"https://raw.kkgithub.com/ssili126/tv/main/itvlist.txt","playerType":1,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"}
   ],
   
   
