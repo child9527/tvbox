@@ -18,9 +18,10 @@
 ],
 
 
-  "lives":[
+  "lives": [
   {"name":"live","type":0,"url":"https://raw.kkgithub.com/child9527/tvbox/main/hlive.txt","playerType":2,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"},
-  {"name":"ipv6","type":0,"url":"https://raw.kkgithub.com/ssili126/tv/main/itvlist.txt","playerType":1,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"}],
+  {"name":"ipv6","type":0,"url":"https://raw.kkgithub.com/ssili126/tv/main/itvlist.txt","playerType":1,"epg":"http://epg.112114.xyz/?ch={name}&date={date}","logo":"https://epg.112114.xyz/logo/{name}.png"}
+  ],
   
   
   "ads": [
