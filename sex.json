@@ -2,11 +2,11 @@
 "spider":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar;md5;6695B4FE705A1EEDCAE352ABE5412640",
 "spider":"https://raw.kkgithub.com/child9527/tvbox/main/pg.jar;md5;385933EA4FBEC9CBE733E1D56A86E7D3",
 "sites": [
-//{"key":"pwd_袜子","name":"1️⃣8️⃣🈲蜜蜂","type":0,"api":"https://www.msnii.com/api/xml.php","searchable":1,"quickSearch":0},
+{"key":"pwd_袜子","name":"1️⃣8️⃣🈲蜜蜂","type":0,"api":"https://www.msnii.com/api/xml.php","searchable":1,"quickSearch":0},
 {"key": "*环亚","name": "❤环亚❤","type": 0,"api": "http://wmcj8.com/inc/sapi.php?ac=videolist","searchable":1,"quickSearch":0},
 {"key": "MissAV","name": "1️⃣8️⃣🈲MissAV","type": 3,"api": "csp_Miss","searchable": 1},
 {"key":"*蛋蛋视频","name":"💕蛋蛋💕","type":1,"api":"https://156.249.29.8/inc/apijson_vod.php","searchable":1,"quickSearch":0},
-//{"key": "*美少女","name": "💘美少女💘","type": 0,"api": "https://www.msnii.com/api/xml.php","searchable": 1,"quickSearch": 0,"filterable": 1},
+{"key": "*美少女","name": "💘美少女💘","type": 0,"api": "https://www.msnii.com/api/xml.php","searchable": 1,"quickSearch": 0,"filterable": 1},
 {"key": "bttcj","name": "🐤博天堂🐤","type": 0,"api": "http://bttcj.com/inc/sapi.php","playUrl": "https://jx.kujiexi.net/m3u8.php?url=","searchable": 1,"quickSearch": 0,"filterable": 0},
 {"key": "gdlsE", "name": "❣香奶儿❣", "type": 0, "api": "https://www.gdlsp.com/api/xml.php", "searchable": 1, "quickSearch": 0, "filterable": 1},
 {"key": "乐播资源","name": "💞乐播💞","type": 1,"api": "https://lbapi9.com/api.php/provide/vod/","searchable": 1,"quickSearch": 0,"filterable": 0},
