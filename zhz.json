@@ -16,7 +16,7 @@
 {"key":"csp_xml_飞速采集","name":"  🍕飞速采集","type":1,"api":"https://m3u8.feisuzyapi.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
 {"key":"csp_xml_卧龙资源","name":"  🍕卧龙资源","type":1,"api":"https://collect.wolongzyw.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
 {"key": "csp_KungFu404","name":"🎦阿里设置","type": 3, "api": "csp_KungFu404", "searchable":1,"filterable": 0, "changeable":0,"jar":"https://raw.kkgithub.com/child9527/tvbox/main/alsz.jar"},
-{"key":"drpy_js_南瓜","name":"🎃南瓜App","type":3,"api":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar"},
+{"key":"drpy_js_南瓜","name":"🎃南瓜┃App","type":3,"api":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar"},
 //{"key": "南瓜","name": "🎃南瓜┃App","type": 3,"api": "csp_NanGua","playerType": 2,"searchable": 1,"quickSearch": 1,"changeable": 1},
 {"key": "賤賤","name": "🌊荐片","type": 3,"api": "csp_Jianpian","searchable": 1,"changeable": 1,"jar": "https://raw.kkgithub.com/child9527/tvbox/main/qpg.jar","ext": "https://agit.ai/leevi/PiG/raw/branch/master/lib/jianpian.json$$$1","timeout": 60},
 {"key": "csp_beijihu","name": "🎪极狐影视","type": 3,"api": "csp_AppYsV2","searchable": 1,"quickSearch": 1,"filterable": 1,"ext": "https://www.kuin.one/api.php/app/"},
