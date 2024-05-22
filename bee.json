@@ -1,13 +1,13 @@
 {
-"spider":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar;md5;6695B4FE705A1EEDCAE352ABE5412640",
-"spider":"https://raw.kkgithub.com/child9527/tvbox/main/pg.jar;md5;385933EA4FBEC9CBE733E1D56A86E7D3",
+"spider":"http://42.192.49.232:8000/s/C2fXLMsNAg2TR7J/download/xc0126.jar",
+"spider":"http://42.192.49.232:8000/s/gce4DrjxS7ZoeAg/download/fm.jar;md5;6695B4FE705A1EEDCAE352ABE5412640",
+"spider":"http://42.192.49.232:8000/s/bmsWLjZ5Jp6LLiG/download/pg.jar;md5;385933EA4FBEC9CBE733E1D56A86E7D3",
 "sites": [
-//{"key":"pwd_袜子","name":"1️⃣8️⃣🈲蜜蜂","type":0,"api":"https://www.msnii.com/api/xml.php","searchable":1,"quickSearch":0},
 {"key": "*环亚","name": "1️⃣8️⃣🈲蜜蜂","type": 0,"api": "http://wmcj8.com/inc/sapi.php?ac=videolist","searchable":1,"quickSearch":0},
+{"key":"玩偶","name":"🐞玩偶","type":3,"api":"csp_Doll","searchable":1,"quickSearch":1,"filterable":1},
 //{"key": "MissAV","name": "1️⃣8️⃣🈲MissAV","type": 3,"api": "csp_Miss","searchable": 1},
 {"key":"*蛋蛋视频","name":"💕蛋蛋💕","type":1,"api":"https://156.249.29.8/inc/apijson_vod.php","searchable":1,"quickSearch":0},
 //{"key": "*美少女","name": "💘美少女💘","type": 0,"api": "https://www.msnii.com/api/xml.php","searchable": 1,"quickSearch": 0,"filterable": 1},
-//{"key": "bttcj","name": "🐤博天堂🐤","type": 0,"api": "http://bttcj.com/inc/sapi.php","playUrl": "https://jx.kujiexi.net/m3u8.php?url=","searchable": 1,"quickSearch": 0,"filterable": 0},
 {"key": "gdlsE", "name": "❣香奶儿❣", "type": 0, "api": "https://www.gdlsp.com/api/xml.php", "searchable": 1, "quickSearch": 0, "filterable": 1},
 {"key": "乐播资源","name": "💞乐播💞","type": 1,"api": "https://lbapi9.com/api.php/provide/vod/","searchable": 1,"quickSearch": 0,"filterable": 0},
 {"key": "*白嫖","name": "🈲白嫖🈲","type": 0,"api": "https://www.kxgav.com/api/xml.php"},
@@ -15,8 +15,7 @@
 {"key":"xrbsp.com","name":"💝淫水机💝","type":0,"api":"https://www.xrbsp.com/api/xml.php","searchable":1,"quickSearch": 0,"recordable":0,"style":{"type":"rect","ratio":1.33},"header":{"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","User-Agent":"Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/117.0.0.0Safari/537.36"}},
 //搜索功能
 {"key":"f2dcj6.com","name":"😻fed搜索😻","type":0,"api":"http://f2dcj6.com/sapi?ac=videolist","searchable":1,"recordable":0,"style":{"type":"rect","ratio":1.33},"header":{"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","User-Agent":"Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/117.0.0.0Safari/537.36"}},
-//以下资源可能失效
-//{"key": "❤91麻豆","name": "😡91麻豆源","type": 1,"api": "https://91md.me/api.php/provide/vod/","searchable": 1,"quickSearch": 0,"filterable": 0},
+{ "key": "KpgxdyE", "name": "💦AV资源", "type": 0, "api": "https://www.pgxdy.com/api/xml.php", "searchable": 1, "quickSearch": 1, "filterable": 1 },
 {"key": "❤小湿妹资源","name": "⛔小湿妹⛔","type": 0,"api": "https://www.afasu.com/api/xml.php","searchable": 1,"quickSearch": 0,"filterable": 0},
 {"key": "❤大地资源","name": "😘大地😘","type": 0,"api": "https://dadiapi.com/api.php","searchable": 1,"quickSearch": 0,"filterable": 0},  
 {"key": "❤老鸭资源","name": "🐦老鸭🐦","type": 1,"api": "https://api.apilyzy.com/api.php/provide/vod/","searchable": 1,"quickSearch": 0,"filterable": 0}
