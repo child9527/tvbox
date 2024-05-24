@@ -1,7 +1,7 @@
 {
 "spider":"https://raw.github.com/child9527/tvbox/main/fm.jar",
 "sites": [
-{"key":"cc1","name":"💖淞淞涵涵💯分💖","type":3,"api":"csp_XPath","searchable":0,"quickSearch":0,"filterable":0},
+{"key":"少儿教育","name":"💖淞淞涵涵💯分💖","type":3,"api":"csp_Bili","searchable":0,"quickSearch":0,"filterable":1,"ext":"https://pan.shangui.cc/f/qMXnUG/%E5%B0%91%E5%84%BF%E2%94%83%E6%95%99%E8%82%B2.json"},
 //{"key": "YGFXZ","name": "💖淞淞涵涵💯分💖","type": 3,"api": "csp_Local","searchable": 0,"quickSearch": 0,"filterable": 0},
 {"key":"小学课堂","name":"📚小学┃课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://raw.github.com/child9527/tvbox/main/小学课堂.json"},
 {"key":"初中课堂","name":"📚初中┃课堂","type":3,"api":"csp_Bili","style":{"type":"rect","ratio":1.597},"searchable":0,"quickSearch":0,"changeable":0,"ext":"https://raw.github.com/child9527/tvbox/main/初中课堂.json"},
