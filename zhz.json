@@ -2,7 +2,8 @@
 //python抓包程序
 "spider":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar",
 "spider":"https://raw.kkgithub.com/child9527/tvbox/main/ok.jar",
-//"spider":"https://raw.kkgithub.com/child9527/tvbox/main/fan.txt",
+"spider":"https://raw.kkgithub.com/child9527/tvbox/main/fxz.jar",
+"spider":"https://raw.kkgithub.com/child9527/tvbox/main/pg.jar",
 //自定义随机壁纸
 "wallpaper":"https://bing.img.run/rand.php",
 
@@ -10,26 +11,24 @@
 //收录站点
 "sites":[
 {"key":"csp_Kuaikan","name":"💯真汉子🚹","type":3,"api":"csp_Kuaikan","searchable":1,"quickSearch":1,"filterable":1},
+{"key": "天天","name": "⛅️天天资源","type": 3,"api": "csp_TTian","playerType": 1,"ext": "http://op.ysdqjs.cn$$$null$$$1"},
 {"key": "火狐","name": "🦊茶杯狐","type": 1,"api": "https://hhzyapi.com/api.php/provide/vod/","searchable": 1,"quickSearch": 0,"filterable": 1,"categories": ["内地剧","动作片","科幻片","战争片","喜剧片","爱情片","恐怖片","犯罪片","剧情片","冒险片","记录片","韩剧","香港剧","台湾剧","欧美剧","日剧","马泰剧","体育赛事","综艺","动画片","中国动漫","日本动漫","欧美动漫","伦理片"]},
-{"key":"csp_xml_天空资源","name":"  🌕天空资源","type":1,"api":"https://api.tiankongapi.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
 {"key":"csp_xml_飞速采集","name":"  🚀飞速采集","type":1,"api":"https://m3u8.feisuzyapi.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
 {"key":"csp_xml_卧龙资源","name":"  🐲卧龙资源","type":1,"api":"https://collect.wolongzyw.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
-{"key":"閲戦拱璧勬簮","name":"🦅金鹰资源","type":1,"api":"http://jinyingzy.com/provide/vod","searchable":1,"quickSearch":1},
-{"key":"褰卞浘","name":"🎥影图资源","type":1,"api":"https://cj.vodimg.top/api.php/provide/vod/","searchable":1,"quickSearch":1},
-{"key": "天天","name": "⛅️天天资源","type": 3,"api": "csp_TianTian","searchable": 1,"quickSearch": 1,"filterable": 1,"timeout": 10},
 {"key":"drpy_js_南瓜","name":"🎃南瓜┃App","type":3,"api":"https://raw.kkgithub.com/child9527/tvbox/main/drpy2.min.js","ext":"https://raw.kkgithub.com/child9527/tvbox/main/%E5%8D%97%E7%93%9C.js","jar":"https://raw.kkgithub.com/child9527/tvbox/main/fm.jar"},
 {"key":"虎牙","name":"🐯虎牙采集","type":1,"api":"https://www.huyaapi.com/api.php/provide/vod/from/hym3u8","searchable":1,"quickSearch":1 ,"categories": ["内地剧","动作片","科幻片","战争片","喜剧片","爱情片","恐怖片","犯罪片","剧情片","冒险片","记录片","韩剧","香港剧","台湾剧","欧美剧","日剧","马泰剧","体育赛事","综艺","动画片","中国动漫","日本动漫","欧美动漫","伦理片"]},
 {"key": "csp_非凡资源","name": "💥非凡资源","type": 1,"api": "http://cj.ffzyapi.com/api.php/provide/vod/","playurl": "json:http://jx.84jia.com/m3u8ts.php?url=","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["动作片","喜剧片","科幻片","恐怖片","爱情片","剧情片","战争片","记录片","国产剧","欧美剧","香港剧","韩国剧","台湾剧","日本剧","海外剧","泰国剧","国产动漫","日韩动漫","欧美动漫","港台动漫","海外动漫","大陆综艺","港台综艺","日韩综艺","欧美综艺","伦理片"]},
 {"key": "csp_xml_ikun","name": "🐔鸡坤影视","type": 1,"api":"https://ikunzyapi.com/api.php/provide/vod/from/ikm3u8/at/json","searchable": 1,"quickSearch": 1,"filterable": 1,"playerType": 2,"categories": ["国产剧","韩国剧","泰国剧","欧美剧","香港剧","台湾剧","日本剧","海外剧","国产动漫","日韩动漫","欧美动漫","大陆综艺","港台综艺","日韩综艺","动作片","喜剧片","科幻片","恐怖片","爱情片","剧情片","战争片","记录片","犯罪片","惊悚片","古装片","灾难片","历史片","其他片","悬疑片","奇幻片","动画片","欧美综艺","伦理片"]},
-
 {"key": "賤賤","name": "🌊荐片","type": 3,"api": "csp_Jianpian","searchable": 1,"changeable": 1,"jar": "https://raw.kkgithub.com/child9527/tvbox/main/qpg.jar","ext": "https://agit.ai/leevi/PiG/raw/branch/master/lib/jianpian.json$$$1","timeout": 60},
-
 {"key": "zy_量子资源","name": "✴️ 量子资源","type": 1,"api": "https://cj.lziapi.com/api.php/provide/vod/","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["动作片","喜剧片","爱情片","科幻片","恐怖片","剧情片","战争片","国产剧","香港剧","韩国剧","欧美剧","记录片","台湾剧","日本剧","海外剧","泰国剧","大陆综艺","港台综艺","日韩综艺","欧美综艺","国产动漫","日韩动漫","欧美动漫","港台动漫","海外动漫","伦理片"]},
-{"key": "暴風","name": "🌪暴風采集","type": 1,"api": "https://bfzyapi.com/api.php/provide/vod","searchable": 1,"changeable": 1,"timeout": 10},
-{"key": "索尼采集","name": "🥤索尼影视","type": 1,"api": "https://suoniapi.com/api.php/provide/vod/?ac=list","playUrl": "","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["科幻片","动作片","恐怖片","纪录片","爱情片","战争片","剧情片","喜剧片","大陆剧","港澳剧","台湾剧","欧美剧","动漫电影","韩剧","日剧","泰剧"]},
 {"key": "玩偶","name": "👽玩偶┃4K","type": 3,"api": "csp_Wogg","searchable": 1,"filterable": 1,"changeable": 1,"ext": {"token": "file://TV/ali_token.txt","wogg": true},"timeout": 30},
 {"key": "土豆网盘","name": "🥔土豆┃4K","type": 3,"api": "csp_Wobg","quickSearch": 1,"changeable": 1,"filterable": 1,"ext": {"token": "file://TV/ali_token.txt","cookie": "file://TV/quark_cookie.txt","site": "https://tudou.lvdoui.top"},"timeout": 25},
-{"key": "zy_红牛资源","name": " 👍┃红牛资源","type": 1,"api": "https://www.hongniuzy2.com/api.php/provide/vod/","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["综艺","动漫","动作片","喜剧片","爱情片","科幻片","恐怖片","剧情片","战争片","国产剧","港澳剧","日剧","欧美剧","台湾剧","泰剧","韩剧","纪录片","动漫电影","伦理片"]},
+{"key":"csp_xml_天空资源","name":"  🌕天空资源","type":1,"api":"https://api.tiankongapi.com/api.php/provide/vod/","playUrl":"","searchable":1,"quickSearch":1},
+//{"key":"閲戦拱璧勬簮","name":"🦅金鹰资源","type":1,"api":"http://jinyingzy.com/provide/vod","searchable":1,"quickSearch":1},
+//{"key":"褰卞浘","name":"🎥影图资源","type":1,"api":"https://cj.vodimg.top/api.php/provide/vod/","searchable":1,"quickSearch":1},
+//{"key": "zy_红牛资源","name": " 👍┃红牛资源","type": 1,"api": "https://www.hongniuzy2.com/api.php/provide/vod/","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["综艺","动漫","动作片","喜剧片","爱情片","科幻片","恐怖片","剧情片","战争片","国产剧","港澳剧","日剧","欧美剧","台湾剧","泰剧","韩剧","纪录片","动漫电影","伦理片"]},
+//{"key": "暴風","name": "🌪暴風采集","type": 1,"api": "https://bfzyapi.com/api.php/provide/vod","searchable": 1,"changeable": 1,"timeout": 10},
+//{"key": "索尼采集","name": "🥤索尼影视","type": 1,"api": "https://suoniapi.com/api.php/provide/vod/?ac=list","playUrl": "","searchable": 1,"quickSearch": 1,"filterable": 1,"categories": ["科幻片","动作片","恐怖片","纪录片","爱情片","战争片","剧情片","喜剧片","大陆剧","港澳剧","台湾剧","欧美剧","动漫电影","韩剧","日剧","泰剧"]},
 
 
 //{"key":"csp_Bili合集","name":"🅱哔哔合集","type":3,"api":"csp_Bili","searchable":1,"quickSearch":1,"filterable":1,"changeable":0,"ext":"https://pan.shangui.cc/f/GlMofz/%E5%93%94%E5%93%A9%E5%90%88%E9%9B%86.json"},
