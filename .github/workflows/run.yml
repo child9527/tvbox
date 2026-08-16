@@ -51,7 +51,7 @@ jobs:
               
               print(f'Successfully converted {txt_file} -> {yaml_file}')
 
-          # 将生成的 YAML 文件加上 my- 前缀，避免与已有文件重名
+          # 生成带有 my- 前缀的文件
           convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
           convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
           "
@@ -61,25 +61,25 @@ jobs:
           GITEE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          cat << 'EOF' > ~/.ssh/id_ed25519
-          $GITEE_KEY
-          EOF
+          # 使用 printf 将环境变量正确写入文件（完美保留换行符）
+          printf "%s\n" "$GITEE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H gitee.com >> ~/.ssh/known_hosts
 
       - name: Clone Gitee Repo and Push Updated Files
         run: |
-          # 1. 在临时目录克隆 Gitee 目标仓库[cite: 1]
+          # 1. 设置 Git 用户身份信息
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          # 2. 在临时目录使用标准 git clone 命令
           git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
           
-          # 2. 将生成的 my-*.yaml 复制到克隆好的 Gitee 仓库目录中
+          # 3. 将生成的 my-*.yaml 复制到 Gitee 仓库目录
           cp my-direct.yaml gitee_temp/my-direct.yaml
           cp my-ai.yaml gitee_temp/my-ai.yaml
           
-          # 3. 提交并推送到 Gitee
+          # 4. 提交并推送到 Gitee
           cd gitee_temp
           git add my-direct.yaml my-ai.yaml
           
