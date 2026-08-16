@@ -53,16 +53,14 @@ jobs:
           convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
           "
 
-      - name: Set up SSH for Gitee
-        env:
-          GITEE_KEY: ${{ secrets.GITEE_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          printf "%s\n" "$GITEE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H gitee.com >> ~/.ssh/known_hosts
+      - name: Set up SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GITEE_SSH_KEY }}
 
-      - name: Clone Gitee Repo and Push Updated Files
+      - name: Clone Gitee and Push Files
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
