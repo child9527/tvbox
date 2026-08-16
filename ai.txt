@@ -1,22 +1,21 @@
-# OpenAI / ChatGPT
 openai.com
 chatgpt.com
 oaistatic.com
 oaiusercontent.com
 
-# Anthropic / Claude
+
 anthropic.com
 claude.ai
 
-# Google Gemini & AI
+
 google.com
 deepmind.google
 googleapis.com
 
-# xAI / Grok
+
 grok.com
 x.ai
 
-# Perplexity & Mistral
+
 perplexity.ai
 mistral.ai
