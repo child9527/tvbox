@@ -1,0 +1,88 @@
+name: Convert Rules and Sync to Gitee
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'direct.txt'
+      - 'ai.txt'
+  workflow_dispatch: # 保留 GitHub 页面手动触发入口
+
+jobs:
+  convert-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitHub Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Convert TXT to Custom Clash YAML Format
+        run: |
+          python -c "
+          import os
+
+          def convert_txt_to_yaml(txt_file, yaml_file):
+              if not os.path.exists(txt_file):
+                  print(f'Warning: {txt_file} not found, skipping.')
+                  return
+              
+              lines = []
+              with open(txt_file, 'r', encoding='utf-8') as f:
+                  for line in f:
+                      line = line.strip()
+                      # 忽略空行和注释行
+                      if not line or line.startswith('#'):
+                          continue
+                      # 如果已经包含 '+.' 或 '.'，直接使用，否则加上 '+.'
+                      if not line.startswith('+.') and not line.startswith('.'):
+                          line = '+.' + line
+                      lines.append(f'  - \'{line}\'')
+              
+              with open(yaml_file, 'w', encoding='utf-8') as f:
+                  f.write('payload:\n')
+                  f.write('\n'.join(lines) + '\n')
+              
+              print(f'Successfully converted {txt_file} -> {yaml_file}')
+
+          # 将生成的 YAML 文件加上 my- 前缀，避免与已有文件重名
+          convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
+          convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
+          "
+
+      - name: Set up SSH for Gitee
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEE_SSH_KEY }}" > ~/.ssh/id_ed25519[cite: 1]
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H gitee.com >> ~/.ssh/known_hosts
+
+      - name: Clone Gitee Repo and Push Updated Files
+        run: |
+          # 1. 在临时目录克隆 Gitee 目标仓库[cite: 1]
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
+          
+          # 2. 将生成的 my-*.yaml 复制到克隆好的 Gitee 仓库目录中
+          cp my-direct.yaml gitee_temp/my-direct.yaml
+          cp my-ai.yaml gitee_temp/my-ai.yaml
+          
+          # 3. 提交并推送到 Gitee
+          cd gitee_temp
+          git add my-direct.yaml my-ai.yaml
+          
+          # 检查是否有文件变更，有变更才 commit 并 push
+          if git diff --staged --quiet; then
+            echo "No changes in rules compared to Gitee, skipping push."
+          else
+            git commit -m "auto: update custom rulesets (my-direct/my-ai) from GitHub Actions [skip ci]"
+            git push origin master
+          fi
