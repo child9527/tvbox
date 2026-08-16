@@ -25,17 +25,22 @@ jobs:
 
       - name: Convert TXT to Custom Clash YAML Format
         run: |
+          echo "=================== [步骤 1] 开始转换文本规则 ==================="
           python -c "
           import os
 
           def convert_txt_to_yaml(txt_file, yaml_file):
+              print(f'[提示] 正在检查源文件: {txt_file}')
               if not os.path.exists(txt_file):
-                  print(f'Warning: {txt_file} not found, skipping.')
+                  print(f'[警告] 源文件 {txt_file} 不存在，跳过转换。')
                   return
               
               lines = []
               with open(txt_file, 'r', encoding='utf-8') as f:
-                  for line in f:
+                  raw_lines = f.readlines()
+                  print(f'[提示] {txt_file} 读取成功，共 {len(raw_lines)} 行原始文本')
+                  
+                  for line in raw_lines:
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
@@ -47,31 +52,60 @@ jobs:
                   f.write('payload:\n')
                   f.write('\n'.join(lines) + '\n')
               
-              print(f'Successfully converted {txt_file} -> {yaml_file}')
+              print(f'[成功] 转换完成: {txt_file} -> {yaml_file}，写入 {len(lines)} 条有效规则')
 
           convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
           convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
           "
+          echo "=================== [步骤 1] 规则转换结束 ==================="
 
-      - name: Set up SSH Key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.GITEE_SSH_KEY }}
+      - name: Setup SSH Key and Diagnostics
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          echo "=================== [步骤 2] 配置 SSH 密钥与连通性诊断 ==================="
+          echo "[诊断] 当前 Runner 环境中的 Git 版本:"
+          git --version
+          
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
+          chmod 600 ~/.ssh/gitee_id_ed25519
+          
+          echo "[提示] 私钥已写入 ~/.ssh/gitee_id_ed25519，权限状态如下:"
+          ls -la ~/.ssh/gitee_id_ed25519
+          
+          echo "[诊断] 正在向 Gitee 发起 SSH 握手测试..."
+          ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no -T git@gitee.com || true
+          echo "=================== [步骤 2] SSH 诊断结束 ==================="
 
       - name: Clone Gitee and Push Files
-        env:
-          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
         run: |
+          echo "=================== [步骤 3] 克隆 Gitee 仓库并同步提交 ==================="
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
-          cp my-direct.yaml gitee_temp/my-direct.yaml
-          cp my-ai.yaml gitee_temp/my-ai.yaml
+          
+          echo "[提示] 开始执行 git clone 克隆目标仓库..."
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no" git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
+          
+          echo "[提示] 正在覆盖拷贝最新生成的 YAML 规则文件..."
+          cp -v my-direct.yaml gitee_temp/my-direct.yaml
+          cp -v my-ai.yaml gitee_temp/my-ai.yaml
+          
           cd gitee_temp
+          echo "[诊断] 查看目标仓库的本地状态 (git status):"
+          git status
+          
           git add my-direct.yaml my-ai.yaml
+          
+          echo "[诊断] 查看已暂存的修改差异 (git diff --staged):"
+          git diff --staged
+          
           if git diff --staged --quiet; then
-            echo "No changes in rules compared to Gitee, skipping push."
+            echo "[提示] 经比对无任何文件变更，跳过 Commit 和 Push 操作。"
           else
+            echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
             git commit -m "auto: update custom rulesets (my-direct/my-ai) from GitHub Actions [skip ci]"
-            git push origin master
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no" git push origin master
+            echo "[成功] 文件更新已顺利推送至 Gitee！"
           fi
+          echo "=================== [步骤 3] 全流程执行完毕 ==================="
