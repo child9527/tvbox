@@ -68,22 +68,13 @@ jobs:
 
       - name: Clone Gitee Repo and Push Updated Files
         run: |
-          # 1. 设置 Git 用户身份信息
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 2. 在临时目录使用标准 git clone 命令
           git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
-          
-          # 3. 将生成的 my-*.yaml 复制到 Gitee 仓库目录
           cp my-direct.yaml gitee_temp/my-direct.yaml
           cp my-ai.yaml gitee_temp/my-ai.yaml
-          
-          # 4. 提交并推送到 Gitee
           cd gitee_temp
           git add my-direct.yaml my-ai.yaml
-          
-          # 检查是否有文件变更，有变更才 commit 并 push
           if git diff --staged --quiet; then
             echo "No changes in rules compared to Gitee, skipping push."
           else
