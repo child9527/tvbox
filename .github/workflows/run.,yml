@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Convert TXT to Clash YAML Format
+      - name: Convert TXT to Custom Clash YAML Format
         run: |
           python -c "
           import os
@@ -51,8 +51,9 @@ jobs:
               
               print(f'Successfully converted {txt_file} -> {yaml_file}')
 
-          convert_txt_to_yaml('direct.txt', 'direct.yaml')
-          convert_txt_to_yaml('ai.txt', 'ai.yaml')
+          # 将生成的 YAML 文件加上 my- 前缀，避免与已有文件重名
+          convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
+          convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
           "
 
       - name: Set up SSH for Gitee
@@ -70,18 +71,18 @@ jobs:
           
           git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
           
-          # 2. 将生成的 yaml 文件复制到克隆好的 Gitee 仓库目录中
-          cp direct.yaml gitee_temp/direct.yaml
-          cp ai.yaml gitee_temp/ai.yaml
+          # 2. 将生成的 my-*.yaml 复制到克隆好的 Gitee 仓库目录中
+          cp my-direct.yaml gitee_temp/my-direct.yaml
+          cp my-ai.yaml gitee_temp/my-ai.yaml
           
           # 3. 提交并推送到 Gitee
           cd gitee_temp
-          git add direct.yaml ai.yaml
+          git add my-direct.yaml my-ai.yaml
           
           # 检查是否有文件变更，有变更才 commit 并 push
           if git diff --staged --quiet; then
             echo "No changes in rules compared to Gitee, skipping push."
           else
-            git commit -m "auto: update rulesets from GitHub Actions [skip ci]"
+            git commit -m "auto: update custom rulesets (my-direct/my-ai) from GitHub Actions [skip ci]"
             git push origin master
           fi
