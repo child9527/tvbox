@@ -8,7 +8,7 @@ on:
     paths:
       - 'direct.txt'
       - 'ai.txt'
-  workflow_dispatch: # 保留 GitHub 页面手动触发入口
+  workflow_dispatch:
 
 jobs:
   convert-and-push:
@@ -37,10 +37,8 @@ jobs:
               with open(txt_file, 'r', encoding='utf-8') as f:
                   for line in f:
                       line = line.strip()
-                      # 忽略空行和注释行
                       if not line or line.startswith('#'):
                           continue
-                      # 如果已经包含 '+.' 或 '.'，直接使用，否则加上 '+.'
                       if not line.startswith('+.') and not line.startswith('.'):
                           line = '+.' + line
                       lines.append(f'  - \'{line}\'')
@@ -51,7 +49,6 @@ jobs:
               
               print(f'Successfully converted {txt_file} -> {yaml_file}')
 
-          # 生成带有 my- 前缀的文件
           convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
           convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
           "
@@ -61,7 +58,6 @@ jobs:
           GITEE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          # 使用 printf 将环境变量正确写入文件（完美保留换行符）
           printf "%s\n" "$GITEE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H gitee.com >> ~/.ssh/known_hosts
