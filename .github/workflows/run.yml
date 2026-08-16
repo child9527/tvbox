@@ -59,23 +59,35 @@ jobs:
           "
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
-      - name: Setup SSH Key and Diagnostics
+      - name: Setup SSH Config and Diagnostics
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
-          echo "=================== [步骤 2] 配置 SSH 密钥与连通性诊断 ==================="
+          echo "=================== [步骤 2] 配置 SSH 与 Gitee 域名映射 ==================="
           echo "[诊断] 当前 Runner 环境中的 Git 版本:"
           git --version
           
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # 1. 写入私钥文件并严格授权
           echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
           
-          echo "[提示] 私钥已写入 ~/.ssh/gitee_id_ed25519，权限状态如下:"
-          ls -la ~/.ssh/gitee_id_ed25519
+          # 2. 写入 SSH Config，彻底替代全局 GIT_SSH_COMMAND 变量，规避 Git 参数解析冲突
+          cat << 'EOF' > ~/.ssh/config
+          Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/gitee_id_ed25519
+              StrictHostKeyChecking no
+          EOF
+          chmod 600 ~/.ssh/config
           
-          echo "[诊断] 正在向 Gitee 发起 SSH 握手测试..."
-          ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no -T git@gitee.com || true
+          echo "[提示] SSH 配置文件 ~/.ssh/config 建立完毕"
+          
+          echo "[诊断] 正在测试 Gitee SSH 免密连通性..."
+          ssh -T git@gitee.com || true
           echo "=================== [步骤 2] SSH 诊断结束 ==================="
 
       - name: Clone Gitee and Push Files
@@ -84,15 +96,22 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          echo "[提示] 开始执行 git clone 克隆目标仓库..."
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no" git clone git@gitee.com:child9527/mybox.git gitee_temp[cite: 1]
+          echo "[提示] 开始执行 git clone..."
+          # 使用原生命令，直接依靠 ~/.ssh/config 自动匹配密钥
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 正在覆盖拷贝最新生成的 YAML 规则文件..."
-          cp -v my-direct.yaml gitee_temp/my-direct.yaml
-          cp -v my-ai.yaml gitee_temp/my-ai.yaml
+          echo "[提示] 正在将生成的 YAML 复制到目标仓库目录..."
+          cp -v my-direct.yaml gitee_temp/
+          cp -v my-ai.yaml gitee_temp/
           
           cd gitee_temp
-          echo "[诊断] 查看目标仓库的本地状态 (git status):"
+          echo "[诊断] 进入 gitee_temp 目录，当前路径为:"
+          pwd
+          
+          echo "[诊断] 查看已复制文件的目录状态:"
+          ls -la my-*.yaml
+          
+          echo "[诊断] 查看本地 git status:"
           git status
           
           git add my-direct.yaml my-ai.yaml
@@ -105,7 +124,7 @@ jobs:
           else
             echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
             git commit -m "auto: update custom rulesets (my-direct/my-ai) from GitHub Actions [skip ci]"
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/gitee_id_ed25519 -o StrictHostKeyChecking=no" git push origin master
+            git push origin master
             echo "[成功] 文件更新已顺利推送至 Gitee！"
           fi
           echo "=================== [步骤 3] 全流程执行完毕 ==================="
