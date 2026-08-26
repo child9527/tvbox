@@ -17,7 +17,7 @@ jobs:
       - name: 检出当前仓库
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 完整拉取历史记录以便平滑 Push 到 Gitee
+          fetch-depth: 0
 
       - name: 配置 Python 环境
         uses: actions/setup-python@v5
@@ -56,7 +56,7 @@ jobs:
               except Exception:
                   hash_cache = {}
 
-          # 需要批量处理的目标清单（新增链接直接在此追加即可，互不混淆）
+          # 需要批量处理的目标清单
           TASKS = [
               {
                   "name": "X.json",
@@ -230,7 +230,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "提示：上游未发生有效变动，无需 Commit。"
           else
-            git commit -m "自动同步：检测到上游更新，更新加速与 tvbox 加密产物"
+            git commit -m "auto: update tvbox json and bin files [skip ci]"
             git push
             echo "GitHub 仓库推送成功。"
           fi
@@ -260,13 +260,28 @@ jobs:
           echo "[诊断] 测试 Gitee SSH 免密连通性..."
           ssh -T git@gitee.com || true
 
-      - name: 5. 推送到 Gitee 仓库 (mybox 的 master 主分支)
+      - name: 5. 克隆 Gitee mybox 仓库并同步推送产物
         run: |
-          GITEE_REPO_URL="git@gitee.com:child9527/mybox.git"
+          echo "=================== 克隆 Gitee 仓库并同步提交 ==================="
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git remote remove gitee 2>/dev/null || true
-          git remote add gitee "$GITEE_REPO_URL"
+          echo "[提示] 开始克隆 Gitee mybox 仓库..."
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "开始推送本地 main 分支更新至 Gitee mybox 仓库的 master 分支..."
-          git push -u gitee main:master --force
-          echo "🎉 Gitee mybox 仓库 master 分支（根目录）同步成功！"
+          echo "[提示] 复制最新生成的 JSON、BIN 和 Hash 缓存到目标仓库..."
+          cp -v *.json gitee_temp/ 2>/dev/null || true
+          cp -v *.bin gitee_temp/ 2>/dev/null || true
+          cp -v .hash_cache.json gitee_temp/ 2>/dev/null || true
+          
+          cd gitee_temp
+          git add *.json *.bin .hash_cache.json 2>/dev/null || true
+          
+          if git diff --staged --quiet; then
+            echo "[提示] 经比对 Gitee 仓库无任何文件变更，跳过 Commit 和 Push。"
+          else
+            echo "[提示] 检测到变更内容，提交并推送至 Gitee master 分支..."
+            git commit -m "auto: update tvbox json and bin files from GitHub Actions [skip ci]"
+            git push origin master
+            echo "[成功] 产物已顺利推送至 Gitee mybox 根目录！"
+          fi
