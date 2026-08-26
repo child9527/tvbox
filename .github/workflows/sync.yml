@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome
 
-      - name: 1. 执行多文件检测（含本地缺失强行补全）、测速与 JSON 加速替换
+      - name: 1. 执行多文件检测、测速与 JSON 加速替换
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -120,14 +120,11 @@ jobs:
               else:
                   return data
 
-          updated_files = []
-
           for task in TASKS:
               save_filename = task["name"]
 
-              # 检查：如果 GitHub 仓库本地缺失明文 json，启动强制重新拉取
               if not os.path.exists(save_filename):
-                  print(f"⚠️ 检测到本地缺失文件 ({save_filename})，启动强制重新拉取与生成机制！")
+                  print(f"⚠️ 检测到本地缺失文件 ({save_filename})，强制重新拉取生成！")
 
               raw_target_url = normalize_to_raw_url(task["url"])
               fetch_url = f"{accent_prefix}{raw_target_url}"
@@ -144,67 +141,73 @@ jobs:
                   try:
                       json_data = json.loads(content_text)
                       processed_data = traverse_and_replace(json_data)
+                      
                       with open(save_filename, "w", encoding="utf-8") as f:
                           json.dump(processed_data, f, ensure_ascii=False, indent=2)
-                      print(f"✅ JSON 格式化替换完成: {save_filename}")
+                      
+                      if json_data == processed_data:
+                          print(f"ℹ️ {save_filename} 无需链接替换/正则匹配，已按原样保存")
+                      else:
+                          print(f"✅ JSON 格式化替换完成: {save_filename}")
+
                   except Exception:
                       lines = content_text.splitlines()
                       new_lines = []
+                      changed = False
                       for line in lines:
                           if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
                               new_lines.append(line)
                               continue
-                          line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                          line = re.sub(r'(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', line)
-                          new_lines.append(line)
+                          new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
+                          new_line = re.sub(r'(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
+                          if new_line != line:
+                              changed = True
+                          new_lines.append(new_line)
                       
                       with open(save_filename, "w", encoding="utf-8") as f:
                           f.write("\n".join(new_lines))
-                      print(f"✅ 正则匹配替换完成: {save_filename}")
+                      
+                      if changed:
+                          print(f"✅ 正则匹配替换完成: {save_filename}")
+                      else:
+                          print(f"ℹ️ {save_filename} 无需正则匹配，已按原样保存")
 
-                  updated_files.append(save_filename)
                   print("")
 
               except Exception as err:
                   print(f"❌ 处理异常 ({save_filename}): {err}\n")
-
-          # 输出待加密的文件名给后续步骤
-          updated_str = ",".join(updated_files)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-              fh.write(f"updated_files={updated_str}\n")
           EOF
 
-      - name: 2. 仅在内存中针对 JSON 进行加密生成临时 BIN
+      - name: 2. 扫描并针对所有 JSON 进行加密生成 BIN
         id: encrypt_step
         run: |
-          UPDATED_FILES="${{ steps.process_json.outputs.updated_files }}"
-          
           if [ ! -f "tvbox.py" ]; then
             echo "::warning::警告：根目录下未找到 tvbox.py 脚本，跳过加密步骤！"
           else
-            echo "待加密处理的文件列表: $UPDATED_FILES"
-            IFS=',' read -r -a file_array <<< "$UPDATED_FILES"
-            
-            for file in "${file_array[@]}"; do
+            # 明确为清单中的 JSON 文件进行加密生成同名的 .bin
+            TARGET_FILES=("X.json" "pj.json")
+            for file in "${TARGET_FILES[@]}"; do
               if [ -f "$file" ]; then
                 base_name="${file%.*}"
                 bin_file="${base_name}.bin"
                 echo "正在加密生成临时文件: $file -> $bin_file..."
                 python tvbox.py "$file" "$bin_file" enc || echo "::error::加密 $file 失败"
+              else
+                echo "::error::未找到待加密的源文件: $file"
               fi
             done
           fi
 
-      - name: 3. 提交明文 JSON 到 GitHub 仓库（清除旧的 .bin 历史文件）
+      - name: 3. 提交明文 JSON 到 GitHub 仓库（坚决排除 .bin）
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. 从 GitHub Git 跟踪列表中彻底移除历史遗留的 .bin 文件（不删本地临时文件，只从仓库中删）
-          git rm --cached *.bin *.BIN 2>/dev/null || true
+          # 1. 强行指定添加生成的明文 JSON 文件
+          git add -f X.json pj.json 2>/dev/null || true
 
-          # 2. 仅暂存明文 JSON 文件
-          git add *.json *.JSON 2>/dev/null || true
+          # 2. 从 Git 索引中强制抹除可能误添加的 .bin
+          git rm --cached *.bin *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "提示：GitHub 仓库的明文 JSON 无实际变动，无需 Commit。"
@@ -246,14 +249,13 @@ jobs:
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          # 彻底清除 Gitee 仓库中历史遗留的 .bin 文件
+          # 1. 清除 Gitee 仓库根目录下旧的 .bin 文件
           cd gitee_temp
           git rm -f *.bin *.BIN 2>/dev/null || true
           cd ..
 
-          echo "[提示] 将临时加密生成的 BIN 文件重命名为 .json 复制到 Gitee 仓库..."
+          # 2. 遍历加密生成的 .bin 文件，统一重命名为 .json 覆盖移入 gitee_temp
           shopt -s nullglob nocaseglob
-          
           for bin_file in *.bin; do
             if [ -f "$bin_file" ]; then
               base_name="${bin_file%.*}"
