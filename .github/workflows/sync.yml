@@ -39,22 +39,11 @@ jobs:
           import os
           import re
           import time
-          import hashlib
           from concurrent.futures import ThreadPoolExecutor
           import requests
 
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
-          CACHE_FILE = ".hash_cache.json"
-
-          # 1. 加载本地历史 Hash 缓存
-          hash_cache = {}
-          if os.path.exists(CACHE_FILE):
-              try:
-                  with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                      hash_cache = json.load(f)
-              except Exception:
-                  hash_cache = {}
 
           # 需要批量处理的目标清单
           TASKS = [
@@ -138,25 +127,14 @@ jobs:
               raw_target_url = normalize_to_raw_url(task["url"])
               fetch_url = f"{accent_prefix}{raw_target_url}"
 
-              print(f"--> 正在检查文件: {save_filename}")
+              print(f"--> 正在拉取与处理文件: {save_filename}")
               try:
                   resp = requests.get(fetch_url, headers=HEADERS, timeout=10)
                   if resp.status_code != 200:
                       print(f"❌ 无法读取 ({resp.status_code}): {fetch_url}")
                       continue
 
-                  content_bytes = resp.content
                   content_text = resp.text
-
-                  # 计算上游原始文件的 Hash
-                  current_hash = hashlib.sha256(content_bytes).hexdigest()
-                  old_hash = hash_cache.get(save_filename)
-
-                  if old_hash == current_hash and os.path.exists(save_filename):
-                      print(f"☕ 上游文件未更新 (Hash 校验一致)，跳过处理: {save_filename}\n")
-                      continue
-
-                  print(f"⚡ 检测到上游内容变更/首次同步，开始处理: {save_filename}")
                   
                   try:
                       json_data = json.loads(content_text)
@@ -179,17 +157,11 @@ jobs:
                           f.write("\n".join(new_lines))
                       print(f"✅ 正则匹配替换完成: {save_filename}")
 
-                  # 更新缓存记录与待加密列表
-                  hash_cache[save_filename] = current_hash
                   updated_files.append(save_filename)
                   print("")
 
               except Exception as err:
                   print(f"❌ 处理异常 ({save_filename}): {err}\n")
-
-          # 保存最新的 Hash 缓存到文件
-          with open(CACHE_FILE, "w", encoding="utf-8") as f:
-              json.dump(hash_cache, f, ensure_ascii=False, indent=2)
 
           # 输出待加密的文件名给后续步骤
           updated_str = ",".join(updated_files)
@@ -202,18 +174,17 @@ jobs:
         run: |
           UPDATED_FILES="${{ steps.process_json.outputs.updated_files }}"
           
-          if [ -z "$UPDATED_FILES" ]; then
-            echo "提示：所有上游 JSON 均无更新，跳过加密步骤。"
-          elif [ ! -f "tvbox.py" ]; then
+          if [ ! -f "tvbox.py" ]; then
             echo "::warning::警告：根目录下未找到 tvbox.py 脚本，跳过加密步骤！"
           else
-            echo "更新的文件清单: $UPDATED_FILES"
+            echo "待加密处理的文件列表: $UPDATED_FILES"
             IFS=',' read -r -a file_array <<< "$UPDATED_FILES"
             
             for file in "${file_array[@]}"; do
-              bin_file="${file%.json}.bin"
               if [ -f "$file" ]; then
-                echo "正在加密 $file -> $bin_file..."
+                base_name="${file%.*}"
+                bin_file="${base_name}.bin"
+                echo "正在加密: $file -> $bin_file..."
                 python tvbox.py "$file" "$bin_file" enc || echo "::error::加密 $file 失败"
               fi
             done
@@ -224,11 +195,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 暂存所有变动的 json、bin 以及 hash 缓存记录
-          git add *.json *.bin .hash_cache.json 2>/dev/null || true
+          # 暂存所有 json 和 bin 产物
+          git add *.json *.bin *.JSON *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
-            echo "提示：上游未发生有效变动，无需 Commit。"
+            echo "提示：文件无实际变动，无需 Commit。"
           else
             git commit -m "auto: update tvbox json and bin files [skip ci]"
             git push
@@ -243,11 +214,9 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # 1. 写入私钥文件并严格授权
           echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
           
-          # 2. 写入 SSH Config
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -260,7 +229,7 @@ jobs:
           echo "[诊断] 测试 Gitee SSH 免密连通性..."
           ssh -T git@gitee.com || true
 
-      - name: 5. 克隆 Gitee mybox 仓库并同步推送产物
+      - name: 5. 克隆 Gitee mybox 仓库并重命名推送加密产物
         run: |
           echo "=================== 克隆 Gitee 仓库并同步提交 ==================="
           git config --global user.name "github-actions[bot]"
@@ -269,19 +238,33 @@ jobs:
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 复制最新生成的 JSON、BIN 和 Hash 缓存到目标仓库..."
-          cp -v *.json gitee_temp/ 2>/dev/null || true
-          cp -v *.bin gitee_temp/ 2>/dev/null || true
-          cp -v .hash_cache.json gitee_temp/ 2>/dev/null || true
+          echo "[提示] 将加密后的 .bin 文件重命名为 .json 复制到 Gitee 仓库..."
+          # 遍历所有 .bin 文件，统一重命名为 .json 并覆盖到 gitee_temp 目录
+          for bin_file in *.bin; do
+            if [ -f "$bin_file" ]; then
+              base_name="${bin_file%.*}"
+              target_json="gitee_temp/${base_name}.json"
+              echo "改名复制: $bin_file -> $target_json"
+              cp -v "$bin_file" "$target_json"
+            fi
+          done
           
           cd gitee_temp
-          git add *.json *.bin .hash_cache.json 2>/dev/null || true
+          git add *.json 2>/dev/null || true
           
           if git diff --staged --quiet; then
-            echo "[提示] 经比对 Gitee 仓库无任何文件变更，跳过 Commit 和 Push。"
+            echo "[提示] 经比对 Gitee 仓库无任何变更，跳过 Commit 和 Push。"
           else
-            echo "[提示] 检测到变更内容，提交并推送至 Gitee master 分支..."
-            git commit -m "auto: update tvbox json and bin files from GitHub Actions [skip ci]"
+            echo "[提示] 检测到变更，提交并推送加密产物至 Gitee master 分支..."
+            git commit -m "auto: update encrypted json files from GitHub Actions [skip ci]"
             git push origin master
-            echo "[成功] 产物已顺利推送至 Gitee mybox 根目录！"
+            echo "[成功] 加密产物已重命名并顺利推送至 Gitee mybox 目录！"
           fi
+
+      - name: 6. 清理临时文件夹及无用缓存
+        if: always()
+        run: |
+          echo "[清理] 开始清除运行产生的临时文件..."
+          rm -rf gitee_temp
+          rm -f .hash_cache.json
+          echo "[完成] 环境变量与临时文件已彻底清理。"
