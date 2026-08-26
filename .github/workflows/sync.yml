@@ -172,7 +172,7 @@ jobs:
       - name: 2. 针对变动文件调用 tvbox.py 进行加密
         id: encrypt_step
         run: |
-          UPDATED_FILES="${{ steps.process_json.outputs.updated_files }}"
+          UPDATED_FILES="${{ steps.process_json.outputs.outputs.updated_files }}"
           
           if [ ! -f "tvbox.py" ]; then
             echo "::warning::警告：根目录下未找到 tvbox.py 脚本，跳过加密步骤！"
@@ -195,7 +195,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 暂存所有 json 和 bin 产物
+          # 暂存所有大小写后缀的 json 和 bin 产物
           git add *.json *.bin *.JSON *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
@@ -238,8 +238,15 @@ jobs:
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 将加密后的 .bin 文件重命名为 .json 复制到 Gitee 仓库..."
-          # 遍历所有 .bin 文件，统一重命名为 .json 并覆盖到 gitee_temp 目录
+          # 1. 彻底清除 Gitee 仓库中历史遗留的 .bin 文件
+          cd gitee_temp
+          git rm -f *.bin *.BIN 2>/dev/null || true
+          cd ..
+
+          echo "[提示] 将加密后的所有 BIN 文件（忽略大小写）重命名为 .json 复制到 Gitee 仓库..."
+          # 2. 开启 nullglob 避免没有匹配文件时报错，并开启 nocaseglob 忽略扩展名大小写
+          shopt -s nullglob nocaseglob
+          
           for bin_file in *.bin; do
             if [ -f "$bin_file" ]; then
               base_name="${bin_file%.*}"
@@ -248,17 +255,18 @@ jobs:
               cp -v "$bin_file" "$target_json"
             fi
           done
-          
+
           cd gitee_temp
-          git add *.json 2>/dev/null || true
+          # 3. 暂存删除旧 bin 与新增的伪装 json
+          git add -A
           
           if git diff --staged --quiet; then
             echo "[提示] 经比对 Gitee 仓库无任何变更，跳过 Commit 和 Push。"
           else
             echo "[提示] 检测到变更，提交并推送加密产物至 Gitee master 分支..."
-            git commit -m "auto: update encrypted json files from GitHub Actions [skip ci]"
+            git commit -m "auto: replace with encrypted json files and remove legacy bin files [skip ci]"
             git push origin master
-            echo "[成功] 加密产物已重命名并顺利推送至 Gitee mybox 目录！"
+            echo "[成功] 加密产物已重命名更新，并且旧的 .bin 文件已被清除！"
           fi
 
       - name: 6. 清理临时文件夹及无用缓存
