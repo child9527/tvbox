@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome
 
-      - name: 1. 执行多文件检测、测速与 JSON 加速替换
+      - name: 1. 执行多文件检测、测速、去注释与 JSON 加速替换
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -39,6 +39,7 @@ jobs:
           import os
           import re
           import time
+          import sys
           from concurrent.futures import ThreadPoolExecutor
           import requests
 
@@ -72,13 +73,26 @@ jobs:
               url = url.replace('/refs/heads/', '/')
               return url
 
+          def remove_comments(text):
+              # 1. 移除多行注释 /* ... */
+              text = re.sub(r'/\*[\s\S]*?\*/', '', text)
+              # 2. 逐行剔除单行注释 //（避开 http:// 和 https://）
+              clean_lines = []
+              for line in text.splitlines():
+                  # 匹配不在 http(s): 后的 // 及其后面的全部内容
+                  line_clean = re.sub(r'(?<!:)\/\/.*$', '', line)
+                  # 如果该行去注释后不是纯空白行，才保留
+                  if line_clean.strip():
+                      clean_lines.append(line_clean)
+              return "\n".join(clean_lines)
+
           def test_mirror(mirror):
               test_url = mirror + raw_github_prefix + "alantang1977/X/main/X.json"
               try:
                   start = time.time()
                   r = requests.get(test_url, headers=HEADERS, timeout=4)
                   text = r.content.decode("utf-8", errors="ignore").lstrip()
-                  if r.status_code == 200 and (text.startswith("{") or text.startswith("[")):
+                  if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
                       return mirror, time.time() - start
               except Exception:
                   pass
@@ -92,12 +106,8 @@ jobs:
                   if delay is not None:
                       results[m] = delay
 
-          if results:
-              accent_prefix = min(results, key=results.get)
-          else:
-              accent_prefix = "https://github.moeyy.xyz/"
-              print("⚠️ 所有镜像测速超时，降级使用默认镜像: https://github.moeyy.xyz/")
-
+          sorted_mirrors = sorted(results, key=results.get) if results else MIRRORS
+          accent_prefix = sorted_mirrors[0]
           print(f"全局最快镜像: {accent_prefix}\n")
 
           my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
@@ -126,60 +136,63 @@ jobs:
 
           for task in TASKS:
               save_filename = task["name"]
-
               raw_target_url = normalize_to_raw_url(task["url"])
-              fetch_url = f"{accent_prefix}{raw_target_url}"
-
-              print(f"--> 正在拉取与处理文件: {save_filename}")
-              try:
-                  resp = requests.get(fetch_url, headers=HEADERS, timeout=10)
-                  if resp.status_code != 200:
-                      print(f"❌ 无法读取 ({resp.status_code}): {fetch_url}")
+              
+              resp_content = None
+              for mirror in sorted_mirrors:
+                  fetch_url = f"{mirror}{raw_target_url}"
+                  try:
+                      resp = requests.get(fetch_url, headers=HEADERS, timeout=8)
+                      if resp.status_code == 200:
+                          text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
+                          if text:
+                              resp_content = text
+                              print(f"--> 从镜像 {mirror} 成功获取: {save_filename}")
+                              break
+                  except Exception:
                       continue
 
-                  content_text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "")
+              if not resp_content:
+                  print(f"❌ 错误：所有镜像均无法拉取内容: {save_filename}")
+                  if not os.path.exists(save_filename):
+                      sys.exit(1)
+                  else:
+                      print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
+                      continue
 
-                  try:
-                      json_data = json.loads(content_text)
-                      processed_data = traverse_and_replace(json_data)
+              # 先清理掉所有注释
+              cleaned_text = remove_comments(resp_content)
 
-                      with open(save_filename, "w", encoding="utf-8") as f:
-                          json.dump(processed_data, f, ensure_ascii=False, indent=2)
+              try:
+                  # 尝试按严格 JSON 解析并递归替换 URL
+                  json_data = json.loads(cleaned_text)
+                  processed_data = traverse_and_replace(json_data)
 
-                      if json_data == processed_data:
-                          print(f"ℹ️ {save_filename} 无需替换，已按原样保存")
-                      else:
-                          print(f"✅ JSON 格式化替换完成: {save_filename}")
+                  with open(save_filename, "w", encoding="utf-8") as f:
+                      json.dump(processed_data, f, ensure_ascii=False, indent=2)
 
-                  except Exception as e:
-                      lines = content_text.splitlines()
-                      new_lines = []
-                      changed = False
-                      for line in lines:
-                          if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
-                              new_lines.append(line)
-                              continue
-                          new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                          new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
-                          if new_line != line:
-                              changed = True
-                          new_lines.append(new_line)
+                  print(f"✅ 成功清理注释并完成 JSON 结构化替换: {save_filename}\n")
 
-                      with open(save_filename, "w", encoding="utf-8") as f:
-                          f.write("\n".join(new_lines))
+              except Exception as e:
+                  print(f"ℹ️ {save_filename} 去注释后存在 JSON 尾部逗号等语法瑕疵 ({e})，切换为去注释后按行正则替换...")
+                  lines = cleaned_text.splitlines()
+                  new_lines = []
+                  for line in lines:
+                      if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
+                          new_lines.append(line)
+                          continue
+                      new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
+                      new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
+                      new_lines.append(new_line)
 
-                      if changed:
-                          print(f"✅ 正则匹配替换完成: {save_filename}")
-                      else:
-                          print(f"ℹ️ {save_filename} 无需正则匹配，已按原样保存")
+                  final_text = "\n".join(new_lines)
+                  with open(save_filename, "w", encoding="utf-8") as f:
+                      f.write(final_text)
 
-                  print("")
-
-              except Exception as err:
-                  print(f"❌ 处理异常 ({save_filename}): {err}\n")
+                  print(f"✅ 成功清理注释并完成按行正则替换: {save_filename}\n")
           EOF
 
-      - name: 2. 强校验加密 JSON 为 BIN
+      - name: 2. 加密 JSON 为 BIN
         id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
@@ -189,25 +202,17 @@ jobs:
 
           for target in "x.json" "pj.json"; do
             if [ -f "$target" ]; then
-              echo "校验 JSON 格式: $target"
-              python3 - "$target" << 'EOF'
-          import json, sys
-          try:
-              with open(sys.argv[1], "r", encoding="utf-8-sig") as f:
-                  json.load(f)
-          except Exception as e:
-              print("❌ JSON 校验失败:", e)
-              sys.exit(1)
-          EOF
+              echo "正在加密: $target"
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
-              echo "正在执行加密: $target -> $bin_file"
               python tvbox.py "$target" "$bin_file" enc
 
               if [ ! -f "$bin_file" ]; then
                 echo "❌ 失败：加密产物 $bin_file 未成功生成！"
                 exit 1
+              else
+                echo "✅ 加密产物已成功生成: $bin_file"
               fi
             else
               echo "❌ 失败：未能找到待加密文件: $target"
@@ -215,7 +220,7 @@ jobs:
             fi
           done
 
-      - name: 3. 提交明文 JSON 到 GitHub 仓库
+      - name: 3. 提交无注释明文 JSON 到 GitHub 仓库
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -230,7 +235,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "提示：GitHub 仓库的明文 JSON 无实际变动，无需 Commit。"
           else
-            git commit -m "auto: update plain json files [skip ci]"
+            git commit -m "auto: update plain json files without comments [skip ci]"
             git push
             echo "GitHub 仓库明文 JSON 推送成功。"
           fi
