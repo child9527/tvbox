@@ -1,8 +1,8 @@
-name: 批量同步、加密与双端推送单独的json (GitHub + Gitee)
+name: 批量同步、加密与双端推送 (GitHub + Gitee)
 
 on:
   schedule:
-    - cron: '0 2 * * *'    # 北京时间每天 10:00 运行
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -92,7 +92,6 @@ jobs:
                   if delay is not None:
                       results[m] = delay
 
-          # 【修复点 ②】：做安全容错，防止 results 为空时 min() 抛出异常
           if results:
               accent_prefix = min(results, key=results.get)
           else:
@@ -161,7 +160,6 @@ jobs:
                               new_lines.append(line)
                               continue
                           new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                          # 【修复点 ⑥】：防止镜像前缀被重复叠加
                           new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
                           if new_line != line:
                               changed = True
@@ -190,19 +188,17 @@ jobs:
           fi
 
           for target in "x.json" "pj.json"; do
-            # 【修复点 ③】：直接精准检查文件，规避大小写模糊匹配带来的风险
             if [ -f "$target" ]; then
               echo "校验 JSON 格式: $target"
               python3 - "$target" << 'EOF'
-import json, sys
-try:
-    # 【修复点 ④】：使用 utf-8-sig 兼容带 BOM 头的 JSON
-    with open(sys.argv[1], "r", encoding="utf-8-sig") as f:
-        json.load(f)
-except Exception as e:
-    print("❌ JSON 校验失败:", e)
-    sys.exit(1)
-EOF
+          import json, sys
+          try:
+              with open(sys.argv[1], "r", encoding="utf-8-sig") as f:
+                  json.load(f)
+          except Exception as e:
+              print("❌ JSON 校验失败:", e)
+              sys.exit(1)
+          EOF
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
@@ -224,7 +220,6 @@ EOF
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 【修复点 ③】：清理历史上可能存在的大写 X.json，保证文件名统一为小写
           if [ -f "X.json" ]; then
             git rm -f X.json 2>/dev/null || true
           fi
@@ -247,7 +242,6 @@ EOF
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # 【修复点 ①】：用 printf 保证私钥格式正确及末尾换行
           printf "%s\n" "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
 
@@ -291,7 +285,6 @@ EOF
             echo "[提示] Gitee 仓库无任何变更，跳过 Commit 和 Push。"
           else
             echo "[提示] 检测到变更，提交并推送加密产物至 Gitee..."
-            # 【修复点 ⑤】：推送至远程默认分支，避免强制指定 master 导致分支不存在
             git push origin HEAD
             echo "[成功] 加密产物 (x.json, pj.json) 已同步更新至 Gitee mybox！"
           fi
