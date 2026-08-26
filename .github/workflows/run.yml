@@ -1,4 +1,4 @@
-name: Convert Rules and Sync to Gitee
+name: 转换Clash规则文件推送到Gitee
 
 on:
   push:
