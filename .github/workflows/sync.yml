@@ -1,0 +1,272 @@
+name: 批量同步、加密与双端推送单独的json (GitHub + Gitee)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 北京时间每天 10:00 运行
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  batch-sync-and-encrypt:
+    name: 批量处理、加密及推送
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出当前仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 完整拉取历史记录以便平滑 Push 到 Gitee
+
+      - name: 配置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装 Python 依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pycryptodome
+
+      - name: 1. 执行多文件上游变动检测、测速与 JSON 加速替换
+        id: process_json
+        env:
+          MY_REPO: ${{ github.repository }}
+        run: |
+          python - << 'EOF'
+          import json
+          import os
+          import re
+          import time
+          import hashlib
+          from concurrent.futures import ThreadPoolExecutor
+          import requests
+
+          my_repo = os.environ.get('MY_REPO')
+          raw_github_prefix = "https://raw.githubusercontent.com/"
+          CACHE_FILE = ".hash_cache.json"
+
+          # 1. 加载本地历史 Hash 缓存
+          hash_cache = {}
+          if os.path.exists(CACHE_FILE):
+              try:
+                  with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                      hash_cache = json.load(f)
+              except Exception:
+                  hash_cache = {}
+
+          # 需要批量处理的目标清单（新增链接直接在此追加即可，互不混淆）
+          TASKS = [
+              {
+                  "name": "X.json",
+                  "url": "https://github.com/alantang1977/X/blob/main/X.json"
+              },
+              {
+                  "name": "pj.json",
+                  "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
+              }
+          ]
+
+          MIRRORS = [
+              "https://github.moeyy.xyz/",
+              "https://gh-proxy.org/",
+              "https://ghproxy.net/",
+              "https://mirror.ghproxy.com/",
+          ]
+
+          HEADERS = {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          }
+
+          def normalize_to_raw_url(url):
+              url = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', url)
+              url = url.replace('/refs/heads/', '/')
+              return url
+
+          def test_mirror(mirror):
+              test_url = mirror + raw_github_prefix + "alantang1977/X/main/X.json"
+              try:
+                  start = time.time()
+                  r = requests.get(test_url, headers=HEADERS, timeout=4)
+                  if r.status_code == 200 and r.text.strip().startswith(("{", "[")):
+                      return mirror, time.time() - start
+              except Exception:
+                  pass
+              return mirror, None
+
+          # 优先测速选出最佳镜像前缀
+          results = {}
+          with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
+              futures = [executor.submit(test_mirror, m) for m in MIRRORS]
+              for future in futures:
+                  m, delay = future.result()
+                  if delay is not None:
+                      results[m] = delay
+
+          accent_prefix = min(results, key=results.get) if results else "https://github.moeyy.xyz/"
+          print(f"全局最快镜像: {accent_prefix}\n")
+
+          my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
+
+          def process_url(url):
+              if not isinstance(url, str):
+                  return url
+              idx = url.find(raw_github_prefix)
+              if idx > 0:
+                  return url
+              if url.startswith("./"):
+                  return f"{my_repo_raw_base}{url[2:]}"
+              if idx == 0:
+                  return f"{accent_prefix}{url}"
+              return url
+
+          def traverse_and_replace(data):
+              if isinstance(data, dict):
+                  return {k: traverse_and_replace(v) for k, v in data.items()}
+              elif isinstance(data, list):
+                  return [traverse_and_replace(item) for item in data]
+              elif isinstance(data, str):
+                  return process_url(data)
+              else:
+                  return data
+
+          updated_files = []
+
+          for task in TASKS:
+              save_filename = task["name"]
+              raw_target_url = normalize_to_raw_url(task["url"])
+              fetch_url = f"{accent_prefix}{raw_target_url}"
+
+              print(f"--> 正在检查文件: {save_filename}")
+              try:
+                  resp = requests.get(fetch_url, headers=HEADERS, timeout=10)
+                  if resp.status_code != 200:
+                      print(f"❌ 无法读取 ({resp.status_code}): {fetch_url}")
+                      continue
+
+                  content_bytes = resp.content
+                  content_text = resp.text
+
+                  # 计算上游原始文件的 Hash
+                  current_hash = hashlib.sha256(content_bytes).hexdigest()
+                  old_hash = hash_cache.get(save_filename)
+
+                  if old_hash == current_hash and os.path.exists(save_filename):
+                      print(f"☕ 上游文件未更新 (Hash 校验一致)，跳过处理: {save_filename}\n")
+                      continue
+
+                  print(f"⚡ 检测到上游内容变更/首次同步，开始处理: {save_filename}")
+                  
+                  try:
+                      json_data = json.loads(content_text)
+                      processed_data = traverse_and_replace(json_data)
+                      with open(save_filename, "w", encoding="utf-8") as f:
+                          json.dump(processed_data, f, ensure_ascii=False, indent=2)
+                      print(f"✅ JSON 格式化替换完成: {save_filename}")
+                  except Exception:
+                      lines = content_text.splitlines()
+                      new_lines = []
+                      for line in lines:
+                          if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
+                              new_lines.append(line)
+                              continue
+                          line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
+                          line = re.sub(r'(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', line)
+                          new_lines.append(line)
+                      
+                      with open(save_filename, "w", encoding="utf-8") as f:
+                          f.write("\n".join(new_lines))
+                      print(f"✅ 正则匹配替换完成: {save_filename}")
+
+                  # 更新缓存记录与待加密列表
+                  hash_cache[save_filename] = current_hash
+                  updated_files.append(save_filename)
+                  print("")
+
+              except Exception as err:
+                  print(f"❌ 处理异常 ({save_filename}): {err}\n")
+
+          # 保存最新的 Hash 缓存到文件
+          with open(CACHE_FILE, "w", encoding="utf-8") as f:
+              json.dump(hash_cache, f, ensure_ascii=False, indent=2)
+
+          # 输出待加密的文件名给后续步骤
+          updated_str = ",".join(updated_files)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              fh.write(f"updated_files={updated_str}\n")
+          EOF
+
+      - name: 2. 针对变动文件调用 tvbox.py 进行加密
+        id: encrypt_step
+        run: |
+          UPDATED_FILES="${{ steps.process_json.outputs.updated_files }}"
+          
+          if [ -z "$UPDATED_FILES" ]; then
+            echo "提示：所有上游 JSON 均无更新，跳过加密步骤。"
+          elif [ ! -f "tvbox.py" ]; then
+            echo "::warning::警告：根目录下未找到 tvbox.py 脚本，跳过加密步骤！"
+          else
+            echo "更新的文件清单: $UPDATED_FILES"
+            IFS=',' read -r -a file_array <<< "$UPDATED_FILES"
+            
+            for file in "${file_array[@]}"; do
+              bin_file="${file%.json}.bin"
+              if [ -f "$file" ]; then
+                echo "正在加密 $file -> $bin_file..."
+                python tvbox.py "$file" "$bin_file" enc || echo "::error::加密 $file 失败"
+              fi
+            done
+          fi
+
+      - name: 3. 提交变动并推送到 GitHub 仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 暂存所有变动的 json、bin 以及 hash 缓存记录
+          git add *.json *.bin .hash_cache.json 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "提示：上游未发生有效变动，无需 Commit。"
+          else
+            git commit -m "自动同步：检测到上游更新，更新加速与 tvbox 加密产物"
+            git push
+            echo "GitHub 仓库推送成功。"
+          fi
+
+      - name: 4. 配置 SSH 与 Gitee 域名映射
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          echo "=================== 配置 SSH 与 Gitee 域名映射 ==================="
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # 1. 写入私钥文件并严格授权
+          echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
+          chmod 600 ~/.ssh/gitee_id_ed25519
+          
+          # 2. 写入 SSH Config
+          cat << 'EOF' > ~/.ssh/config
+          Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/gitee_id_ed25519
+              StrictHostKeyChecking no
+          EOF
+          chmod 600 ~/.ssh/config
+          
+          echo "[诊断] 测试 Gitee SSH 免密连通性..."
+          ssh -T git@gitee.com || true
+
+      - name: 5. 推送到 Gitee 仓库 (mybox 的 master 主分支)
+        run: |
+          GITEE_REPO_URL="git@gitee.com:child9527/mybox.git"
+          
+          git remote remove gitee 2>/dev/null || true
+          git remote add gitee "$GITEE_REPO_URL"
+          
+          echo "开始推送本地 main 分支更新至 Gitee mybox 仓库的 master 分支..."
+          git push -u gitee main:master --force
+          echo "🎉 Gitee mybox 仓库 master 分支（根目录）同步成功！"
