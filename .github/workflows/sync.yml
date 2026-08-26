@@ -2,7 +2,7 @@ name: 批量同步、加密与双端推送单独的json (GitHub + Gitee)
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 北京时间每天 10:00 运行
+    - cron: '0 2 * * *'    # 北京时间每天 10:00 运行
   workflow_dispatch:
 
 permissions:
@@ -45,10 +45,9 @@ jobs:
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
 
-          # 需要批量处理的目标清单
           TASKS = [
               {
-                  "name": "X.json",
+                  "name": "x.json",
                   "url": "https://github.com/alantang1977/X/blob/main/X.json"
               },
               {
@@ -78,13 +77,13 @@ jobs:
               try:
                   start = time.time()
                   r = requests.get(test_url, headers=HEADERS, timeout=4)
-                  if r.status_code == 200 and r.text.strip().startswith(("{", "[")):
+                  text = r.content.decode("utf-8", errors="ignore").lstrip()
+                  if r.status_code == 200 and (text.startswith("{") or text.startswith("[")):
                       return mirror, time.time() - start
               except Exception:
                   pass
               return mirror, None
 
-          # 优先测速选出最佳镜像前缀
           results = {}
           with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
               futures = [executor.submit(test_mirror, m) for m in MIRRORS]
@@ -93,7 +92,13 @@ jobs:
                   if delay is not None:
                       results[m] = delay
 
-          accent_prefix = min(results, key=results.get) if results else "https://github.moeyy.xyz/"
+          # 【修复点 ②】：做安全容错，防止 results 为空时 min() 抛出异常
+          if results:
+              accent_prefix = min(results, key=results.get)
+          else:
+              accent_prefix = "https://github.moeyy.xyz/"
+              print("⚠️ 所有镜像测速超时，降级使用默认镜像: https://github.moeyy.xyz/")
+
           print(f"全局最快镜像: {accent_prefix}\n")
 
           my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
@@ -123,9 +128,6 @@ jobs:
           for task in TASKS:
               save_filename = task["name"]
 
-              if not os.path.exists(save_filename):
-                  print(f"⚠️ 检测到本地缺失文件 ({save_filename})，强制重新拉取生成！")
-
               raw_target_url = normalize_to_raw_url(task["url"])
               fetch_url = f"{accent_prefix}{raw_target_url}"
 
@@ -136,21 +138,21 @@ jobs:
                       print(f"❌ 无法读取 ({resp.status_code}): {fetch_url}")
                       continue
 
-                  content_text = resp.text
-                  
+                  content_text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "")
+
                   try:
                       json_data = json.loads(content_text)
                       processed_data = traverse_and_replace(json_data)
-                      
+
                       with open(save_filename, "w", encoding="utf-8") as f:
                           json.dump(processed_data, f, ensure_ascii=False, indent=2)
-                      
+
                       if json_data == processed_data:
-                          print(f"ℹ️ {save_filename} 无需链接替换/正则匹配，已按原样保存")
+                          print(f"ℹ️ {save_filename} 无需替换，已按原样保存")
                       else:
                           print(f"✅ JSON 格式化替换完成: {save_filename}")
 
-                  except Exception:
+                  except Exception as e:
                       lines = content_text.splitlines()
                       new_lines = []
                       changed = False
@@ -159,14 +161,15 @@ jobs:
                               new_lines.append(line)
                               continue
                           new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                          new_line = re.sub(r'(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
+                          # 【修复点 ⑥】：防止镜像前缀被重复叠加
+                          new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
                           if new_line != line:
                               changed = True
                           new_lines.append(new_line)
-                      
+
                       with open(save_filename, "w", encoding="utf-8") as f:
                           f.write("\n".join(new_lines))
-                      
+
                       if changed:
                           print(f"✅ 正则匹配替换完成: {save_filename}")
                       else:
@@ -178,35 +181,55 @@ jobs:
                   print(f"❌ 处理异常 ({save_filename}): {err}\n")
           EOF
 
-      - name: 2. 扫描并针对所有 JSON 进行加密生成 BIN
+      - name: 2. 强校验加密 JSON 为 BIN
         id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
-            echo "::warning::警告：根目录下未找到 tvbox.py 脚本，跳过加密步骤！"
-          else
-            # 明确为清单中的 JSON 文件进行加密生成同名的 .bin
-            TARGET_FILES=("X.json" "pj.json")
-            for file in "${TARGET_FILES[@]}"; do
-              if [ -f "$file" ]; then
-                base_name="${file%.*}"
-                bin_file="${base_name}.bin"
-                echo "正在加密生成临时文件: $file -> $bin_file..."
-                python tvbox.py "$file" "$bin_file" enc || echo "::error::加密 $file 失败"
-              else
-                echo "::error::未找到待加密的源文件: $file"
-              fi
-            done
+            echo "❌ 错误：根目录下未找到 tvbox.py 脚本！"
+            exit 1
           fi
 
-      - name: 3. 提交明文 JSON 到 GitHub 仓库（坚决排除 .bin）
+          for target in "x.json" "pj.json"; do
+            # 【修复点 ③】：直接精准检查文件，规避大小写模糊匹配带来的风险
+            if [ -f "$target" ]; then
+              echo "校验 JSON 格式: $target"
+              python3 - "$target" << 'EOF'
+import json, sys
+try:
+    # 【修复点 ④】：使用 utf-8-sig 兼容带 BOM 头的 JSON
+    with open(sys.argv[1], "r", encoding="utf-8-sig") as f:
+        json.load(f)
+except Exception as e:
+    print("❌ JSON 校验失败:", e)
+    sys.exit(1)
+EOF
+              base_name="${target%.*}"
+              bin_file="${base_name}.bin"
+
+              echo "正在执行加密: $target -> $bin_file"
+              python tvbox.py "$target" "$bin_file" enc
+
+              if [ ! -f "$bin_file" ]; then
+                echo "❌ 失败：加密产物 $bin_file 未成功生成！"
+                exit 1
+              fi
+            else
+              echo "❌ 失败：未能找到待加密文件: $target"
+              exit 1
+            fi
+          done
+
+      - name: 3. 提交明文 JSON 到 GitHub 仓库
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. 强行指定添加生成的明文 JSON 文件
-          git add -f X.json pj.json 2>/dev/null || true
+          # 【修复点 ③】：清理历史上可能存在的大写 X.json，保证文件名统一为小写
+          if [ -f "X.json" ]; then
+            git rm -f X.json 2>/dev/null || true
+          fi
 
-          # 2. 从 Git 索引中强制抹除可能误添加的 .bin
+          git add -f x.json pj.json 2>/dev/null || true
           git rm --cached *.bin *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
@@ -221,13 +244,13 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
-          echo "=================== 配置 SSH 与 Gitee 域名映射 ==================="
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          
-          echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
+
+          # 【修复点 ①】：用 printf 保证私钥格式正确及末尾换行
+          printf "%s\n" "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
-          
+
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -236,52 +259,47 @@ jobs:
               StrictHostKeyChecking no
           EOF
           chmod 600 ~/.ssh/config
-          
-          echo "[诊断] 测试 Gitee SSH 免密连通性..."
           ssh -T git@gitee.com || true
 
       - name: 5. 克隆 Gitee mybox 仓库并推送加密改名后的 JSON
         run: |
-          echo "=================== 克隆 Gitee 仓库并同步提交 ==================="
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
-          
-          # 1. 清除 Gitee 仓库根目录下旧的 .bin 文件
+
           cd gitee_temp
           git rm -f *.bin *.BIN 2>/dev/null || true
           cd ..
 
-          # 2. 遍历加密生成的 .bin 文件，统一重命名为 .json 覆盖移入 gitee_temp
-          shopt -s nullglob nocaseglob
-          for bin_file in *.bin; do
-            if [ -f "$bin_file" ]; then
-              base_name="${bin_file%.*}"
-              target_json="gitee_temp/${base_name}.json"
-              echo "改名复制加密产物: $bin_file -> $target_json"
-              cp -v "$bin_file" "$target_json"
+          for b in "x.bin" "pj.bin"; do
+            if [ -f "$b" ]; then
+              target_name="${b%.*}.json"
+              echo "改名复制加密产物: $b -> gitee_temp/$target_name"
+              cp -v "$b" "gitee_temp/$target_name"
+            else
+              echo "❌ 失败：缺少加密文件 $b，中断推送！"
+              exit 1
             fi
           done
 
           cd gitee_temp
           git add -A
-          
+
           if git diff --staged --quiet; then
-            echo "[提示] 经比对 Gitee 仓库无任何变更，跳过 Commit 和 Push。"
+            echo "[提示] Gitee 仓库无任何变更，跳过 Commit 和 Push。"
           else
-            echo "[提示] 检测到变更，提交并推送加密产物至 Gitee master 分支..."
-            git commit -m "auto: replace with encrypted json files and remove legacy bin files [skip ci]"
-            git push origin master
-            echo "[成功] 加密产物已重命名更新至 Gitee mybox！"
+            echo "[提示] 检测到变更，提交并推送加密产物至 Gitee..."
+            # 【修复点 ⑤】：推送至远程默认分支，避免强制指定 master 导致分支不存在
+            git push origin HEAD
+            echo "[成功] 加密产物 (x.json, pj.json) 已同步更新至 Gitee mybox！"
           fi
 
       - name: 6. 清理临时文件夹及所有 .bin 临时文件
         if: always()
         run: |
-          echo "[清理] 开始清除运行产生的临时文件及加密 .bin..."
           rm -rf gitee_temp
           rm -f *.bin *.BIN
           rm -f .hash_cache.json
-          echo "[完成] 所有临时加密文件与缓存已彻底清理。"
+          echo "[完成] 所有临时加密文件已彻底清理。"
