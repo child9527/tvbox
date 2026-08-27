@@ -53,7 +53,11 @@ jobs:
                   "name": "x.json",
                   "url": "https://github.com/alantang1977/X/blob/main/X.json"
               },
-              {
+                            {
+                  "name": "x.json",
+                  "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json"
+              },
+                            {
                   "name": "pj.json",
                   "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
               }
