@@ -97,7 +97,6 @@
 {"name": "🛳️️┃裤佬「仅移动网」","type":0,"url":"https://live.445569.xyz/live.m3u","ua":"okHttp","timeout":10,"playerType":2},
 {"name": "🍅┃全国直播「live」","type":0,"url":"http://wangziduoqing.com/yuan/zb.txt","ua":"okHttp","timeout":10,"playerType":2},
 
-##NAS部署直播
 {"name": "🏄‍♂️┃serv00「直播」","type": 0,"ua": "okhttp","url": "https://alantang.serv00.net/m3u/jtv.m3u"},
 {"name": "🐍┃tangtang「直播」","type": 0,"ua": "okhttp","url": "https://tangtang.ggff.net/m3u/jtv.m3u"},
 
@@ -115,7 +114,6 @@
 {"name": "🥷┃iptv「NAS」","type": 0,"ua": "okhttp","url": "http://192.168.110.108:1905"},
 
 
-#github仓库直播区
 {"name": "🐬┃各大源合集「直播」","type": 0,"ua": "okhttp/5.3.2","url": "https://gh-proxy.org/https://raw.githubusercontent.com/807080747/zv/refs/heads/main/sese.txt"}, 
 {"name": "🐬┃锋哥xTV「直播」","type": 0,"url": "https://gh-proxy.org/https://raw.githubusercontent.com/FGBLH/FG/refs/heads/main/xxx视频资源","playerType":1},
 {"name": "🐬┃综合「直播」","type": 0,"playerType": 2,"url": "https://ghfast.top/https://raw.githubusercontent.com/wujiangliu/live-sources/refs/heads/main/电视家.m3u","ua": "okhttp"},	
@@ -128,7 +126,6 @@
 {"name": "🐬┃live「wujiangliu直播」","type": 0,"ua": "okhttp","url": "https://gh-proxy.org/https://raw.githubusercontent.com/wujiangliu/live-sources/refs/heads/main/wangzizb.txt"}, 
 
 
-##来源TG收集
 {"name": "🪼┃老汤TV「直播」","type": 0,"ua": "okhttp","url": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/alan/main/proxy/mg.m3u"},
 {"name": "📚┃alantangTV「直播」","type": 0,"ua": "okhttp","url": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/iptv8/refs/heads/main/bbxx_lite.m3u"},
 {"name": "🌺┃jn950TV「直播」","type": 0,"ua": "okhttp","url": "https://gh-proxy.org/https://raw.githubusercontent.com/jn950/live/main/tv/pllive.txt"},
@@ -161,7 +158,6 @@
 {"name": "🦄┃中港台直播源","type": 0,"ua": "okhttp","url": "https://t.freetv.fun/m3u/playlist.txt"},
 {"name": "🦄┃台湾欢乐看源","type": 0,"ua": "okhttp","url": "http://ezc.xtvantsc.xyz/欢乐看.txt"},
 
-##酷九live直播
 {"name": "🔫️┃松鼠「直播」","type": 0,"ua": "okhttp","url": "http://www.52top.com.cn:678/downloads/migu.txt"},
 {"name": "🔫️┃壹米「直播」","type": 0,"url": "https://gitee.com/yimi321/tv/raw/master/tv.png","ua": "okhttp/3.15,AptvPlayer/1.4.0","timeout": 5,"epg": "http://cdn.1678520.xyz/epg/?ch={name}&date={date}","logo": "https://live.fanmingming.cn/tv/{name}.png"},
 {"name": "🔫️┃酷九「直播」","type": 0,"url": "https://gongdian.top/tv/ku9/webview.txt#JS=https://gongdian.top/tv/ku9/js/webview.js","playerType":1},
@@ -183,7 +179,6 @@
 {"name": "🐰┃kakaxi「直播ipv6」","type":0,"url":"https://kakaxi.indevs.in/ipv6.m3u","playerType":1},
 
 	
-##长青云盘直播
 {"name": "🛺┃大广东「长青」","type":0,"url":"https://cloud.7so.top/f/9QXOc2/jjtv.txt","ua": "","timeout": 10,"playerType": 1},
 {"name": "🏍️️️┃china全国「长青」","type":0,"url":"https://cloud.7so.top/f/yrlQHL/chinaTV.m3u","ua": "","timeout": 10,"playerType": 1},
 {"name": "🚐┃HKTV「长青」","type": 0,"url": "https://cloud.7so.top/f/yr7BHL/HKTV.txt","playerType":1},
@@ -201,7 +196,6 @@
 {"name": "☎️️┃tmxk「smart直播」","type": 0,"url": "https://tmxk.pp.ua/smart-cn.m3u","playerType":1},
 {"name": "🎣┃tmxk「4gtv直播」","type": 0,"url": "https://tmxk.pp.ua/litv.php?token=tmxk","playerType":1},	
 
-##github仓库直播区	
 
 {"name": "🚔️️┃judy-smart「直播」","type": 0,"pass": true,"ua": "Goiptv/8.8.8","url": "https://gh-proxy.org/https://raw.githubusercontent.com/judy-gotv/iptv/main/logo-smart.m3u","epg": "http://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}","logo": "https://epg.112114.xyz/logo/{name}.png"},
 {"name": "🎅┃judy-4gtv「梯直播」","type":0,"url":"https://gh-proxy.org/https://raw.githubusercontent.com/judy-gotv/iptv/refs/heads/main/4gtv.m3u","ua": "Goiptv/8.8.8","timeout": 10,"playerType": 1},
@@ -226,7 +220,6 @@
 
 {"name": "🍏️┃范明明「直播V6」","type":0,"url":"https://nos.netease.com/ysf/3d75a78a0fc7ede372c03598d6d10367.m3u","playerType":2},
 	
-##自家系列直播
 {"name": "🍬┃jtv采集「自家」","type": 0,"url": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/jtv/refs/heads/main/综合源.txt","playerType":1},
 {"name": "🥚┃tang收集「自家」","type": 0,"url": "https://gh-proxy.org/https://raw.githubusercontent.com/1626907/miguevent/refs/heads/main/migu.php","playerType":1},	
 {"name": "🦀️┃TVsmile「自家」","type":0,"url":"https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/TVsmile/refs/heads/main/组播优选.txt","playerType":1},
@@ -261,13 +254,11 @@
 {"name": "🛡️️┃张先生「央视直播」","type": 0,"url": "https://gitee.com/zhanghuan12345/my-live/raw/master/hubeiliantong","playerType":1},
 {"name": "🎁┃张先生「央视直播」","type": 0,"url": "https://gitee.com/zhanghuan12345/my-live/raw/master/fjdx","playerType":1},
 
-##网上收集系列
 
 
 
 
 
-##serv00服务器系列
 
 
 
