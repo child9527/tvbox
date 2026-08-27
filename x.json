@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/jar/custom_spider.jar;md5;608d621640f5ed5ae8c78158ca61bff7",
+  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/jar/custom_spider.jar;md5;608d621640f5ed5ae8c78158ca61bff7",
   "wallpaper": "https://wp.upx8.com/api.php",
   "logo": "https://cnb.cool/junchao.tang/jtv/-/git/raw/main/Pictures/junmeng.gif",
   "sites": [
@@ -8,11 +8,11 @@
       "name": "🐮┃豆瓣┃跑马灯",
       "type": 3,
       "api": "csp_Douban",
-      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/jar/跑马灯.jar",
+      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/jar/跑马灯.jar",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 1,
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/jar/跑马灯.txt"
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/jar/跑马灯.txt"
     },
     {
       "key": "玩偶",
@@ -31,7 +31,7 @@
       "key": "剧透",
       "name": "🥷┃剧透社┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/剧透社.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/剧透社.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -41,7 +41,7 @@
       "key": "剧透ai",
       "name": "🦸┃剧透社┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/剧透社ai.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/剧透社ai.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -51,7 +51,7 @@
       "key": "直播转点播[全功能]",
       "name": "📡┆直播┆电视[全功能]",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/live/live2vod@v18.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/live/live2vod@v18.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -60,7 +60,7 @@
         "ratio": 1.88
       },
       "ext": {
-        "config_file": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/live/live_user_v18.json",
+        "config_file": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/live/live_user_v18.json",
         "过滤规则|开启": {
           "忽略": [
             {
@@ -113,7 +113,7 @@
           ]
         },
         "lives": [
-          "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/live/feimaolive.json"
+          "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/live/feimaolive.json"
         ]
       }
     },
@@ -123,13 +123,13 @@
       "type": 3,
       "api": "csp_AppV6",
       "ext": "http://172.247.227.203:25321/mtys.php",
-      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/jar/CatVodSpider.jar"
+      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/jar/CatVodSpider.jar"
     },
     {
       "key": "心跳",
       "name": "🏄‍♂️┃心跳┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/心跳.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/心跳.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -139,7 +139,7 @@
       "key": "瓜子子",
       "name": "🥭┃瓜子┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/guazi新.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/guazi新.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -149,7 +149,7 @@
       "key": "云朵",
       "name": "🌦️┃云朵┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/云朵.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/云朵.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -159,7 +159,7 @@
       "key": "ggjav",
       "name": "🏄‍♂️┃密云┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/ggjav.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/ggjav.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -169,7 +169,7 @@
       "key": "duoduo",
       "name": "🎉┃多多┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/duoduo.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/duoduo.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -179,7 +179,7 @@
       "key": "hongguo",
       "name": "🍟┃红果┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/hongguo.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/hongguo.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -189,7 +189,7 @@
       "key": "七味",
       "name": "🐼️┃七味┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/七味.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/七味.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
@@ -199,7 +199,7 @@
       "key": "袋鼠影视(JS)",
       "name": "🛸┃袋鼠┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/js/袋鼠影视.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/js/袋鼠影视.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -209,7 +209,7 @@
       "key": "永乐影视(JS)",
       "name": "🛸┃永乐┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/js/永乐影视.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/js/永乐影视.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -228,7 +228,7 @@
       "key": "枫叶",
       "name": "🛸┃枫叶┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/枫叶影院.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/枫叶影院.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -238,7 +238,7 @@
       "key": "达达龟",
       "name": "🛸┃达达龟┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/达达龟影院.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/达达龟影院.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -248,7 +248,7 @@
       "key": "247看(JS)",
       "name": "🛸┃247看┃影视",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/js/247看.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/js/247看.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -259,12 +259,12 @@
       "name": "🛸┃a123tv┃影视",
       "type": 3,
       "api": "csp_WvSpider",
-      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/jar/WvSpider.jar",
+      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/jar/WvSpider.jar",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
       "switchable": 1,
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/js/a123tv.js"
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/js/a123tv.js"
     },
     {
       "key": "MDrive",
@@ -729,7 +729,7 @@
       "key": "youtube",
       "name": "🐼️┃Youtube",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/child9527/tvbox/main/py/youtubelive.py",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/X/main/py/youtubelive.py",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 0,
