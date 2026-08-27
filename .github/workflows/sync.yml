@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome commentjson jsmin
 
-      - name: 1. 多文件拉取、强制剥离 // 与 # 注释、JSON 加速替换与导出
+      - name: 1. 多文件拉取、精简剔除注释行、JSON 加速替换与导出
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -76,17 +76,24 @@ jobs:
 
           def force_remove_comments(text):
               """
-              强行剥离所有 //、# / ## 行首注释以及 /* ... */ 多行注释
+              精简清洗逻辑：
+              1. 剔除多行注释 /* ... */
+              2. 忽略开头空格后，只要整行以 // 或 # 开头，直接整行过滤掉
               """
+              # 剔除 Windows 回车符
+              text = text.replace('\r', '')
+              
+              # 剔除多行注释
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
+              
               clean_lines = []
               for line in text.splitlines():
-                  # 剥离 // 注释
-                  line_clean = re.sub(r'(?<!:)\/\/.*$', '', line)
-                  # 过滤 # 或 ## 开头的整行注释/Markdown 标题
-                  if line_clean.strip().startswith('#'):
+                  stripped = line.strip()
+                  # 开头是 // 或 # (包含前缀空格的情况) 的整行抛弃
+                  if stripped.startswith('//') or stripped.startswith('#'):
                       continue
-                  clean_lines.append(line_clean)
+                  clean_lines.append(line)
+              
               cleaned_text = "\n".join(clean_lines)
               cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
               return cleaned_text
@@ -172,7 +179,7 @@ jobs:
                   json_data = commentjson.loads(cleaned_text)
               except Exception:
                   try:
-                      json_data = json.loads(cleaned_text)
+                      json_data = json.loads(cleaned_text, strict=False)
                   except Exception:
                       pass
 
