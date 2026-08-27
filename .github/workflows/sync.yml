@@ -27,9 +27,9 @@ jobs:
       - name: 安装 Python 依赖
         run: |
           python -m pip install --upgrade pip
-          pip install requests pycryptodome commentjson
+          pip install requests pycryptodome commentjson jsmin
 
-      - name: 1. 多文件拉取、精细剔除 // 注释、JSON 加速替换与导出
+      - name: 1. 多文件拉取、强制剥离注释与特殊字符、JSON 加速替换与导出
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -74,23 +74,30 @@ jobs:
               url = url.replace('/refs/heads/', '/')
               return url
 
-          def remove_double_slash_comments(text):
+          def force_remove_comments(text):
               """
-              精细剥离所有 // 注释，同时避开字符串/网址内部（如 http://, https://）中的双斜杠
+              深度清洗：强行替换隐藏乱码字符、去除所有注释，并清理非法尾部逗号与空白行
               """
-              # 1. 移除多行注释 /* ... */
+              # 1. 清理异常字符与中文引号
+              text = text.replace('\xa0', ' ')        # 替换不换行空格
+              text = text.replace('\u200b', '')       # 剔除零宽空格
+              text = text.replace(' ', ' ')          # 全角空格转半角空格
+              text = text.replace('”', '"').replace('“', '"') # 中文双引号转英文双引号
+
+              # 2. 删除多行注释 /* ... */
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
               
               clean_lines = []
               for line in text.splitlines():
-                  # 利用正则剥离行内 // 注释（只匹配非冒号后面的 //，防止破坏 http:// 或 https://）
+                  # 剥离非 http(s):// 中的 // 单行注释
                   line_clean = re.sub(r'(?<!:)\/\/.*$', '', line)
-                  # 剔除因为整行都是注释而变为空白的行，防止产生孤立逗号或 Expecting value 错误
+                  # 剥离首尾空格后，仅保留有实质内容的行（彻底消除乱码空行引起的行号错位）
                   if line_clean.strip():
-                      clean_lines.append(line_clean)
+                      clean_lines.append(line_clean.strip())
               
               cleaned_text = "\n".join(clean_lines)
-              # 剔除末尾可能存在的非法多余逗号（如 {"a": 1,} 或 [1, 2,]）
+              
+              # 3. 移除数组或对象末尾多余的非法逗号 (Trailing Commas)
               cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
               return cleaned_text
 
@@ -106,7 +113,7 @@ jobs:
                   pass
               return mirror, None
 
-          # 测速选出最快镜像
+          # 测速选择最快镜像
           results = {}
           with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
               futures = [executor.submit(test_mirror, m) for m in MIRRORS]
@@ -169,27 +176,27 @@ jobs:
                       print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
                       continue
 
-              # 核心：完全抹去所有 // 开头的注释并清除注释形成的空行
-              cleaned_text = remove_double_slash_comments(resp_content)
+              # 第一步：强制剥离所有 // 注释与异常隐藏字符
+              cleaned_text = force_remove_comments(resp_content)
 
               json_data = None
-              # 优先解析为 JSON 对象，自动重构为标准无注释 JSON
+              # 第二步：尝试转化为 JSON 对象并替换加速 URL
               try:
                   json_data = commentjson.loads(cleaned_text)
-              except Exception as e:
-                  print(f"⚠️ commentjson 解析提示 ({e})，尝试标准 json.loads...")
+              except Exception:
                   try:
                       json_data = json.loads(cleaned_text)
-                  except Exception as e2:
-                      print(f"❌ 警告：结构化解析失败 ({e2})，将使用干净文本直接保存。")
+                  except Exception:
+                      pass
 
               if json_data is not None:
                   processed_data = traverse_and_replace(json_data)
                   with open(save_filename, "w", encoding="utf-8") as f:
                       json.dump(processed_data, f, ensure_ascii=False, indent=2)
-                  print(f"✅ 成功完全剥离 // 注释并保存标准无注释 JSON: {save_filename}\n")
+                  print(f"✅ 成功解析并生成标准的纯净 JSON: {save_filename}\n")
               else:
-                  # 降级按行替换加速 URL，但输出依然是去除了 // 注释的干净文本
+                  # 即使对象转化失败，也绝对只针对去完注释和特殊字符的文本进行替换保存
+                  print(f"ℹ️ {save_filename} 结构化解析未成功，使用清洗后的无注释纯文本进行正则替换保存...")
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
@@ -200,9 +207,12 @@ jobs:
                       new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
                       new_lines.append(new_line)
 
+                  final_clean_text = "\n".join(new_lines)
+                  final_clean_text = re.sub(r',\s*([\}\]])', r'\1', final_clean_text)
+
                   with open(save_filename, "w", encoding="utf-8") as f:
-                      f.write("\n".join(new_lines))
-                  print(f"✅ 降级去除注释与 URL 替换完成: {save_filename}\n")
+                      f.write(final_clean_text)
+                  print(f"✅ 无注释纯文本替换保存完成: {save_filename}\n")
           EOF
 
       - name: 2. 执行 tvbox.py 将无注释 JSON 加密为 BIN
