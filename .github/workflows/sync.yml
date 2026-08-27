@@ -54,10 +54,6 @@ jobs:
                   "url": "https://github.com/alantang1977/X/blob/main/X.json"
               },
               {
-                  "name": "jsm.json",
-                  "url": "https://github.com/qist/tvbox/blob/master/jsm.json"
-              },
-              {
                   "name": "pj.json",
                   "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
               },
@@ -88,6 +84,13 @@ jobs:
                   url = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', url)
                   url = url.replace('/refs/heads/', '/')
               return url
+
+          def get_base_url(url):
+              """根据任务 URL 获取其资源的基础目录 (Base URL)"""
+              raw_url = normalize_to_raw_url(url)
+              if "/" in raw_url:
+                  return raw_url.rsplit("/", 1)[0] + "/"
+              return raw_url
 
           def force_remove_comments(text):
               text = text.replace('\r', '')
@@ -129,41 +132,58 @@ jobs:
           accent_prefix = sorted_mirrors[0] if sorted_mirrors else "https://gh-proxy.org/"
           print(f"全局最快 GitHub 镜像: {accent_prefix}\n")
 
-          my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
-
-          def process_url(url):
+          def process_url(url, base_url):
               """
-              精细化处理 JSON 内部的引用 URL：
-              1. 相对路径 (./) -> 替换为本仓库地址
-              2. GitHub 链接 -> 替换/添加镜像加速前缀
-              3. 普通第三方链接 (如非 GitHub 的 js/jar/api) -> 原样保留
+              正确修补相对路径与 GitHub 镜像：
+              1. 相对路径 (./) -> 补全为原作者的 Base URL，而非你自己的仓库地址
+              2. 参数（如 ;md5;xxx） -> 保持在链接末尾
+              3. GitHub 链接 -> 加上镜像代理
+              4. 普通网络链接 -> 保持原样
               """
               if not isinstance(url, str):
                   return url
               
-              if url.startswith("./"):
-                  return f"{my_repo_raw_base}{url[2:]}"
+              # 如果包含以 ./ 开头的相对路径，替换为任务原作者的 Base URL
+              if "./" in url:
+                  # 分离可能存在的参数（如 ;md5;xxxx）
+                  extra_param = ""
+                  clean_url = url
+                  if ";" in url:
+                      parts = url.split(";", 1)
+                      clean_url = parts[0]
+                      extra_param = ";" + parts[1]
 
-              # 只对 GitHub 来源的资源镜像加速
+                  # 替换其中的 ./ 为原作者 Base URL
+                  if clean_url.startswith("./"):
+                      clean_url = base_url + clean_url[2:]
+                  elif "./" in clean_url:
+                      clean_url = re.sub(r'\./', base_url, clean_url)
+
+                  url = clean_url + extra_param
+
+              # 如果处理后的链接是 GitHub 资源，加上镜像前缀加速
               if is_github_url(url):
-                  # 如果已经加过了镜像前缀，不重复添加
+                  # 避免重复加镜像
                   for mirror in MIRRORS:
                       if url.startswith(mirror):
                           return url
-                  # 转换 raw 链接并加上镜像前缀
                   raw_url = normalize_to_raw_url(url)
+                  # 如果链接中包含 ;md5; 等参数，前缀只加到真实 url 前面
+                  if ";" in raw_url:
+                      u_parts = raw_url.split(";", 1)
+                      return f"{accent_prefix}{u_parts[0]};{u_parts[1]}"
                   return f"{accent_prefix}{raw_url}"
 
-              # 非 GitHub 链接（普通网络 API/JS/JAR）直接返回原链接
+              # 非 GitHub 链接保持原样
               return url
 
-          def traverse_and_replace(data):
+          def traverse_and_replace(data, base_url):
               if isinstance(data, dict):
-                  return {k: traverse_and_replace(v) for k, v in data.items()}
+                  return {k: traverse_and_replace(v, base_url) for k, v in data.items()}
               elif isinstance(data, list):
-                  return [traverse_and_replace(item) for item in data]
+                  return [traverse_and_replace(item, base_url) for item in data]
               elif isinstance(data, str):
-                  return process_url(data)
+                  return process_url(data, base_url)
               else:
                   return data
 
@@ -173,10 +193,11 @@ jobs:
           for task in TASKS:
               save_filename = task["name"]
               target_url = task["url"]
+              task_base_url = get_base_url(target_url)
               
               resp_content = None
 
-              # 分流处理：判断是 GitHub 链接还是普通 HTTP 链接
+              # 分流拉取：判断是 GitHub 链接还是普通 HTTP 链接
               if is_github_url(target_url):
                   raw_target_url = normalize_to_raw_url(target_url)
                   for mirror in sorted_mirrors:
@@ -192,7 +213,7 @@ jobs:
                       except Exception:
                           continue
               else:
-                  # 普通第三方 URL（如 yydsok.com），直接拉取，不经过 GitHub 镜像
+                  # 普通第三方 URL（如 yydsok.com），直接拉取
                   try:
                       resp = requests.get(target_url, headers=HEADERS, timeout=10)
                       if resp.status_code == 200:
@@ -221,16 +242,16 @@ jobs:
                   pass
 
               if json_obj is None:
+                  # 如果 commentjson 严格解析失败，尝试文本行处理
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
-                      # 正则替换：只针对 GitHub 链接进行镜像化替换
-                      if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
-                          new_lines.append(line)
-                          continue
-                      new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                      new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
-                      new_lines.append(new_line)
+                      # 替换 ./ 相对路径为原作者的 base_url
+                      line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + task_base_url + r'\3\4', line)
+                      # 针对 github raw 链接增加镜像代理
+                      if is_github_url(line) and not any(m in line for m in MIRRORS):
+                          line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', line)
+                      new_lines.append(line)
 
                   final_clean_text = "\n".join(new_lines)
                   final_clean_text = re.sub(r',\s*([\}\]])', r'\1', final_clean_text)
@@ -241,7 +262,8 @@ jobs:
                       json_obj = None
 
               if json_obj is not None:
-                  processed_data = traverse_and_replace(json_obj)
+                  # 遍历递归修补相对路径与代理
+                  processed_data = traverse_and_replace(json_obj, task_base_url)
                   
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
                   json.loads(final_json_str)
