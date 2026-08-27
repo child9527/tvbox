@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 安装 Python 依赖 (精简去除 jsmin)
+      - name: 安装 Python 依赖
         run: |
           python -m pip install --upgrade pip
           pip install requests pycryptodome commentjson
@@ -47,19 +47,19 @@ jobs:
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
 
-          # 支持在此自由增删 JSON 任务，后续步骤均会自动全量适配
+          # 支持在此自由增删 JSON 任务（既支持 GitHub 链接，也支持普通 HTTP/HTTPS 链接）
           TASKS = [
               {
                   "name": "x.json",
                   "url": "https://github.com/alantang1977/X/blob/main/X.json"
               },
-                            {
-                  "name": "api.json",
-                  "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json"
-              },
-                            {
+              {
                   "name": "pj.json",
                   "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
+              },
+              {
+                  "name": "api.json",
+                  "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json"
               }
           ]
 
@@ -74,9 +74,15 @@ jobs:
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           }
 
+          def is_github_url(url):
+              """判断是否为 GitHub 相关的链接"""
+              return "github.com" in url or "raw.githubusercontent.com" in url
+
           def normalize_to_raw_url(url):
-              url = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', url)
-              url = url.replace('/refs/heads/', '/')
+              """如果是 GitHub 仓库链接，规范化转换为 raw 链接；非 GitHub 链接保持原样"""
+              if is_github_url(url):
+                  url = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', url)
+                  url = url.replace('/refs/heads/', '/')
               return url
 
           def force_remove_comments(text):
@@ -106,6 +112,7 @@ jobs:
                   pass
               return mirror, None
 
+          # 测速选择全局最快 GitHub 镜像
           results = {}
           with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
               futures = [executor.submit(test_mirror, m) for m in MIRRORS]
@@ -115,21 +122,35 @@ jobs:
                       results[m] = delay
 
           sorted_mirrors = sorted(results, key=results.get) if results else MIRRORS
-          accent_prefix = sorted_mirrors[0]
-          print(f"全局最快镜像: {accent_prefix}\n")
+          accent_prefix = sorted_mirrors[0] if sorted_mirrors else "https://gh-proxy.org/"
+          print(f"全局最快 GitHub 镜像: {accent_prefix}\n")
 
           my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
 
           def process_url(url):
+              """
+              精细化处理 JSON 内部的引用 URL：
+              1. 相对路径 (./) -> 替换为本仓库地址
+              2. GitHub 链接 -> 替换/添加镜像加速前缀
+              3. 普通第三方链接 (如非 GitHub 的 js/jar/api) -> 原样保留
+              """
               if not isinstance(url, str):
                   return url
-              idx = url.find(raw_github_prefix)
-              if idx > 0:
-                  return url
+              
               if url.startswith("./"):
                   return f"{my_repo_raw_base}{url[2:]}"
-              if idx == 0:
-                  return f"{accent_prefix}{url}"
+
+              # 只对 GitHub 来源的资源镜像加速
+              if is_github_url(url):
+                  # 如果已经加过了镜像前缀，不重复添加
+                  for mirror in MIRRORS:
+                      if url.startswith(mirror):
+                          return url
+                  # 转换 raw 链接并加上镜像前缀
+                  raw_url = normalize_to_raw_url(url)
+                  return f"{accent_prefix}{raw_url}"
+
+              # 非 GitHub 链接（普通网络 API/JS/JAR）直接返回原链接
               return url
 
           def traverse_and_replace(data):
@@ -147,24 +168,39 @@ jobs:
 
           for task in TASKS:
               save_filename = task["name"]
-              raw_target_url = normalize_to_raw_url(task["url"])
+              target_url = task["url"]
               
               resp_content = None
-              for mirror in sorted_mirrors:
-                  fetch_url = f"{mirror}{raw_target_url}"
+
+              # 分流处理：判断是 GitHub 链接还是普通 HTTP 链接
+              if is_github_url(target_url):
+                  raw_target_url = normalize_to_raw_url(target_url)
+                  for mirror in sorted_mirrors:
+                      fetch_url = f"{mirror}{raw_target_url}"
+                      try:
+                          resp = requests.get(fetch_url, headers=HEADERS, timeout=8)
+                          if resp.status_code == 200:
+                              text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
+                              if text:
+                                  resp_content = text
+                                  print(f"--> 从 GitHub 镜像 {mirror} 成功获取: {save_filename}")
+                                  break
+                      except Exception:
+                          continue
+              else:
+                  # 普通第三方 URL（如 yydsok.com），直接拉取，不经过 GitHub 镜像
                   try:
-                      resp = requests.get(fetch_url, headers=HEADERS, timeout=8)
+                      resp = requests.get(target_url, headers=HEADERS, timeout=10)
                       if resp.status_code == 200:
                           text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
                           if text:
                               resp_content = text
-                              print(f"--> 从镜像 {mirror} 成功获取原文件: {save_filename}")
-                              break
-                  except Exception:
-                      continue
+                              print(f"--> 直接从第三方 URL 成功获取: {save_filename} ({target_url})")
+                  except Exception as e:
+                      print(f"❌ 拉取第三方 URL 失败 ({target_url}): {e}")
 
               if not resp_content:
-                  print(f"❌ 错误：所有镜像均无法拉取内容: {save_filename}")
+                  print(f"❌ 错误：无法拉取内容: {save_filename}")
                   if not os.path.exists(save_filename):
                       sys.exit(1)
                   else:
@@ -184,6 +220,7 @@ jobs:
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
+                      # 正则替换：只针对 GitHub 链接进行镜像化替换
                       if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
                           new_lines.append(line)
                           continue
@@ -221,7 +258,7 @@ jobs:
           print(f"📄 文件列表: {', '.join(successful_files)}")
           print("--------------------------------------------------\n")
 
-          # 关键点：将 TASKS 中的文件列表导出给 GitHub Actions 后续步骤精确绑定
+          # 将 TASKS 中的目标文件名导出给后续步骤
           task_files_str = " ".join([t["name"] for t in TASKS])
           github_output = os.environ.get('GITHUB_OUTPUT')
           if github_output:
@@ -236,7 +273,6 @@ jobs:
 
           TASK_FILES="${{ steps.process_json.outputs.task_files }}"
 
-          # 只精确定向 add TASKS 里声明的文件，防止误触无关的根目录文件
           for file in $TASK_FILES; do
             if [ -f "$file" ]; then
               git add -f "$file"
@@ -264,7 +300,6 @@ jobs:
           TASK_FILES="${{ steps.process_json.outputs.task_files }}"
           processed_json=()
           
-          # 精准只循环 TASKS 对应的文件名，绝不盲目处理 *.json
           for target in $TASK_FILES; do
             if [ -f "$target" ]; then
               echo "正在加密无注释文件: $target"
@@ -329,7 +364,6 @@ jobs:
           TASK_FILES="${{ steps.process_json.outputs.task_files }}"
           copied_files=()
 
-          # 只精准处理 TASKS 生成的对应的 .bin 加密产物
           for target in $TASK_FILES; do
             base_name="${target%.*}"
             bin_file="${base_name}.bin"
