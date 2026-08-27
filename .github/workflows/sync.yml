@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome commentjson jsmin
 
-      - name: 1. 多文件拉取、强制剥离注释与特殊字符、JSON 加速替换与导出
+      - name: 1. 多文件拉取、强制剥离 // 注释、JSON 加速替换与导出
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -76,28 +76,14 @@ jobs:
 
           def force_remove_comments(text):
               """
-              深度清洗：强行替换隐藏乱码字符、去除所有注释，并清理非法尾部逗号与空白行
+              强行剥离所有 // 单行注释与 /* ... */ 多行注释，不删除空行
               """
-              # 1. 清理异常字符与中文引号
-              text = text.replace('\xa0', ' ')        # 替换不换行空格
-              text = text.replace('\u200b', '')       # 剔除零宽空格
-              text = text.replace(' ', ' ')          # 全角空格转半角空格
-              text = text.replace('”', '"').replace('“', '"') # 中文双引号转英文双引号
-
-              # 2. 删除多行注释 /* ... */
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
-              
               clean_lines = []
               for line in text.splitlines():
-                  # 剥离非 http(s):// 中的 // 单行注释
                   line_clean = re.sub(r'(?<!:)\/\/.*$', '', line)
-                  # 剥离首尾空格后，仅保留有实质内容的行（彻底消除乱码空行引起的行号错位）
-                  if line_clean.strip():
-                      clean_lines.append(line_clean.strip())
-              
+                  clean_lines.append(line_clean)
               cleaned_text = "\n".join(clean_lines)
-              
-              # 3. 移除数组或对象末尾多余的非法逗号 (Trailing Commas)
               cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
               return cleaned_text
 
@@ -113,7 +99,6 @@ jobs:
                   pass
               return mirror, None
 
-          # 测速选择最快镜像
           results = {}
           with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
               futures = [executor.submit(test_mirror, m) for m in MIRRORS]
@@ -176,11 +161,9 @@ jobs:
                       print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
                       continue
 
-              # 第一步：强制剥离所有 // 注释与异常隐藏字符
               cleaned_text = force_remove_comments(resp_content)
 
               json_data = None
-              # 第二步：尝试转化为 JSON 对象并替换加速 URL
               try:
                   json_data = commentjson.loads(cleaned_text)
               except Exception:
@@ -193,10 +176,9 @@ jobs:
                   processed_data = traverse_and_replace(json_data)
                   with open(save_filename, "w", encoding="utf-8") as f:
                       json.dump(processed_data, f, ensure_ascii=False, indent=2)
-                  print(f"✅ 成功解析并生成标准的纯净 JSON: {save_filename}\n")
+                  print(f"✅ 成功完美解析并生成格式化的无注释 JSON: {save_filename}\n")
               else:
-                  # 即使对象转化失败，也绝对只针对去完注释和特殊字符的文本进行替换保存
-                  print(f"ℹ️ {save_filename} 结构化解析未成功，使用清洗后的无注释纯文本进行正则替换保存...")
+                  print(f"ℹ️ {save_filename} 结构化解析未成功，写入去注释后的文本...")
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
@@ -212,10 +194,30 @@ jobs:
 
                   with open(save_filename, "w", encoding="utf-8") as f:
                       f.write(final_clean_text)
-                  print(f"✅ 无注释纯文本替换保存完成: {save_filename}\n")
+                  print(f"✅ 无注释纯文本保存完成: {save_filename}\n")
           EOF
 
-      - name: 2. 执行 tvbox.py 将无注释 JSON 加密为 BIN
+      - name: 2. 优先提交无注释明文 JSON 到 GitHub 仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -f "X.json" ]; then
+            git rm -f X.json 2>/dev/null || true
+          fi
+
+          git add -f x.json pj.json 2>/dev/null || true
+          git rm --cached *.bin *.BIN 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "提示：GitHub 仓库的 JSON 无实际变动，跳过 Commit。"
+          else
+            git commit -m "auto: update plain json files without comments [skip ci]"
+            git push
+            echo "✅ 已优先成功推送无注释明文 JSON 到 GitHub 仓库！"
+          fi
+
+      - name: 3. 执行 tvbox.py 将无注释 JSON 加密为 BIN
         id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
@@ -242,26 +244,6 @@ jobs:
               exit 1
             fi
           done
-
-      - name: 3. 提交无注释明文 JSON 到 GitHub 仓库
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          if [ -f "X.json" ]; then
-            git rm -f X.json 2>/dev/null || true
-          fi
-
-          git add -f x.json pj.json 2>/dev/null || true
-          git rm --cached *.bin *.BIN 2>/dev/null || true
-
-          if git diff --staged --quiet; then
-            echo "提示：GitHub 仓库的无注释 JSON 无实际变动，无需 Commit。"
-          else
-            git commit -m "auto: update plain json files without // comments [skip ci]"
-            git push
-            echo "✅ 已成功推送无注释明文 JSON 到 GitHub 仓库。"
-          fi
 
       - name: 4. 配置 SSH 与 Gitee 域名映射
         env:
