@@ -54,6 +54,10 @@ jobs:
                   "url": "https://github.com/alantang1977/X/blob/main/X.json"
               },
               {
+                  "name": "jsm.json",
+                  "url": "https://github.com/qist/tvbox/blob/master/jsm.json"
+              },
+              {
                   "name": "pj.json",
                   "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
               },
