@@ -389,8 +389,8 @@
       "key": "虎牙js",
       "name": "🐯虎牙┃直播",
       "type": 3,
-      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/虎牙.js",
+      "api": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/虎牙.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -405,8 +405,8 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃直播",
       "type": 3,
-      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/斗鱼直播.js",
+      "api": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/斗鱼直播.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -533,8 +533,8 @@
       "key": "dr_兔小贝",
       "name": "📚儿童┃启蒙",
       "type": 3,
-      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
+      "api": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -633,7 +633,7 @@
     {
       "name": "Kimentanm",
       "type": 0,
-      "url": "https://gh.927223.xyz/https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
+      "url": "https://gh-proxy.org/https://gh.927223.xyz/https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
       "playerType": 2
     },
     {

@@ -638,8 +638,8 @@
       "key": "虎牙js",
       "name": "🐯虎牙┃直播",
       "type": 3,
-      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://gh-proxy.com/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/虎牙.js",
+      "api": "https://gh-proxy.org/https://gh-proxy.com/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://gh-proxy.com/https://raw.githubusercontent.com/fantaiying7/EXT/main/虎牙.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -654,8 +654,8 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃直播",
       "type": 3,
-      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/斗鱼直播.js",
+      "api": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/斗鱼直播.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -771,8 +771,8 @@
       "key": "dr_兔小贝",
       "name": "📚儿童┃启蒙",
       "type": 3,
-      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
+      "api": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -906,7 +906,7 @@
         "hlsztemgsplive.miguvideo.com=hlsztemgsplive.188766.xyz",
         "cache.ott.fifalive.itv.cmvideo.cn=fifalive.188766.xyz",
         "iptv.huuc.edu.cn=huucv6.188766.xyz",
-        "raw.githubusercontent.com",
+        "https://gh-proxy.org/raw.githubusercontent.com",
         "googlevideo.com",
         "cdn.v82u1l.com",
         "cdn.iz8qkg.com",
@@ -1159,7 +1159,7 @@
       "name": "🐬┃综合「直播」",
       "type": 0,
       "playerType": 2,
-      "url": "https://ghfast.top/https://raw.githubusercontent.com/wujiangliu/live-sources/refs/heads/main/电视家.m3u",
+      "url": "https://gh-proxy.org/https://ghfast.top/https://raw.githubusercontent.com/wujiangliu/live-sources/main/电视家.m3u",
       "ua": "okhttp"
     },
     {
@@ -1811,7 +1811,7 @@
       "type": 0,
       "url": "https://gitee.com/tushaoyong/live/raw/master/接口/电信IPTV.json",
       "ua": "hequan",
-      "epg": "https://gh-proxy.org/https://raw.githubusercontent.com/mytv-android/iptv-api/refs/heads/master/output/epg/epg.gz",
+      "epg": "https://gh-proxy.org/https://raw.githubusercontent.com/mytv-android/iptv-api/master/output/epg/epg.gz",
       "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/{name}.png"
     },
     {
@@ -1819,7 +1819,7 @@
       "type": 0,
       "url": "https://gitee.com/tushaoyong/live/raw/master/接口/移动IPTV.json",
       "ua": "hequan",
-      "epg": "https://gh-proxy.org/https://raw.githubusercontent.com/mytv-android/iptv-api/refs/heads/master/output/epg/epg.gz",
+      "epg": "https://gh-proxy.org/https://raw.githubusercontent.com/mytv-android/iptv-api/master/output/epg/epg.gz",
       "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/{name}.png"
     },
     {
@@ -2133,7 +2133,7 @@
     {
       "name": "🃏️┃Kimentanm「直播」",
       "type": 0,
-      "url": "https://wget.la/https://github.com/Kimentanm/aptv/raw/master/m3u/iptv.m3u",
+      "url": "https://gh-proxy.org/https://wget.la/https://github.com/Kimentanm/aptv/raw/master/m3u/iptv.m3u",
       "epg": "http://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}",
       "logo": "https://epg.iill.top/logo/{name}.png",
       "ua": "okhttp/3.15,AptvPlayer/1.4.0",
