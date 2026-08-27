@@ -29,227 +29,95 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome
 
-      - name: 1. 执行多文件检测、测速、去注释与 JSON 加速替换
+      - name: 1. 拉取并清理注释后的 JSON
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
         run: |
           python - << 'EOF'
-          import json
-          import os
-          import re
-          import time
-          import sys
-          from concurrent.futures import ThreadPoolExecutor
-          import requests
-
-          my_repo = os.environ.get('MY_REPO')
-          raw_github_prefix = "https://raw.githubusercontent.com/"
+          import requests, re, os, json, sys
 
           TASKS = [
-              {
-                  "name": "x.json",
-                  "url": "https://github.com/alantang1977/X/blob/main/X.json"
-              },
-              {
-                  "name": "pj.json",
-                  "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
-              }
+              {"name": "x.json", "url": "https://raw.githubusercontent.com/alantang1977/X/main/X.json"},
+              {"name": "pj.json", "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json"}
           ]
 
-          MIRRORS = [
-              "https://github.moeyy.xyz/",
-              "https://gh-proxy.org/",
-              "https://ghproxy.net/",
-              "https://mirror.ghproxy.com/",
-          ]
-
-          HEADERS = {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          }
-
-          def normalize_to_raw_url(url):
-              url = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', url)
-              url = url.replace('/refs/heads/', '/')
-              return url
+          HEADERS = {"User-Agent": "Mozilla/5.0"}
 
           def remove_comments(text):
-              # 1. 移除多行注释 /* ... */
-              text = re.sub(r'/\*[\s\S]*?\*/', '', text)
-              # 2. 逐行剔除单行注释 //（避开 http:// 和 https://）
+              # 删除所有 // 开头的注释（避免误删 http:// https://）
               clean_lines = []
               for line in text.splitlines():
-                  # 匹配不在 http(s): 后的 // 及其后面的全部内容
-                  line_clean = re.sub(r'(?<!:)\/\/.*$', '', line)
-                  # 如果该行去注释后不是纯空白行，才保留
+                  line_clean = re.sub(r'(?<!:)//.*$', '', line)
                   if line_clean.strip():
                       clean_lines.append(line_clean)
               return "\n".join(clean_lines)
 
-          def test_mirror(mirror):
-              test_url = mirror + raw_github_prefix + "alantang1977/X/main/X.json"
-              try:
-                  start = time.time()
-                  r = requests.get(test_url, headers=HEADERS, timeout=4)
-                  text = r.content.decode("utf-8", errors="ignore").lstrip()
-                  if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
-                      return mirror, time.time() - start
-              except Exception:
-                  pass
-              return mirror, None
-
-          results = {}
-          with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
-              futures = [executor.submit(test_mirror, m) for m in MIRRORS]
-              for future in futures:
-                  m, delay = future.result()
-                  if delay is not None:
-                      results[m] = delay
-
-          sorted_mirrors = sorted(results, key=results.get) if results else MIRRORS
-          accent_prefix = sorted_mirrors[0]
-          print(f"全局最快镜像: {accent_prefix}\n")
-
-          my_repo_raw_base = f"{accent_prefix}{raw_github_prefix}{my_repo}/main/"
-
-          def process_url(url):
-              if not isinstance(url, str):
-                  return url
-              idx = url.find(raw_github_prefix)
-              if idx > 0:
-                  return url
-              if url.startswith("./"):
-                  return f"{my_repo_raw_base}{url[2:]}"
-              if idx == 0:
-                  return f"{accent_prefix}{url}"
-              return url
-
-          def traverse_and_replace(data):
-              if isinstance(data, dict):
-                  return {k: traverse_and_replace(v) for k, v in data.items()}
-              elif isinstance(data, list):
-                  return [traverse_and_replace(item) for item in data]
-              elif isinstance(data, str):
-                  return process_url(data)
-              else:
-                  return data
-
           for task in TASKS:
-              save_filename = task["name"]
-              raw_target_url = normalize_to_raw_url(task["url"])
-              
-              resp_content = None
-              for mirror in sorted_mirrors:
-                  fetch_url = f"{mirror}{raw_target_url}"
-                  try:
-                      resp = requests.get(fetch_url, headers=HEADERS, timeout=8)
-                      if resp.status_code == 200:
-                          text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
-                          if text:
-                              resp_content = text
-                              print(f"--> 从镜像 {mirror} 成功获取: {save_filename}")
-                              break
-                  except Exception:
-                      continue
-
-              if not resp_content:
-                  print(f"❌ 错误：所有镜像均无法拉取内容: {save_filename}")
-                  if not os.path.exists(save_filename):
-                      sys.exit(1)
-                  else:
-                      print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
-                      continue
-
-              # 先清理掉所有注释
-              cleaned_text = remove_comments(resp_content)
-
+              url = task["url"]
+              name = task["name"]
               try:
-                  # 尝试按严格 JSON 解析并递归替换 URL
-                  json_data = json.loads(cleaned_text)
-                  processed_data = traverse_and_replace(json_data)
-
-                  with open(save_filename, "w", encoding="utf-8") as f:
-                      json.dump(processed_data, f, ensure_ascii=False, indent=2)
-
-                  print(f"✅ 成功清理注释并完成 JSON 结构化替换: {save_filename}\n")
-
+                  resp = requests.get(url, headers=HEADERS, timeout=10)
+                  if resp.status_code != 200:
+                      print(f"❌ 拉取失败: {url}")
+                      sys.exit(1)
+                  text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "")
+                  cleaned = remove_comments(text)
+                  # 校验 JSON 是否合法
+                  try:
+                      json.loads(cleaned)
+                  except Exception as e:
+                      print(f"❌ {name} 清理后仍不是合法 JSON: {e}")
+                      sys.exit(1)
+                  with open(name, "w", encoding="utf-8") as f:
+                      f.write(cleaned)
+                  print(f"✅ 已清理注释并保存: {name}")
               except Exception as e:
-                  print(f"ℹ️ {save_filename} 去注释后存在 JSON 尾部逗号等语法瑕疵 ({e})，切换为去注释后按行正则替换...")
-                  lines = cleaned_text.splitlines()
-                  new_lines = []
-                  for line in lines:
-                      if re.search(r'https?://[^"\']+/https://raw\.githubusercontent\.com/', line):
-                          new_lines.append(line)
-                          continue
-                      new_line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + my_repo_raw_base + r'\3\4', line)
-                      new_line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', new_line)
-                      new_lines.append(new_line)
-
-                  final_text = "\n".join(new_lines)
-                  with open(save_filename, "w", encoding="utf-8") as f:
-                      f.write(final_text)
-
-                  print(f"✅ 成功清理注释并完成按行正则替换: {save_filename}\n")
+                  print(f"❌ 处理异常 {name}: {e}")
+                  sys.exit(1)
           EOF
 
       - name: 2. 加密 JSON 为 BIN
-        id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
-            echo "❌ 错误：根目录下未找到 tvbox.py 脚本！"
+            echo "❌ 错误：未找到 tvbox.py 脚本！"
             exit 1
           fi
-
           for target in "x.json" "pj.json"; do
             if [ -f "$target" ]; then
-              echo "正在加密: $target"
-              base_name="${target%.*}"
-              bin_file="${base_name}.bin"
-
-              python tvbox.py "$target" "$bin_file" enc
-
-              if [ ! -f "$bin_file" ]; then
-                echo "❌ 失败：加密产物 $bin_file 未成功生成！"
+              base="${target%.*}"
+              bin="${base}.bin"
+              echo "正在加密: $target -> $bin"
+              python tvbox.py "$target" "$bin" enc
+              if [ ! -f "$bin" ]; then
+                echo "❌ 加密失败: $target"
                 exit 1
-              else
-                echo "✅ 加密产物已成功生成: $bin_file"
               fi
-            else
-              echo "❌ 失败：未能找到待加密文件: $target"
-              exit 1
             fi
           done
 
-      - name: 3. 提交无注释明文 JSON 到 GitHub 仓库
+      - name: 3. 提交清理后的 JSON 到 GitHub
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          if [ -f "X.json" ]; then
-            git rm -f X.json 2>/dev/null || true
-          fi
-
-          git add -f x.json pj.json 2>/dev/null || true
+          git add -f x.json pj.json
           git rm --cached *.bin *.BIN 2>/dev/null || true
-
           if git diff --staged --quiet; then
-            echo "提示：GitHub 仓库的明文 JSON 无实际变动，无需 Commit。"
+            echo "提示：无变化，跳过提交。"
           else
-            git commit -m "auto: update plain json files without comments [skip ci]"
+            git commit -m "auto: update json files (comments removed) [skip ci]"
             git push
-            echo "GitHub 仓库明文 JSON 推送成功。"
+            echo "✅ 已推送清理后的 JSON 到 GitHub"
           fi
 
-      - name: 4. 配置 SSH 与 Gitee 域名映射
+      - name: 4. 配置 SSH 与 Gitee
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-
           printf "%s\n" "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
-
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -258,46 +126,33 @@ jobs:
               StrictHostKeyChecking no
           EOF
           chmod 600 ~/.ssh/config
-          ssh -T git@gitee.com || true
 
-      - name: 5. 克隆 Gitee mybox 仓库并推送加密改名后的 JSON
+      - name: 5. 推送加密后的 JSON 到 Gitee
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          echo "[提示] 开始克隆 Gitee mybox 仓库..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
-
           cd gitee_temp
           git rm -f *.bin *.BIN 2>/dev/null || true
           cd ..
-
           for b in "x.bin" "pj.bin"; do
-            if [ -f "$b" ]; then
-              target_name="${b%.*}.json"
-              echo "改名复制加密产物: $b -> gitee_temp/$target_name"
-              cp -v "$b" "gitee_temp/$target_name"
-            else
-              echo "❌ 失败：缺少加密文件 $b，中断推送！"
-              exit 1
-            fi
+            target="${b%.*}.json"
+            cp -v "$b" "gitee_temp/$target"
           done
-
           cd gitee_temp
           git add -A
-
           if git diff --staged --quiet; then
-            echo "[提示] Gitee 仓库无任何变更，跳过 Commit 和 Push。"
+            echo "提示：Gitee 无变化，跳过提交。"
           else
-            echo "[提示] 检测到变更，提交并推送加密产物至 Gitee..."
+            git commit -m "auto: update encrypted json files [skip ci]"
             git push origin HEAD
-            echo "[成功] 加密产物 (x.json, pj.json) 已同步更新至 Gitee mybox！"
+            echo "✅ 已推送加密后的 JSON 到 Gitee"
           fi
 
-      - name: 6. 清理临时文件夹及所有 .bin 临时文件
+      - name: 6. 清理临时文件
         if: always()
         run: |
           rm -rf gitee_temp
           rm -f *.bin *.BIN
           rm -f .hash_cache.json
-          echo "[完成] 所有临时加密文件已彻底清理。"
+          echo "[完成] 清理临时文件"
