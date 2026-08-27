@@ -171,13 +171,11 @@ jobs:
               cleaned_text = force_remove_comments(resp_content)
 
               json_obj = None
-              # 1. 尝试使用 commentjson 解析
               try:
                   json_obj = commentjson.loads(cleaned_text)
               except Exception:
                   pass
 
-              # 2. 如果失败，做正则二次替换后再尝试标准 json.loads
               if json_obj is None:
                   lines = cleaned_text.splitlines()
                   new_lines = []
@@ -197,13 +195,11 @@ jobs:
                   except Exception:
                       json_obj = None
 
-              # 3. 统一处理 URL 链接替换并校验写入
               if json_obj is not None:
                   processed_data = traverse_and_replace(json_obj)
                   
-                  # 统一 JSON 校验：确保输出前能正常反序列化为 JSON 字符串
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
-                  json.loads(final_json_str)  # 严格检验合法性
+                  json.loads(final_json_str)
 
                   with open(save_filename, "w", encoding="utf-8") as f:
                       f.write(final_json_str)
@@ -220,26 +216,40 @@ jobs:
           print(f"📊 【步骤 1 统计】任务总数: {total_tasks} | 成功处理: {len(successful_files)}")
           print(f"📄 文件列表: {', '.join(successful_files)}")
           print("--------------------------------------------------\n")
+
+          # 关键点：将 TASKS 中的文件列表导出给 GitHub Actions 后续步骤精确绑定
+          task_files_str = " ".join([t["name"] for t in TASKS])
+          github_output = os.environ.get('GITHUB_OUTPUT')
+          if github_output:
+              with open(github_output, "a") as f:
+                  f.write(f"task_files={task_files_str}\n")
           EOF
 
-      - name: 2. 优先提交所有无注释明文 JSON 到 GitHub 仓库
+      - name: 2. 仅提交 TASKS 列表中对应的明文 JSON 到 GitHub 仓库
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 动态添加所有生成/更新的 .json 明文文件
-          git add -f *.json 2>/dev/null || true
+          TASK_FILES="${{ steps.process_json.outputs.task_files }}"
+
+          # 只精确定向 add TASKS 里声明的文件，防止误触无关的根目录文件
+          for file in $TASK_FILES; do
+            if [ -f "$file" ]; then
+              git add -f "$file"
+            fi
+          done
+
           git rm --cached *.bin *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
-            echo "提示：GitHub 仓库的 JSON 无实际变动，跳过 Commit。"
+            echo "提示：GitHub 仓库的 TASKS JSON 无实际变动，跳过 Commit。"
           else
-            git commit -m "auto: update all plain json files without comments [skip ci]"
+            git commit -m "auto: update plain json files without comments [skip ci]"
             git push
-            echo "✅ 已优先成功推送所有无注释明文 JSON 到 GitHub 仓库！"
+            echo "✅ 已成功推送 TASKS 里的无注释明文 JSON 到 GitHub 仓库！"
           fi
 
-      - name: 3. 执行 tvbox.py 动态加密所有 JSON 为 BIN
+      - name: 3. 执行 tvbox.py 仅加密 TASKS 里的 JSON 文件
         id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
@@ -247,10 +257,11 @@ jobs:
             exit 1
           fi
 
+          TASK_FILES="${{ steps.process_json.outputs.task_files }}"
           processed_json=()
           
-          # 动态扫描根目录下所有的 .json 文件并校验存在性
-          for target in *.json; do
+          # 精准只循环 TASKS 对应的文件名，绝不盲目处理 *.json
+          for target in $TASK_FILES; do
             if [ -f "$target" ]; then
               echo "正在加密无注释文件: $target"
               base_name="${target%.*}"
@@ -265,16 +276,18 @@ jobs:
                 echo "✅ 加密产物已成功生成: $bin_file"
                 processed_json+=("$target")
               fi
+            else
+              echo "⚠️ 警告：未找到目标文件 $target，跳过加密。"
             fi
           done
 
           if [ ${#processed_json[@]} -eq 0 ]; then
-            echo "❌ 失败：目录下未检测到任何可供加密的 .json 文件，中断执行！"
+            echo "❌ 失败：未成功加密任何 TASKS 里的 .json 文件，中断执行！"
             exit 1
           fi
 
           echo "--------------------------------------------------"
-          echo "📊 【步骤 3 汇总】成功加密 ${#processed_json[@]} 个文件: $(IFS=, ; echo "${processed_json[*]}")"
+          echo "📊 【步骤 3 汇总】成功加密 ${#processed_json[@]} 个 TASKS 目标文件: $(IFS=, ; echo "${processed_json[*]}")"
           echo "--------------------------------------------------"
 
       - name: 4. 配置 SSH 与 Gitee 域名映射
@@ -297,7 +310,7 @@ jobs:
           chmod 600 ~/.ssh/config
           ssh -T git@gitee.com || true
 
-      - name: 5. 克隆 Gitee mybox 仓库并动态推送所有加密产物
+      - name: 5. 克隆 Gitee mybox 仓库并动态推送 TASKS 加密产物
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -309,20 +322,24 @@ jobs:
           git rm -f *.bin *.BIN 2>/dev/null || true
           cd ..
 
+          TASK_FILES="${{ steps.process_json.outputs.task_files }}"
           copied_files=()
 
-          # 动态扫描当前目录下生成的【所有】 .bin 文件并替换复制
-          for b in *.bin; do
-            if [ -f "$b" ]; then
-              target_name="${b%.*}.json"
-              echo "改名复制加密产物: $b -> gitee_temp/$target_name"
-              cp -v "$b" "gitee_temp/$target_name"
+          # 只精准处理 TASKS 生成的对应的 .bin 加密产物
+          for target in $TASK_FILES; do
+            base_name="${target%.*}"
+            bin_file="${base_name}.bin"
+            
+            if [ -f "$bin_file" ]; then
+              target_name="${base_name}.json"
+              echo "改名复制加密产物: $bin_file -> gitee_temp/$target_name"
+              cp -v "$bin_file" "gitee_temp/$target_name"
               copied_files+=("$target_name")
             fi
           done
 
           if [ ${#copied_files[@]} -eq 0 ]; then
-            echo "❌ 失败：未检测到任何 .bin 加密产物，中断推送！"
+            echo "❌ 失败：未检测到任何 TASKS 相关的 .bin 加密产物，中断推送！"
             exit 1
           fi
 
