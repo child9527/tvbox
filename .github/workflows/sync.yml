@@ -24,12 +24,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 安装 Python 依赖
+      - name: 安装 Python 依赖 (精简去除 jsmin)
         run: |
           python -m pip install --upgrade pip
-          pip install requests pycryptodome commentjson jsmin
+          pip install requests pycryptodome commentjson
 
-      - name: 1. 多文件拉取、精简剔除注释行、JSON 加速替换与导出
+      - name: 1. 多文件拉取、精简剔除注释行、JSON 格式统一校验与导出
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -47,6 +47,7 @@ jobs:
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
 
+          # 支持在此自由增删 JSON 任务，后续步骤均会自动全量适配
           TASKS = [
               {
                   "name": "x.json",
@@ -75,21 +76,12 @@ jobs:
               return url
 
           def force_remove_comments(text):
-              """
-              精简清洗逻辑：
-              1. 剔除多行注释 /* ... */
-              2. 忽略开头空格后，只要整行以 // 或 # 开头，直接整行过滤掉
-              """
-              # 剔除 Windows 回车符
               text = text.replace('\r', '')
-              
-              # 剔除多行注释
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
               
               clean_lines = []
               for line in text.splitlines():
                   stripped = line.strip()
-                  # 开头是 // 或 # (包含前缀空格的情况) 的整行抛弃
                   if stripped.startswith('//') or stripped.startswith('#'):
                       continue
                   clean_lines.append(line)
@@ -146,6 +138,9 @@ jobs:
               else:
                   return data
 
+          successful_files = []
+          total_tasks = len(TASKS)
+
           for task in TASKS:
               save_filename = task["name"]
               raw_target_url = normalize_to_raw_url(task["url"])
@@ -170,26 +165,20 @@ jobs:
                       sys.exit(1)
                   else:
                       print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
+                      successful_files.append(save_filename)
                       continue
 
               cleaned_text = force_remove_comments(resp_content)
 
-              json_data = None
+              json_obj = None
+              # 1. 尝试使用 commentjson 解析
               try:
-                  json_data = commentjson.loads(cleaned_text)
+                  json_obj = commentjson.loads(cleaned_text)
               except Exception:
-                  try:
-                      json_data = json.loads(cleaned_text, strict=False)
-                  except Exception:
-                      pass
+                  pass
 
-              if json_data is not None:
-                  processed_data = traverse_and_replace(json_data)
-                  with open(save_filename, "w", encoding="utf-8") as f:
-                      json.dump(processed_data, f, ensure_ascii=False, indent=2)
-                  print(f"✅ 成功完美解析并生成格式化的无注释 JSON: {save_filename}\n")
-              else:
-                  print(f"ℹ️ {save_filename} 结构化解析未成功，写入去注释后的文本...")
+              # 2. 如果失败，做正则二次替换后再尝试标准 json.loads
+              if json_obj is None:
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
@@ -203,32 +192,54 @@ jobs:
                   final_clean_text = "\n".join(new_lines)
                   final_clean_text = re.sub(r',\s*([\}\]])', r'\1', final_clean_text)
 
+                  try:
+                      json_obj = json.loads(final_clean_text)
+                  except Exception:
+                      json_obj = None
+
+              # 3. 统一处理 URL 链接替换并校验写入
+              if json_obj is not None:
+                  processed_data = traverse_and_replace(json_obj)
+                  
+                  # 统一 JSON 校验：确保输出前能正常反序列化为 JSON 字符串
+                  final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
+                  json.loads(final_json_str)  # 严格检验合法性
+
                   with open(save_filename, "w", encoding="utf-8") as f:
-                      f.write(final_clean_text)
-                  print(f"✅ 无注释纯文本保存完成: {save_filename}\n")
+                      f.write(final_json_str)
+                  
+                  print(f"✅ 校验通过：完美导出无注释合法 JSON -> {save_filename}\n")
+                  successful_files.append(save_filename)
+              else:
+                  print(f"❌ 校验失败：{save_filename} 去注释后的内容并非合法 JSON，放弃写入！")
+                  if os.path.exists(save_filename):
+                      print(f"⚠️ 保留旧版文件: {save_filename}")
+                      successful_files.append(save_filename)
+
+          print("--------------------------------------------------")
+          print(f"📊 【步骤 1 统计】任务总数: {total_tasks} | 成功处理: {len(successful_files)}")
+          print(f"📄 文件列表: {', '.join(successful_files)}")
+          print("--------------------------------------------------\n")
           EOF
 
-      - name: 2. 优先提交无注释明文 JSON 到 GitHub 仓库
+      - name: 2. 优先提交所有无注释明文 JSON 到 GitHub 仓库
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ -f "X.json" ]; then
-            git rm -f X.json 2>/dev/null || true
-          fi
-
-          git add -f x.json pj.json 2>/dev/null || true
+          # 动态添加所有生成/更新的 .json 明文文件
+          git add -f *.json 2>/dev/null || true
           git rm --cached *.bin *.BIN 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "提示：GitHub 仓库的 JSON 无实际变动，跳过 Commit。"
           else
-            git commit -m "auto: update plain json files without comments [skip ci]"
+            git commit -m "auto: update all plain json files without comments [skip ci]"
             git push
-            echo "✅ 已优先成功推送无注释明文 JSON 到 GitHub 仓库！"
+            echo "✅ 已优先成功推送所有无注释明文 JSON 到 GitHub 仓库！"
           fi
 
-      - name: 3. 执行 tvbox.py 将无注释 JSON 加密为 BIN
+      - name: 3. 执行 tvbox.py 动态加密所有 JSON 为 BIN
         id: encrypt_step
         run: |
           if [ ! -f "tvbox.py" ]; then
@@ -236,7 +247,10 @@ jobs:
             exit 1
           fi
 
-          for target in "x.json" "pj.json"; do
+          processed_json=()
+          
+          # 动态扫描根目录下所有的 .json 文件并校验存在性
+          for target in *.json; do
             if [ -f "$target" ]; then
               echo "正在加密无注释文件: $target"
               base_name="${target%.*}"
@@ -249,12 +263,19 @@ jobs:
                 exit 1
               else
                 echo "✅ 加密产物已成功生成: $bin_file"
+                processed_json+=("$target")
               fi
-            else
-              echo "❌ 失败：未能找到待加密文件: $target"
-              exit 1
             fi
           done
+
+          if [ ${#processed_json[@]} -eq 0 ]; then
+            echo "❌ 失败：目录下未检测到任何可供加密的 .json 文件，中断执行！"
+            exit 1
+          fi
+
+          echo "--------------------------------------------------"
+          echo "📊 【步骤 3 汇总】成功加密 ${#processed_json[@]} 个文件: $(IFS=, ; echo "${processed_json[*]}")"
+          echo "--------------------------------------------------"
 
       - name: 4. 配置 SSH 与 Gitee 域名映射
         env:
@@ -276,7 +297,7 @@ jobs:
           chmod 600 ~/.ssh/config
           ssh -T git@gitee.com || true
 
-      - name: 5. 克隆 Gitee mybox 仓库并推送加密改名后的 JSON
+      - name: 5. 克隆 Gitee mybox 仓库并动态推送所有加密产物
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -288,16 +309,28 @@ jobs:
           git rm -f *.bin *.BIN 2>/dev/null || true
           cd ..
 
-          for b in "x.bin" "pj.bin"; do
+          copied_files=()
+
+          # 动态扫描当前目录下生成的【所有】 .bin 文件并替换复制
+          for b in *.bin; do
             if [ -f "$b" ]; then
               target_name="${b%.*}.json"
               echo "改名复制加密产物: $b -> gitee_temp/$target_name"
               cp -v "$b" "gitee_temp/$target_name"
-            else
-              echo "❌ 失败：缺少加密文件 $b，中断推送！"
-              exit 1
+              copied_files+=("$target_name")
             fi
           done
+
+          if [ ${#copied_files[@]} -eq 0 ]; then
+            echo "❌ 失败：未检测到任何 .bin 加密产物，中断推送！"
+            exit 1
+          fi
+
+          file_list_str=$(IFS=, ; echo "${copied_files[*]}")
+
+          echo "--------------------------------------------------"
+          echo "📊 【步骤 5 推送前汇总】准备向 Gitee 推送 ${#copied_files[@]} 个文件: $file_list_str"
+          echo "--------------------------------------------------"
 
           cd gitee_temp
           git add -A
@@ -305,9 +338,10 @@ jobs:
           if git diff --staged --quiet; then
             echo "[提示] Gitee 仓库无任何变更，跳过 Commit 和 Push。"
           else
-            echo "[提示] 检测到变更，提交并推送加密产物至 Gitee..."
+            echo "[提示] 检测到变更，正在推送以下加密产物至 Gitee: $file_list_str"
+            git commit -m "auto: update encrypted json files ($file_list_str) [skip ci]"
             git push origin HEAD
-            echo "[成功] 加密产物 (x.json, pj.json) 已同步更新至 Gitee mybox！"
+            echo "✅ [成功] 已成功向 Gitee mybox 推送文件: $file_list_str"
           fi
 
       - name: 6. 清理临时文件夹及所有 .bin 临时文件
