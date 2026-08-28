@@ -1,59 +1,22 @@
-name: Full Cleanup (runs + artifacts)
+name: Auto Clean Workflow Runs
 
 on:
   schedule:
-    - cron: '0 0 1,16 * *'   # 每月 1号、16号 UTC 00:00（北京时间 08:00）
-  workflow_dispatch:
+    # 每半个月运行一次（每月 1 号和 15 号的 00:00 UTC 执行）
+    - cron: '0 0 1,15 * *'
+  workflow_dispatch: # 保留手动触发按钮，方便随时测试
 
 jobs:
-  cleanup:
+  del_runs:
     runs-on: ubuntu-latest
     permissions:
-      actions: write
-      contents: write
-
+      actions: write  # 必须授予写权限，才能通过 API 删除历史日志
+      contents: read
     steps:
-      - name: Delete ALL workflow runs (cross-workflow)
+      - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-
-          # 保留最近 3 天
-          retain_days: 3
-
-          # 每个 workflow 最多保留 5 条 run
-          keep_minimum_runs: 5
-
-          # 关键：跨 workflow 清理所有 workflow 的运行记录
-          workflow_id: all
-          delete_workflow_by_state: all
-
-          # 删除所有状态的 workflow run
-          delete_workflow_by_state_pattern: "completed|cancelled|failure|skipped"
-
-          # 删除所有结论的 run
-          delete_run_by_conclusion_pattern: "success|failure|cancelled|skipped"
-
-      - name: Delete all artifacts (via GitHub API)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "开始清理所有 artifacts..."
-
-          artifacts=$(gh api repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[].id')
-
-          if [ -z "$artifacts" ]; then
-            echo "没有 artifacts 可清理。"
-            exit 0
-          fi
-
-          for id in $artifacts; do
-            echo "删除 artifact: $id"
-            gh api \
-              --method DELETE \
-              repos/${{ github.repository }}/actions/artifacts/$id \
-              || echo "删除失败（跳过）"
-          done
-
-          echo "所有 artifacts 清理完成。"
+          retain_days: 3          # 只保留最近 3 天的日志
+          keep_minimum_runs: 10   # 每个工作流最多保留 10 条日志
