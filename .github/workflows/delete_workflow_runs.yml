@@ -2,7 +2,7 @@ name: Full Cleanup (runs + artifacts)
 
 on:
   schedule:
-    - cron: '0 0 1,16 * *'
+    - cron: '0 0 1,16 * *'   # 每月 1号、16号 UTC 00:00（北京时间 08:00）
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Delete workflow runs (all workflows)
+      - name: Delete ALL workflow runs (cross-workflow)
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
@@ -22,13 +22,17 @@ jobs:
           # 保留最近 3 天
           retain_days: 3
 
-          # 每个 workflow 至少保留 12 条
-          keep_minimum_runs: 12
+          # 每个 workflow 最多保留 5 条 run
+          keep_minimum_runs: 5
 
-          # 删除所有状态的 workflow（用 pattern）
+          # 关键：跨 workflow 清理所有 workflow 的运行记录
+          workflow_id: all
+          delete_workflow_by_state: all
+
+          # 删除所有状态的 workflow run
           delete_workflow_by_state_pattern: "completed|cancelled|failure|skipped"
 
-          # 删除所有结论的 run（用 pattern）
+          # 删除所有结论的 run
           delete_run_by_conclusion_pattern: "success|failure|cancelled|skipped"
 
       - name: Delete all artifacts (via GitHub API)
