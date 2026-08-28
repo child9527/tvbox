@@ -1,22 +1,45 @@
-name: Auto Clean Workflow Runs
+name: 删除所有Runs和Artifacts
 
 on:
   schedule:
-    # 每半个月运行一次（每月 1 号和 15 号的 00:00 UTC 执行）
+    # 每半个月运行一次（每月 1 号和 15 号 00:00 UTC 执行）
     - cron: '0 0 1,15 * *'
-  workflow_dispatch: # 保留手动触发按钮，方便随时测试
+  workflow_dispatch: # 保留手动触发按钮
 
 jobs:
-  del_runs:
+  del_all:
     runs-on: ubuntu-latest
     permissions:
-      actions: write  # 必须授予写权限，才能通过 API 删除历史日志
-      contents: read
+      actions: write  # 必须开启写权限，才能删除日志和 Artifacts
     steps:
-      - name: Delete old workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          retain_days: 3          # 只保留最近 3 天的日志
-          keep_minimum_runs: 10   # 每个工作流最多保留 10 条日志
+      - name: Delete ALL Artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "开始清空所有 Artifacts 产物..."
+          
+          # 获取所有 Artifacts 的 ID 并循环彻底删除
+          gh api -X GET repos/${{ github.repository }}/actions/artifacts --paginate --jq '.artifacts[].id' | while read -r artifact_id; do
+            if [ -n "$artifact_id" ]; then
+              echo "正在删除 Artifact ID: $artifact_id"
+              gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$artifact_id --silent || true
+            fi
+          done
+          
+          echo "所有 Artifacts 已清理完毕！"
+
+      - name: Delete ALL Workflow Runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "开始清空所有工作流运行日志..."
+          
+          # 获取所有运行日志的 ID 并循环删除
+          gh api -X GET repos/${{ github.repository }}/actions/runs --paginate --jq '.workflow_runs[].id' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              echo "正在删除日志 ID: $run_id"
+              gh api -X DELETE repos/${{ github.repository }}/actions/runs/$run_id --silent || true
+            fi
+          done
+          
+          echo "所有历史日志已清理完毕！"
