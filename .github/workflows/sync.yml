@@ -141,19 +141,10 @@ jobs:
           print(f"全局最快 GitHub 镜像: {accent_prefix}\n")
 
           def process_url(url, base_url):
-              """
-              正确修补相对路径与 GitHub 镜像：
-              1. 相对路径 (./) -> 补全为原作者的 Base URL，而非你自己的仓库地址
-              2. 参数（如 ;md5;xxx） -> 保持在链接末尾
-              3. GitHub 链接 -> 加上镜像代理
-              4. 普通网络链接 -> 保持原样
-              """
               if not isinstance(url, str):
                   return url
               
-              # 如果包含以 ./ 开头的相对路径，替换为任务原作者的 Base URL
               if "./" in url:
-                  # 分离可能存在的参数（如 ;md5;xxxx）
                   extra_param = ""
                   clean_url = url
                   if ";" in url:
@@ -161,7 +152,6 @@ jobs:
                       clean_url = parts[0]
                       extra_param = ";" + parts[1]
 
-                  # 替换其中的 ./ 为原作者 Base URL
                   if clean_url.startswith("./"):
                       clean_url = base_url + clean_url[2:]
                   elif "./" in clean_url:
@@ -169,20 +159,16 @@ jobs:
 
                   url = clean_url + extra_param
 
-              # 如果处理后的链接是 GitHub 资源，加上镜像前缀加速
               if is_github_url(url):
-                  # 避免重复加镜像
                   for mirror in MIRRORS:
                       if url.startswith(mirror):
                           return url
                   raw_url = normalize_to_raw_url(url)
-                  # 如果链接中包含 ;md5; 等参数，前缀只加到真实 url 前面
                   if ";" in raw_url:
                       u_parts = raw_url.split(";", 1)
                       return f"{accent_prefix}{u_parts[0]};{u_parts[1]}"
                   return f"{accent_prefix}{raw_url}"
 
-              # 非 GitHub 链接保持原样
               return url
 
           def traverse_and_replace(data, base_url):
@@ -203,11 +189,18 @@ jobs:
               target_url = task["url"]
               task_base_url = get_base_url(target_url)
               
+              if os.path.exists(save_filename):
+                  print(f"🔄 [更新任务] 本地已存在 {save_filename}，开始尝试拉取上游最新内容...")
+              else:
+                  print(f"✨ [新增任务] 本地暂无 {save_filename}，准备从上游拉取并首次创建...")
+
               resp_content = None
 
-              # 分流拉取：判断是 GitHub 链接还是普通 HTTP 链接
+              # 分流拉取与网络报错捕获机制
               if is_github_url(target_url):
                   raw_target_url = normalize_to_raw_url(target_url)
+                  mirror_failed_count = 0
+                  
                   for mirror in sorted_mirrors:
                       fetch_url = f"{mirror}{raw_target_url}"
                       try:
@@ -218,10 +211,21 @@ jobs:
                                   resp_content = text
                                   print(f"--> 从 GitHub 镜像 {mirror} 成功获取: {save_filename}")
                                   break
-                      except Exception:
+                          else:
+                              print(f"⚠️ [镜像返回非200] {mirror} 返回状态码 {resp.status_code}")
+                              mirror_failed_count += 1
+                      except requests.RequestException as req_err:
+                          print(f"⚠️ [镜像连接失败] {mirror} 请求报错: {req_err}")
+                          mirror_failed_count += 1
                           continue
+                  
+                  if not resp_content:
+                      print(f"❌ [错误/跳转] GitHub 任务 {save_filename} 所有镜像均拉取失败（可能链接已变更或不存在），跳过此任务！")
+                      if os.path.exists(save_filename):
+                          print(f"ℹ️ 保留本地现有的 {save_filename} 版本不变。")
+                          successful_files.append(save_filename)
+                      continue
               else:
-                  # 普通第三方 URL（如 yydsok.com），直接拉取
                   try:
                       resp = requests.get(target_url, headers=HEADERS, timeout=10)
                       if resp.status_code == 200:
@@ -229,16 +233,17 @@ jobs:
                           if text:
                               resp_content = text
                               print(f"--> 直接从第三方 URL 成功获取: {save_filename} ({target_url})")
-                  except Exception as e:
-                      print(f"❌ 拉取第三方 URL 失败 ({target_url}): {e}")
+                          else:
+                              print(f"❌ [错误/跳转] 第三方 URL 返回内容为空: {save_filename} ({target_url})，跳过此任务！")
+                      else:
+                          print(f"❌ [错误/跳转] 第三方 URL 请求失败 (HTTP {resp.status_code}): {target_url}，链接可能已变更或不存在，跳过此任务！")
+                  except requests.RequestException as req_err:
+                      print(f"❌ [网络错误/跳转] 无法访问第三方 URL ({target_url}): {req_err}，跳过此任务！")
 
-              if not resp_content:
-                  print(f"❌ 错误：无法拉取内容: {save_filename}")
-                  if not os.path.exists(save_filename):
-                      sys.exit(1)
-                  else:
-                      print(f"⚠️ 保留本地已存在的旧版 {save_filename}")
-                      successful_files.append(save_filename)
+                  if not resp_content:
+                      if os.path.exists(save_filename):
+                          print(f"ℹ️ 保留本地现有的 {save_filename} 版本不变。")
+                          successful_files.append(save_filename)
                       continue
 
               cleaned_text = force_remove_comments(resp_content)
@@ -250,13 +255,10 @@ jobs:
                   pass
 
               if json_obj is None:
-                  # 如果 commentjson 严格解析失败，尝试文本行处理
                   lines = cleaned_text.splitlines()
                   new_lines = []
                   for line in lines:
-                      # 替换 ./ 相对路径为原作者的 base_url
                       line = re.sub(r'(["\'])(\./)([^"\']+)(["\'])', r'\1' + task_base_url + r'\3\4', line)
-                      # 针对 github raw 链接增加镜像代理
                       if is_github_url(line) and not any(m in line for m in MIRRORS):
                           line = re.sub(r'(?<!/)(["\'])(https://raw\.githubusercontent\.com/[^"\']+)(["\'])', r'\1' + accent_prefix + r'\2\3', line)
                       new_lines.append(line)
@@ -270,73 +272,95 @@ jobs:
                       json_obj = None
 
               if json_obj is not None:
-                  # 遍历递归修补相对路径与代理
                   processed_data = traverse_and_replace(json_obj, task_base_url)
                   
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
                   json.loads(final_json_str)
 
+                  # 写入处理后的最新内容（若不存在则自动新建）
                   with open(save_filename, "w", encoding="utf-8") as f:
                       f.write(final_json_str)
                   
-                  print(f"✅ 校验通过：完美导出无注释合法 JSON -> {save_filename}\n")
+                  print(f"✅ 处理完成：导出标准 JSON -> {save_filename}\n")
                   successful_files.append(save_filename)
               else:
-                  print(f"❌ 校验失败：{save_filename} 去注释后的内容并非合法 JSON，放弃写入！")
+                  print(f"❌ [校验失败] {save_filename} 上游内容去注释后非合法 JSON，自动跳过该任务！")
                   if os.path.exists(save_filename):
-                      print(f"⚠️ 保留旧版文件: {save_filename}")
+                      print(f"ℹ️ 保留本地现存的 {save_filename} 版本。")
                       successful_files.append(save_filename)
 
           print("--------------------------------------------------")
-          print(f"📊 【步骤 1 统计】任务总数: {total_tasks} | 成功处理: {len(successful_files)}")
-          print(f"📄 文件列表: {', '.join(successful_files)}")
+          print(f"📊 【步骤 1 统计】TASKS 配置总数: {total_tasks} | 成功响应/已有文件数: {len(successful_files)}")
+          print(f"📄 待比对/提交的文件列表: {', '.join(successful_files)}")
           print("--------------------------------------------------\n")
 
-          # 将 TASKS 中的目标文件名导出给后续步骤
-          task_files_str = " ".join([t["name"] for t in TASKS])
+          # 导出所有成功处理的文件列表
+          task_files_str = " ".join(successful_files)
           github_output = os.environ.get('GITHUB_OUTPUT')
           if github_output:
               with open(github_output, "a") as f:
                   f.write(f"task_files={task_files_str}\n")
           EOF
 
-      - name: 2. 仅提交 TASKS 列表中对应的明文 JSON 到 GitHub 仓库
+      - name: 2. 精准比对 GitHub 本地变更（包含新文件创建与修改），仅提交并加密有动静的文件
+        id: diff_check
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           TASK_FILES="${{ steps.process_json.outputs.task_files }}"
+          changed_files=()
 
+          # 检查新增文件或被修改的文件
           for file in $TASK_FILES; do
             if [ -f "$file" ]; then
               git add -f "$file"
+              
+              if [ -n "$(git status --porcelain "$file")" ]; then
+                echo "🔍 [发现变更/新增] $file 与仓库现有记录不一致（或为新增加文件），加入待处理列表！"
+                changed_files+=("$file")
+              else
+                echo "🙈 [无变更] $file 内容与仓库已有版本完全一致，撤销暂存。"
+                git restore --staged "$file" 2>/dev/null || true
+              fi
             fi
           done
 
-          git rm --cached *.bin *.BIN 2>/dev/null || true
-
-          if git diff --staged --quiet; then
-            echo "提示：GitHub 仓库的 TASKS JSON 无实际变动，跳过 Commit。"
-          else
-            git commit -m "auto: update plain json files without comments [skip ci]"
-            git push
-            echo "✅ 已成功推送 TASKS 里的无注释明文 JSON 到 GitHub 仓库！"
+          # 如果既没有新增文件，也没有任何文件发生变化，退出后续构建
+          if [ ${#changed_files[@]} -eq 0 ]; then
+            echo "--------------------------------------------------"
+            echo "🎉 【对比结果】所有 TASKS 文件与 GitHub 仓库内容完全一致，且无新文件加入！"
+            echo "🎉 任务直接完成，自动跳过 GitHub Push、加密及 Gitee 推送。"
+            echo "--------------------------------------------------"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
-      - name: 3. 执行 tvbox.py 仅加密 TASKS 里的 JSON 文件
+          git rm --cached *.bin *.BIN 2>/dev/null || true
+          
+          changed_str=$(IFS=, ; echo "${changed_files[*]}")
+          git commit -m "auto: sync updated/new json files ($changed_str) [skip ci]"
+          git push
+          echo "✅ 已成功向 GitHub 仓库提交变更/新增文件: $changed_str"
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+
+      - name: 3. 执行 tvbox.py 加密所有有变更/新增的文件
         id: encrypt_step
+        if: steps.diff_check.outputs.has_changes == 'true'
         run: |
           if [ ! -f "tvbox.py" ]; then
             echo "❌ 错误：根目录下未找到 tvbox.py 脚本！"
             exit 1
           fi
 
-          TASK_FILES="${{ steps.process_json.outputs.task_files }}"
+          CHANGED_FILES="${{ steps.diff_check.outputs.changed_files }}"
           processed_json=()
           
-          for target in $TASK_FILES; do
+          for target in $CHANGED_FILES; do
             if [ -f "$target" ]; then
-              echo "正在加密无注释文件: $target"
+              echo "正在加密文件: $target"
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
@@ -349,21 +373,15 @@ jobs:
                 echo "✅ 加密产物已成功生成: $bin_file"
                 processed_json+=("$target")
               fi
-            else
-              echo "⚠️ 警告：未找到目标文件 $target，跳过加密。"
             fi
           done
 
-          if [ ${#processed_json[@]} -eq 0 ]; then
-            echo "❌ 失败：未成功加密任何 TASKS 里的 .json 文件，中断执行！"
-            exit 1
-          fi
-
           echo "--------------------------------------------------"
-          echo "📊 【步骤 3 汇总】成功加密 ${#processed_json[@]} 个 TASKS 目标文件: $(IFS=, ; echo "${processed_json[*]}")"
+          echo "📊 【步骤 3 汇总】成功加密 ${#processed_json[@]} 个变更/新增文件: $(IFS=, ; echo "${processed_json[*]}")"
           echo "--------------------------------------------------"
 
       - name: 4. 配置 SSH 与 Gitee 域名映射
+        if: steps.diff_check.outputs.has_changes == 'true'
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
@@ -383,22 +401,34 @@ jobs:
           chmod 600 ~/.ssh/config
           ssh -T git@gitee.com || true
 
-      - name: 5. 克隆 Gitee mybox 仓库并动态推送 TASKS 加密产物
+      - name: 5. 克隆 Gitee mybox 仓库并推送新增/变更的加密产物
+        if: steps.diff_check.outputs.has_changes == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
-          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          
+          SUCCESS=0
+          for i in {1..3}; do
+            echo "尝试第 $i 次克隆 Gitee 仓库..."
+            if git clone git@gitee.com:child9527/mybox.git gitee_temp; then
+              SUCCESS=1
+              break
+            fi
+            echo "⚠️ 第 $i 次克隆失败，等待 5 秒后重试..."
+            sleep 5
+          done
 
-          cd gitee_temp
-          git rm -f *.bin *.BIN 2>/dev/null || true
-          cd ..
+          if [ $SUCCESS -ne 1 ]; then
+            echo "❌ 失败：多次重试后仍无法克隆 Gitee 仓库！"
+            exit 1
+          fi
 
-          TASK_FILES="${{ steps.process_json.outputs.task_files }}"
+          CHANGED_FILES="${{ steps.diff_check.outputs.changed_files }}"
           copied_files=()
 
-          for target in $TASK_FILES; do
+          for target in $CHANGED_FILES; do
             base_name="${target%.*}"
             bin_file="${base_name}.bin"
             
@@ -410,25 +440,19 @@ jobs:
             fi
           done
 
-          if [ ${#copied_files[@]} -eq 0 ]; then
-            echo "❌ 失败：未检测到任何 TASKS 相关的 .bin 加密产物，中断推送！"
-            exit 1
-          fi
-
           file_list_str=$(IFS=, ; echo "${copied_files[*]}")
 
           echo "--------------------------------------------------"
-          echo "📊 【步骤 5 推送前汇总】准备向 Gitee 推送 ${#copied_files[@]} 个文件: $file_list_str"
+          echo "📊 【步骤 5 推送】向 Gitee 推送 ${#copied_files[@]} 个变更/新增文件: $file_list_str"
           echo "--------------------------------------------------"
 
           cd gitee_temp
           git add -A
 
           if git diff --staged --quiet; then
-            echo "[提示] Gitee 仓库无任何变更，跳过 Commit 和 Push。"
+            echo "[提示] Gitee 仓库内容已是最新，跳过 Commit。"
           else
-            echo "[提示] 检测到变更，正在推送以下加密产物至 Gitee: $file_list_str"
-            git commit -m "auto: update encrypted json files ($file_list_str) [skip ci]"
+            git commit -m "auto: sync encrypted json files ($file_list_str) [skip ci]"
             git push origin HEAD
             echo "✅ [成功] 已成功向 Gitee mybox 推送文件: $file_list_str"
           fi
