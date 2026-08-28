@@ -199,7 +199,6 @@ jobs:
               # 分流拉取与网络报错捕获机制
               if is_github_url(target_url):
                   raw_target_url = normalize_to_raw_url(target_url)
-                  mirror_failed_count = 0
                   
                   for mirror in sorted_mirrors:
                       fetch_url = f"{mirror}{raw_target_url}"
@@ -213,10 +212,8 @@ jobs:
                                   break
                           else:
                               print(f"⚠️ [镜像返回非200] {mirror} 返回状态码 {resp.status_code}")
-                              mirror_failed_count += 1
                       except requests.RequestException as req_err:
                           print(f"⚠️ [镜像连接失败] {mirror} 请求报错: {req_err}")
-                          mirror_failed_count += 1
                           continue
                   
                   if not resp_content:
@@ -302,7 +299,7 @@ jobs:
                   f.write(f"task_files={task_files_str}\n")
           EOF
 
-      - name: 2. 精准比对 GitHub 本地变更（包含新文件创建与修改），仅提交并加密有动静的文件
+      - name: 2. 精准比对 GitHub 本地变更，使用中文时间和文件名格式化 Commit 提交
         id: diff_check
         run: |
           git config user.name "github-actions[bot]"
@@ -338,13 +335,18 @@ jobs:
 
           git rm --cached *.bin *.BIN 2>/dev/null || true
           
+          # 获取北京时间（UTC+8）
+          NOW_TIME=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
           changed_str=$(IFS=, ; echo "${changed_files[*]}")
-          git commit -m "auto: sync updated/new json files ($changed_str) [skip ci]"
+          
+          # Commit 样式自定义修改
+          git commit -m "更新于 ${NOW_TIME} (变动文件: ${changed_str}) [skip ci]"
           git push
-          echo "✅ 已成功向 GitHub 仓库提交变更/新增文件: $changed_str"
+          echo "✅ 已成功向 GitHub 仓库提交变更/新增文件: ${changed_str}（提交信息: 更新于 ${NOW_TIME}）"
 
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+          echo "commit_time=${NOW_TIME}" >> $GITHUB_OUTPUT
 
       - name: 3. 执行 tvbox.py 加密所有有变更/新增的文件
         id: encrypt_step
@@ -426,6 +428,7 @@ jobs:
           fi
 
           CHANGED_FILES="${{ steps.diff_check.outputs.changed_files }}"
+          NOW_TIME="${{ steps.diff_check.outputs.commit_time }}"
           copied_files=()
 
           for target in $CHANGED_FILES; do
@@ -452,7 +455,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "[提示] Gitee 仓库内容已是最新，跳过 Commit。"
           else
-            git commit -m "auto: sync encrypted json files ($file_list_str) [skip ci]"
+            git commit -m "更新于 ${NOW_TIME} (加密推送: ${file_list_str}) [skip ci]"
             git push origin HEAD
             echo "✅ [成功] 已成功向 Gitee mybox 推送文件: $file_list_str"
           fi
