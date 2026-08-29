@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;ca7e2632165bf048b5bc77c0c1a66085",
+  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;76b117b60049b2335ae63a843170c6da",
   "lives": [
     {
       "name": "migu",
@@ -131,20 +131,6 @@
       "quickSearch": 1,
       "filterable": 0,
       "changeable": 1
-    },
-    {
-      "key": "qiletv",
-      "name": "奇乐影视",
-      "type": 3,
-      "api": "csp_XBPQ",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1,
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/json/奇乐.json",
-      "header": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
-      }
     },
     {
       "key": "热播影视",
