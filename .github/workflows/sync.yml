@@ -54,10 +54,10 @@ jobs:
           if os.path.exists(txt_file):
               with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
                   all_lines = f.readlines()
-              
+
               # 获取第 6 行及以后的内容 (索引从 5 开始)
               target_lines = all_lines[5:] if len(all_lines) >= 5 else []
-              
+
               for line in target_lines:
                   line_str = line.strip()
                   # 匹配 http 或 https 开头的 URL
@@ -113,14 +113,14 @@ jobs:
           def force_remove_comments(text):
               text = text.replace('\r', '')
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
-              
+
               clean_lines = []
               for line in text.splitlines():
                   stripped = line.strip()
                   if stripped.startswith('//') or stripped.startswith('#'):
                       continue
                   clean_lines.append(line)
-              
+
               cleaned_text = "\n".join(clean_lines)
               cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
               return cleaned_text
@@ -153,7 +153,7 @@ jobs:
           def process_url(url, base_url):
               if not isinstance(url, str):
                   return url
-              
+
               if "./" in url:
                   extra_param = ""
                   clean_url = url
@@ -170,14 +170,14 @@ jobs:
                   url = clean_url + extra_param
 
               if is_github_url(url):
-                  for mirror in MIRRORS:
-                      if url.startswith(mirror):
-                          return url
                   raw_url = normalize_to_raw_url(url)
-                  if ";" in raw_url:
-                      u_parts = raw_url.split(";", 1)
-                      return f"{accent_prefix}{u_parts[0]};{u_parts[1]}"
-                  return f"{accent_prefix}{raw_url}"
+                  
+                  # 核心修补：仅在纯粹以 raw.githubusercontent.com 开头（即未添加任何镜像代理）时拼接代理前缀，防止重复叠加
+                  if raw_url.startswith("https://raw.githubusercontent.com/"):
+                      if ";" in raw_url:
+                          u_parts = raw_url.split(";", 1)
+                          return f"{accent_prefix}{u_parts[0]};{u_parts[1]}"
+                      return f"{accent_prefix}{raw_url}"
 
               return url
 
@@ -198,7 +198,7 @@ jobs:
               save_filename = task["name"]
               target_url = task["url"]
               task_base_url = get_base_url(target_url)
-              
+
               if os.path.exists(save_filename):
                   print(f"🔄 [更新任务] 本地已存在 {save_filename}，开始尝试拉取上游最新内容...")
               else:
@@ -209,7 +209,7 @@ jobs:
               # 分流拉取与网络报错捕获机制
               if is_github_url(target_url):
                   raw_target_url = normalize_to_raw_url(target_url)
-                  
+
                   for mirror in sorted_mirrors:
                       fetch_url = f"{mirror}{raw_target_url}"
                       try:
@@ -225,7 +225,7 @@ jobs:
                       except requests.RequestException as req_err:
                           print(f"⚠️ [镜像连接失败] {mirror} 请求报错: {req_err}")
                           continue
-                  
+
                   if not resp_content:
                       print(f"❌ [错误/跳转] GitHub 任务 {save_filename} 所有镜像均拉取失败（可能链接已变更或不存在），跳过此任务！")
                       if os.path.exists(save_filename):
@@ -280,14 +280,14 @@ jobs:
 
               if json_obj is not None:
                   processed_data = traverse_and_replace(json_obj, task_base_url)
-                  
+
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
                   json.loads(final_json_str)
 
                   # 写入处理后的最新内容（若不存在则自动新建）
                   with open(save_filename, "w", encoding="utf-8") as f:
                       f.write(final_json_str)
-                  
+
                   print(f"✅ 处理完成：导出标准 JSON -> {save_filename}\n")
                   successful_files.append(save_filename)
               else:
@@ -322,7 +322,7 @@ jobs:
           for file in $TASK_FILES; do
             if [ -f "$file" ]; then
               git add -f "$file"
-              
+
               if [ -n "$(git status --porcelain "$file")" ]; then
                 echo "🔍 [发现变更/新增] $file 与仓库现有记录不一致（或为新增加文件），加入待处理列表！"
                 changed_files+=("$file")
@@ -344,11 +344,11 @@ jobs:
           fi
 
           git rm --cached *.bin *.BIN 2>/dev/null || true
-          
+
           # 获取北京时间（UTC+8）
           NOW_TIME=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
           changed_str=$(IFS=, ; echo "${changed_files[*]}")
-          
+
           # Commit 样式自定义修改
           git commit -m "更新于 ${NOW_TIME} (变动文件: ${changed_str}) [skip ci]"
           git push
@@ -369,7 +369,7 @@ jobs:
 
           CHANGED_FILES="${{ steps.diff_check.outputs.changed_files }}"
           processed_json=()
-          
+
           for target in $CHANGED_FILES; do
             if [ -f "$target" ]; then
               echo "正在加密文件: $target"
@@ -420,7 +420,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           echo "[提示] 开始克隆 Gitee mybox 仓库..."
-          
+
           SUCCESS=0
           for i in {1..3}; do
             echo "尝试第 $i 次克隆 Gitee 仓库..."
@@ -444,7 +444,7 @@ jobs:
           for target in $CHANGED_FILES; do
             base_name="${target%.*}"
             bin_file="${base_name}.bin"
-            
+
             if [ -f "$bin_file" ]; then
               target_name="${base_name}.json"
               echo "改名复制加密产物: $bin_file -> gitee_temp/$target_name"
