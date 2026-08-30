@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pycryptodome
 
-      - name: 执行核心调度逻辑
+      - name: 执行核心调度逻辑 (按行读取 next_run.txt)
         id: process_logic
         run: |
           python - << 'EOF'
@@ -36,37 +36,52 @@ jobs:
           import sys
           import urllib.request
 
-          url = "https://9877.kstore.space/one.json"
-          state_file = "next_run.txt"          # 根目录状态文件
+          state_file = "next_run.txt"          # 根目录状态与 URL 列表文件
           decrypted_file = "one.json"          # 根目录解密文件
           current_time = int(time.time())
 
-          # -------------------------------------------------------------
-          # 1. 优先检查是否首次运行 (缺少 next_run.txt 或 one.json)
-          # -------------------------------------------------------------
-          is_first_run = (not os.path.exists(state_file)) or (not os.path.exists(decrypted_file))
+          # 读取文件所有行
+          lines = []
+          if os.path.exists(state_file):
+              with open(state_file, 'r', encoding='utf-8') as f:
+                  lines = [line.strip() for line in f.readlines()]
 
-          target_time = 0
-          local_size = ""
-
-          if not is_first_run:
-              try:
-                  with open(state_file, 'r', encoding='utf-8') as f:
-                      lines = [line.strip() for line in f.readlines() if line.strip()]
-                      if len(lines) >= 1:
-                          target_time = int(lines[0])
-                      if len(lines) >= 2:
-                          local_size = lines[1]
-              except Exception as e:
-                  print(f"读取状态文件失败，按首次运行处理: {e}")
-                  is_first_run = True
+          # 确保 lines 列表至少有 5 行（不足部分用空字符串补齐，防止索引越界）
+          while len(lines) < 5:
+              lines.append("")
 
           # -------------------------------------------------------------
-          # 关键点：时间没到，直接退出！绝不发起任何网络请求！
+          # 1. 解析第 1 行时间戳、第 2 行 Content-Length、第 5 行起的目标 URL
+          # -------------------------------------------------------------
+          target_time_str = lines[0]
+          local_size = lines[1]
+          
+          # 从第 5 行开始获取 URL 列表 (索引 4 开始)
+          urls = [line for line in lines[4:] if line.startswith("http://") or line.startswith("https://")]
+
+          if not urls:
+              print("✗ 未在 next_run.txt 第 5 行及以后找到有效 URL！退出任务。")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("should_decrypt=false\n")
+              sys.exit(0)
+
+          target_url = urls[0]  # 取第 5 行匹配到的第一个 URL 接口
+          print(f">> 提取到的目标 URL: {target_url}")
+
+          # 判定是否首次运行
+          try:
+              target_time = int(target_time_str)
+          except ValueError:
+              target_time = 0
+
+          is_first_run = (target_time == 0) or (not os.path.exists(decrypted_file))
+
+          # -------------------------------------------------------------
+          # 2. 检查随机时间（未到时间直接退出，绝不发起网络请求）
           # -------------------------------------------------------------
           if not is_first_run and current_time < target_time:
               remaining_hours = round((target_time - current_time) / 3600, 1)
-              print(f">> [时间未到] 距离下一次随机请求还需等待 {remaining_hours} 小时，立即退出，不发起网络请求。")
+              print(f">> [时间未到] 距离下一次随机嗅探还需等待 {remaining_hours} 小时，立即退出。")
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write("should_decrypt=false\n")
               sys.exit(0)
@@ -74,7 +89,7 @@ jobs:
           print(">> [时间已到/首次运行] 开始伪装 TVBox 向服务器发起 HEAD 请求...")
 
           # -------------------------------------------------------------
-          # 2. 随机时间到了，伪装成 TVBox 获取远程 Content-Length
+          # 3. 伪装 TVBox 发起 HEAD 嗅探
           # -------------------------------------------------------------
           headers = {
               'User-Agent': 'okhttp/3.12.0',
@@ -84,10 +99,10 @@ jobs:
 
           remote_size = ""
           try:
-              req = urllib.request.Request(url, headers=headers, method='HEAD')
+              req = urllib.request.Request(target_url, headers=headers, method='HEAD')
               with urllib.request.urlopen(req, timeout=12) as resp:
                   remote_size = resp.headers.get('Content-Length', '').strip()
-                  print(f"[TVBox 伪装请求成功] 远程 Content-Length: '{remote_size}', 本地记录: '{local_size}'")
+                  print(f"[TVBox 伪装嗅探成功] 远程 Content-Length: '{remote_size}', 本地记录: '{local_size}'")
           except Exception as e:
               print(f"✗ 伪装获取 Content-Length 失败: {e}")
               if not is_first_run:
@@ -95,36 +110,42 @@ jobs:
                       f.write("should_decrypt=false\n")
                   sys.exit(0)
 
+          # 将目标 URL 保存到环境变量供下个步骤解密调用
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"target_url={target_url}\n")
+
           # -------------------------------------------------------------
-          # 3. 比对 Content-Length，决定是否解密并更新 next_run.txt
+          # 4. 嗅探成功，安全更新第 1、2 行，并保留第 3 行及以后的所有内容
           # -------------------------------------------------------------
-          # 无论内容变没变，这次随机触发完成后，都必须算出一个新的 1~3 天随机时间戳
           random_delay = random.randint(24 * 3600, 72 * 3600)
           next_target_time = current_time + random_delay
 
+          # 仅替换内存中的第 1 行和第 2 行
+          lines[0] = str(next_target_time)
+          lines[1] = remote_size if remote_size != "" else local_size
+
+          # 原样写回文件（保留后续行的 URL 和其他工作流数据）
+          with open(state_file, 'w', encoding='utf-8') as f:
+              f.write("\n".join(lines) + "\n")
+
+          print(f">> 已安全更新 {state_file} 前 2 行（第 3 行及之后内容完整保留）。")
+
+          # 比对 Content-Length 决定是否解密
           if is_first_run or (remote_size != "" and remote_size != local_size):
-              print(">> [文件有变动/首次运行] 准备执行解密程序...")
-              
-              # 第一行写下次时间戳，第二行写新的 Content-Length
-              with open(state_file, 'w', encoding='utf-8') as f:
-                  f.write(f"{next_target_time}\n{remote_size}\n")
-              
+              print(">> [文件有变动/首次运行] 触发解密！")
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write("should_decrypt=true\n")
           else:
-              print(">> [文件无变动] 上游 Content-Length 未变，不解密，仅更新下一次随机触发时间。")
-              
-              with open(state_file, 'w', encoding='utf-8') as f:
-                  f.write(f"{next_target_time}\n{local_size}\n")
-                  
+              print(">> [文件无变动] 上游 Content-Length 未变，不执行解密。")
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write("should_decrypt=false\n")
           EOF
 
-      - name: 启动解密程序 (解密生成根目录 one.json)
+      - name: 启动解密程序 (自动使用第 5 行读取到的 URL)
         if: steps.process_logic.outputs.should_decrypt == 'true'
         run: |
-          python tvbox.py "https://9877.kstore.space/one.json" "one.json" dec
+          TARGET_URL="${{ steps.process_logic.outputs.target_url }}"
+          python tvbox.py "$TARGET_URL" "one.json" dec
 
       - name: 提交改动到仓库
         run: |
@@ -132,7 +153,6 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           
-          # 检查是否有文件改动 (next_run.txt 或 one.json)
           git add next_run.txt one.json
           if ! git diff --staged --quiet; then
             git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
