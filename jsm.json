@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;76b117b60049b2335ae63a843170c6da",
+  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;13d3366f435f4fc803eac635786812d7",
   "lives": [
     {
       "name": "migu",
@@ -37,7 +37,7 @@
   "sites": [
     {
       "key": "drpy_js_豆瓣",
-      "name": "搜索 • 豆瓣[js]",
+      "name": "搜索 • 豆瓣",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/drpy.js",
@@ -117,6 +117,46 @@
       "name": "ITalkBB • 外",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/ITalkBBTV.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "changeable": 1
+    },
+    {
+      "key": "OleLive",
+      "name": "欧乐影院 • 外",
+      "type": 3,
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/OleLive.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "华数",
+      "name": "华数 • 影视",
+      "type": 3,
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/华数.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "华谊影视",
+      "name": "华谊 • 影视",
+      "type": 3,
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/华谊影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
+      "key": "Didahd",
+      "name": "嘀嗒影视",
+      "type": 3,
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/Didahd.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 0,
@@ -1916,85 +1956,95 @@
       "changeable": 1
     },
     {
+      "key": "Ncat",
+      "name": "网飞猫",
+      "type": 3,
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/py/Ncat.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "changeable": 1
+    },
+    {
       "key": "drpy_js_360影视",
-      "name": "官源 • 360[js]",
+      "name": "官源 • 360",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/360影视.js"
     },
     {
       "key": "drpy_js_百忙无果",
-      "name": "官源 • 芒果[js]",
+      "name": "官源 • 芒果",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/百忙无果.js"
     },
     {
       "key": "drpy_js_腾云驾雾",
-      "name": "官源 • 腾讯[js]",
+      "name": "官源 • 腾讯",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/腾云驾雾.js"
     },
     {
       "key": "drpy_js_奇珍异兽",
-      "name": "官源 • 爱奇艺[js]",
+      "name": "官源 • 爱奇艺",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/奇珍异兽.js"
     },
     {
       "key": "drpy_js_菜狗",
-      "name": "官源 • 搜狗[js]",
+      "name": "官源 • 搜狗",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/菜狗.js"
     },
     {
       "key": "drpy_js_优酷",
-      "name": "官源 • 优酷[js]",
+      "name": "官源 • 优酷",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/优酷.js"
     },
     {
       "key": "drpy_js_Anime1动畫",
-      "name": "动漫 • Anime1动畫[js]",
+      "name": "动漫 • Anime1动畫",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/Anime1动畫.js"
     },
     {
       "key": "drpy_js_NT动漫",
-      "name": "动漫 • NT动漫[js]",
+      "name": "动漫 • NT动漫",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/NT动漫.js"
     },
     {
       "key": "drpy_js_路漫漫",
-      "name": "动漫 • 路漫漫[js]",
+      "name": "动漫 • 路漫漫",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/路漫漫.js"
     },
     {
       "key": "drpy_js_去看吧",
-      "name": "动漫 • 去看吧[js]",
+      "name": "动漫 • 去看吧",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/去看吧.js"
     },
     {
       "key": "drpy_js_A8音乐",
-      "name": "音频 • A8音乐[js]",
+      "name": "音频 • A8音乐",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/A8音乐.js"
     },
     {
       "key": "drpy_js_DJ音乐",
-      "name": "音频 • DJ音乐[js]",
+      "name": "音频 • DJ音乐",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2006,7 +2056,7 @@
     },
     {
       "key": "drpy_js_蜻蜓FM",
-      "name": "广播 • 蜻蜓FM[js]",
+      "name": "广播 • 蜻蜓FM",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2014,7 +2064,7 @@
     },
     {
       "key": "drpy_js_爱上你听书网",
-      "name": "听书 • 爱上你听书[js]",
+      "name": "听书 • 爱上你听书",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2026,7 +2076,7 @@
     },
     {
       "key": "drpy_js_博看听书",
-      "name": "听书 • 博看听书[js]",
+      "name": "听书 • 博看听书",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2038,7 +2088,7 @@
     },
     {
       "key": "drpy_js_海洋听书",
-      "name": "听书 • 海洋听书[js]",
+      "name": "听书 • 海洋听书",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2050,7 +2100,7 @@
     },
     {
       "key": "drpy_js_有声小说",
-      "name": "听书 • 有声小说[js]",
+      "name": "听书 • 有声小说",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2062,14 +2112,14 @@
     },
     {
       "key": "drpy_js_播客",
-      "name": "聚合 • 播客[js]",
+      "name": "聚合 • 播客",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js/播客.js"
     },
     {
       "key": "drpy_js_酷6网",
-      "name": "聚合 • 酷6网[js]",
+      "name": "聚合 • 酷6网",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2077,7 +2127,7 @@
     },
     {
       "key": "drpy_js_网易公版影像",
-      "name": "聚合 • 网易公版[js]",
+      "name": "聚合 • 网易公版",
       "type": 3,
       "api": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "changeable": 0,
@@ -2095,16 +2145,6 @@
       "searchable": 0,
       "filterable": 0,
       "changeable": 0
-    },
-    {
-      "key": "應用商店",
-      "name": "應用商店",
-      "type": 3,
-      "api": "csp_Market",
-      "searchable": 0,
-      "changeable": 0,
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/json/market.json",
-      "jar": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/pg_upgraded.jar"
     },
     {
       "key": "bb",
