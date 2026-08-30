@@ -47,29 +47,39 @@ jobs:
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
 
-          # 支持在此自由增删 JSON 任务（既支持 GitHub 链接，也支持普通 HTTP/HTTPS 链接）
-          TASKS = [
-              {
-                  "name": "x.json",
-                  "url": "https://github.com/alantang1977/X/blob/main/X.json"
-              },
-              {
-                  "name": "fty.json",
-                  "url": "https://github.com/qist/tvbox/blob/master/fty.json"
-              },
-              {
-                  "name": "jsm.json",
-                  "url": "https://github.com/qist/tvbox/blob/master/jsm.json"
-              },
-              {
-                  "name": "pj.json",
-                  "url": "https://github.com/mcp2016/TVBox/blob/main/pj.json"
-              },
-              {
-                  "name": "api.json",
-                  "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json"
-              }
-          ]
+          # ===== 从 next_run.txt 第 6 行开始读取 URL 任务 =====
+          txt_file = "next_run.txt"
+          TASKS = []
+
+          if os.path.exists(txt_file):
+              with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
+                  all_lines = f.readlines()
+              
+              # 获取第 6 行及以后的内容 (索引从 5 开始)
+              target_lines = all_lines[5:] if len(all_lines) >= 5 else []
+              
+              for line in target_lines:
+                  line_str = line.strip()
+                  # 匹配 http 或 https 开头的 URL
+                  match = re.search(r'https?://[^\s]+', line_str)
+                  if match:
+                      url = match.group(0)
+                      # 提取文件名（如 URL 为 https://.../x.json 则提取为 x.json）
+                      base_name = url.split("?")[0].rstrip("/").split("/")[-1]
+                      if not base_name.endswith(".json"):
+                          base_name += ".json"
+                      TASKS.append({
+                          "name": base_name,
+                          "url": url
+                      })
+              print(f"📖 成功从 {txt_file} (第6行起) 解析到 {len(TASKS)} 个待处理任务。")
+          else:
+              print(f"❌ [错误] 未找到文件 {txt_file}！")
+
+          # 校验：若文件不存在或未提取到有效 URL，直接报错并终止脚本
+          if not TASKS:
+              print("❌ [错误] next_run.txt 不存在或第 6 行起未找到有效 URL！退出任务。")
+              sys.exit(1)
 
           MIRRORS = [
               "https://github.moeyy.xyz/",
