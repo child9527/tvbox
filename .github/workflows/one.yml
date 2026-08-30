@@ -1,0 +1,142 @@
+name: 自动解密并同步one接口文件
+
+on:
+  schedule:
+    # 唤醒检查频率：每 6 小时检查一次是否到了“随机时间点”
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  decrypt_and_commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出当前仓库代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 运行环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装加密库依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pycryptodome
+
+      - name: 执行核心调度逻辑
+        id: process_logic
+        run: |
+          python - << 'EOF'
+          import os
+          import time
+          import random
+          import sys
+          import urllib.request
+
+          url = "https://9877.kstore.space/one.json"
+          state_file = "next_run.txt"          # 根目录状态文件
+          decrypted_file = "one.json"          # 根目录解密文件
+          current_time = int(time.time())
+
+          # -------------------------------------------------------------
+          # 1. 优先检查是否首次运行 (缺少 next_run.txt 或 one.json)
+          # -------------------------------------------------------------
+          is_first_run = (not os.path.exists(state_file)) or (not os.path.exists(decrypted_file))
+
+          target_time = 0
+          local_size = ""
+
+          if not is_first_run:
+              try:
+                  with open(state_file, 'r', encoding='utf-8') as f:
+                      lines = [line.strip() for line in f.readlines() if line.strip()]
+                      if len(lines) >= 1:
+                          target_time = int(lines[0])
+                      if len(lines) >= 2:
+                          local_size = lines[1]
+              except Exception as e:
+                  print(f"读取状态文件失败，按首次运行处理: {e}")
+                  is_first_run = True
+
+          # -------------------------------------------------------------
+          # 关键点：时间没到，直接退出！绝不发起任何网络请求！
+          # -------------------------------------------------------------
+          if not is_first_run and current_time < target_time:
+              remaining_hours = round((target_time - current_time) / 3600, 1)
+              print(f">> [时间未到] 距离下一次随机请求还需等待 {remaining_hours} 小时，立即退出，不发起网络请求。")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("should_decrypt=false\n")
+              sys.exit(0)
+
+          print(">> [时间已到/首次运行] 开始伪装 TVBox 向服务器发起 HEAD 请求...")
+
+          # -------------------------------------------------------------
+          # 2. 随机时间到了，伪装成 TVBox 获取远程 Content-Length
+          # -------------------------------------------------------------
+          headers = {
+              'User-Agent': 'okhttp/3.12.0',
+              'Accept': '*/*',
+              'Connection': 'Keep-Alive'
+          }
+
+          remote_size = ""
+          try:
+              req = urllib.request.Request(url, headers=headers, method='HEAD')
+              with urllib.request.urlopen(req, timeout=12) as resp:
+                  remote_size = resp.headers.get('Content-Length', '').strip()
+                  print(f"[TVBox 伪装请求成功] 远程 Content-Length: '{remote_size}', 本地记录: '{local_size}'")
+          except Exception as e:
+              print(f"✗ 伪装获取 Content-Length 失败: {e}")
+              if not is_first_run:
+                  with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                      f.write("should_decrypt=false\n")
+                  sys.exit(0)
+
+          # -------------------------------------------------------------
+          # 3. 比对 Content-Length，决定是否解密并更新 next_run.txt
+          # -------------------------------------------------------------
+          # 无论内容变没变，这次随机触发完成后，都必须算出一个新的 1~3 天随机时间戳
+          random_delay = random.randint(24 * 3600, 72 * 3600)
+          next_target_time = current_time + random_delay
+
+          if is_first_run or (remote_size != "" and remote_size != local_size):
+              print(">> [文件有变动/首次运行] 准备执行解密程序...")
+              
+              # 第一行写下次时间戳，第二行写新的 Content-Length
+              with open(state_file, 'w', encoding='utf-8') as f:
+                  f.write(f"{next_target_time}\n{remote_size}\n")
+              
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("should_decrypt=true\n")
+          else:
+              print(">> [文件无变动] 上游 Content-Length 未变，不解密，仅更新下一次随机触发时间。")
+              
+              with open(state_file, 'w', encoding='utf-8') as f:
+                  f.write(f"{next_target_time}\n{local_size}\n")
+                  
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("should_decrypt=false\n")
+          EOF
+
+      - name: 启动解密程序 (解密生成根目录 one.json)
+        if: steps.process_logic.outputs.should_decrypt == 'true'
+        run: |
+          python tvbox.py "https://9877.kstore.space/one.json" "one.json" dec
+
+      - name: 提交改动到仓库
+        run: |
+          BEIJING_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          
+          # 检查是否有文件改动 (next_run.txt 或 one.json)
+          git add next_run.txt one.json
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
+            git push
+          else
+            echo "没有文件发生改动，无需 Push。"
+          fi
