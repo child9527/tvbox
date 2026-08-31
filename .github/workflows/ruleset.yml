@@ -23,11 +23,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Convert TXT to Custom Clash YAML and v2rayN Format
+      - name: Convert TXT to Custom Clash YAML and v2rayN JSON Format
         run: |
           echo "=================== [步骤 1] 开始转换文本规则 ==================="
           python -c "
           import os
+          import json
 
           def convert_txt_to_yaml(txt_file, yaml_file):
               print(f'[提示] 正在检查源文件: {txt_file}')
@@ -54,7 +55,7 @@ jobs:
               
               print(f'[成功] 转换完成: {txt_file} -> {yaml_file}，写入 {len(lines)} 条有效规则')
 
-          def convert_txt_to_v2rayn(txt_file, cfg_file):
+          def convert_txt_to_v2rayn_json(txt_file, cfg_file):
               print(f'[提示] 正在检查 v2rayN 源文件: {txt_file}')
               if not os.path.exists(txt_file):
                   print(f'[警告] 源文件 {txt_file} 不存在，跳过 v2rayN 转换。')
@@ -67,21 +68,29 @@ jobs:
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
-                      # 清洗可能存在的泛解析前缀，并确保为纯域名格式适配 v2rayN 规则匹配
                       clean_line = line.lstrip('+').lstrip('.')
                       if clean_line and clean_line not in domains:
                           domains.append(clean_line)
               
-              # v2rayN 高级规则集/sing-box rule-set 格式（每行一个纯域名或带 domain: 前缀）
-              # 根据 sing-box / v2rayN 规则集规范，文本直排域名即可被解析
-              with open(cfg_file, 'w', encoding='utf-8') as f:
-                  f.write('\n'.join(domains) + '\n')
+              # 纯净标准的 v2rayN 规则集 JSON 结构
+              rule_data = {
+                  "version": 1,
+                  "rules": [
+                      {
+                          "outbound_tag": "direct",
+                          "domain": domains
+                      }
+                  ]
+              }
               
-              print(f'[成功] v2rayN 格式转换完成: {txt_file} -> {cfg_file}，写入 {len(domains)} 条有效域名')
+              with open(cfg_file, 'w', encoding='utf-8') as f:
+                  json.dump(rule_data, f, indent=2, ensure_ascii=False)
+              
+              print(f'[成功] v2rayN JSON 格式转换完成: {txt_file} -> {cfg_file}，写入 {len(domains)} 条域名规则')
 
           convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
           convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
-          convert_txt_to_v2rayn('direct.txt', 'my_direct.cfg')
+          convert_txt_to_v2rayn_json('direct.txt', 'my_direct.cfg')
           "
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
@@ -96,11 +105,9 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # 1. 写入私钥文件并严格授权
           echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
           
-          # 2. 写入 SSH Config，彻底替代全局 GIT_SSH_COMMAND 变量，规避 Git 参数解析冲突
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -111,8 +118,6 @@ jobs:
           chmod 600 ~/.ssh/config
           
           echo "[提示] SSH 配置文件 ~/.ssh/config 建立完毕"
-          
-          echo "[诊断] 正在测试 Gitee SSH 免密连通性..."
           ssh -T git@gitee.com || true
           echo "=================== [步骤 2] SSH 诊断结束 ==================="
 
@@ -123,7 +128,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           echo "[提示] 开始执行 git clone..."
-          # 使用原生命令，直接依靠 ~/.ssh/config 自动匹配密钥
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
           echo "[提示] 正在将生成的配置文件复制到目标仓库目录..."
