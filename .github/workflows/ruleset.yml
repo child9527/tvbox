@@ -1,4 +1,4 @@
-name: 转换Clash规则文件推送到Gitee
+name: 转换规则文件并推送到 Gitee
 
 on:
   push:
@@ -23,14 +23,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Convert TXT to Custom Clash YAML and v2rayN JSON Format
+      - name: Convert TXT to Formats (Clash YAML & v2rayN JSON Config)
         run: |
           echo "=================== [步骤 1] 开始转换文本规则 ==================="
           python -c "
           import os
           import json
 
-          def convert_txt_to_yaml(txt_file, yaml_file):
+          def convert_clash_yaml(txt_file, yaml_file):
               print(f'[提示] 正在检查源文件: {txt_file}')
               if not os.path.exists(txt_file):
                   print(f'[警告] 源文件 {txt_file} 不存在，跳过转换。')
@@ -39,8 +39,6 @@ jobs:
               lines = []
               with open(txt_file, 'r', encoding='utf-8') as f:
                   raw_lines = f.readlines()
-                  print(f'[提示] {txt_file} 读取成功，共 {len(raw_lines)} 行原始文本')
-                  
                   for line in raw_lines:
                       line = line.strip()
                       if not line or line.startswith('#'):
@@ -52,44 +50,55 @@ jobs:
               with open(yaml_file, 'w', encoding='utf-8') as f:
                   f.write('payload:\n')
                   f.write('\n'.join(lines) + '\n')
-              
-              print(f'[成功] 转换完成: {txt_file} -> {yaml_file}，写入 {len(lines)} 条有效规则')
+              print(f'[成功] 转换 Clash 格式: {txt_file} -> {yaml_file}，写入 {len(lines)} 条规则')
 
-          def convert_txt_to_v2rayn_json(txt_file, cfg_file):
-              print(f'[提示] 正在检查 v2rayN 源文件: {txt_file}')
+          def convert_v2rayn_cfg(txt_file, cfg_file):
+              print(f'[提示] 正在生成 v2rayN JSON 规则文件: {cfg_file}')
               if not os.path.exists(txt_file):
-                  print(f'[警告] 源文件 {txt_file} 不存在，跳过 v2rayN 转换。')
+                  print(f'[警告] 源文件 {txt_file} 不存在，跳过。')
                   return
               
               domains = []
               with open(txt_file, 'r', encoding='utf-8') as f:
-                  raw_lines = f.readlines()
-                  for line in raw_lines:
+                  for line in f:
                       line = line.strip()
-                      if not line or line.startswith('#'):
-                        continue
-                      clean_line = line.lstrip('+').lstrip('.')
-                      if clean_line and clean_line not in domains:
-                          domains.append(clean_line)
+                      if line and not line.startswith('#'):
+                          if line not in domains:
+                              domains.append(line)
               
-              # 符合 sing-box source 格式的规范规则集结构（必须包含 version 与 domain_suffix）
-              rule_data = {
-                  "version": 1,
-                  "rules": [
-                      {
-                          "domain_suffix": domains
-                      }
+              # 构建精简的 v2rayN 路由/DNS 共用目标 JSON 结构
+              config_data = {
+                \"dns\": {
+                  \"servers\": [
+                    {
+                      \"address\": \"https://dns.alidns.com/dns-query\",
+                      \"domains\": domains,
+                      \"skipFallback\": true,
+                      \"tag\": \"direct-dns-1\"
+                    }
                   ]
+                },
+                \"routing\": {
+                  \"rules\": [
+                    {
+                      \"type\": \"field\",
+                      \"outboundTag\": \"direct\",
+                      \"domain\": domains
+                    }
+                  ]
+                }
               }
               
               with open(cfg_file, 'w', encoding='utf-8') as f:
-                  json.dump(rule_data, f, indent=2, ensure_ascii=False)
-              
-              print(f'[成功] v2rayN JSON 格式转换完成: {txt_file} -> {cfg_file}，写入 {len(domains)} 条域名规则')
+                  json.dump(config_data, f, ensure_ascii=False, indent=2)
+              print(f'[成功] 生成 v2rayN JSON 格式: {txt_file} -> {cfg_file}，写入 {len(domains)} 个域名')
 
-          convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
-          convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
-          convert_txt_to_v2rayn_json('direct.txt', 'my_direct.cfg')
+          # 1. 转换 Clash 规则
+          convert_clash_yaml('direct.txt', 'my-direct.yaml')
+          convert_clash_yaml('ai.txt', 'my-ai.yaml')
+
+          # 2. 生成专供 v2rayN 使用的精简版 JSON 配置文件
+          convert_v2rayn_cfg('direct.txt', 'my_direct.cfg')
           "
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
@@ -98,9 +107,6 @@ jobs:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
           echo "=================== [步骤 2] 配置 SSH 与 Gitee 域名映射 ==================="
-          echo "[诊断] 当前 Runner 环境中的 Git 版本:"
-          git --version
-          
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
@@ -116,7 +122,6 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
           
-          echo "[提示] SSH 配置文件 ~/.ssh/config 建立完毕"
           ssh -T git@gitee.com || true
           echo "=================== [步骤 2] SSH 诊断结束 ==================="
 
@@ -126,34 +131,23 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          echo "[提示] 开始执行 git clone..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 正在将生成的配置文件复制到目标仓库目录..."
+          echo "[提示] 正在将生成的文件复制到目标仓库目录..."
           cp -v my-direct.yaml gitee_temp/
           cp -v my-ai.yaml gitee_temp/
           cp -v my_direct.cfg gitee_temp/
           
           cd gitee_temp
-          echo "[诊断] 进入 gitee_temp 目录，当前路径为:"
-          pwd
-          
-          echo "[诊断] 查看已复制文件的目录状态:"
-          ls -la my-*.yaml my_direct.cfg
-          
-          echo "[诊断] 查看本地 git status:"
           git status
           
           git add my-direct.yaml my-ai.yaml my_direct.cfg
-          
-          echo "[诊断] 查看已暂存的修改差异 (git diff --staged):"
-          git diff --staged
           
           if git diff --staged --quiet; then
             echo "[提示] 经比对无任何文件变更，跳过 Commit 和 Push 操作。"
           else
             echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
-            git commit -m "auto: update custom rulesets (my-direct/my-ai/my_direct.cfg) from GitHub Actions [skip ci]"
+            git commit -m "auto: update rulesets (my-direct.yaml, my-ai.yaml, my_direct.cfg) from GitHub Actions [skip ci]"
             git push origin master
             echo "[成功] 文件更新已顺利推送至 Gitee！"
           fi
