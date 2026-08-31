@@ -1,4 +1,4 @@
-name: 转换规则文件并推送到 Gitee
+name: 转换Clash规则文件推送到Gitee
 
 on:
   push:
@@ -23,14 +23,13 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Convert TXT to Formats (Clash YAML & v2rayN JSON Config)
+      - name: Convert TXT to Custom Clash YAML Format
         run: |
           echo "=================== [步骤 1] 开始转换文本规则 ==================="
-          python3 - << 'EOF'
+          python -c "
           import os
-          import json
 
-          def convert_clash_yaml(txt_file, yaml_file):
+          def convert_txt_to_yaml(txt_file, yaml_file):
               print(f'[提示] 正在检查源文件: {txt_file}')
               if not os.path.exists(txt_file):
                   print(f'[警告] 源文件 {txt_file} 不存在，跳过转换。')
@@ -38,66 +37,26 @@ jobs:
               
               lines = []
               with open(txt_file, 'r', encoding='utf-8') as f:
-                  for line in f:
+                  raw_lines = f.readlines()
+                  print(f'[提示] {txt_file} 读取成功，共 {len(raw_lines)} 行原始文本')
+                  
+                  for line in raw_lines:
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
                       if not line.startswith('+.') and not line.startswith('.'):
-                      
                           line = '+.' + line
-                      lines.append(f"  - '{line}'")
+                      lines.append(f'  - \'{line}\'')
               
               with open(yaml_file, 'w', encoding='utf-8') as f:
                   f.write('payload:\n')
                   f.write('\n'.join(lines) + '\n')
-              print(f'[成功] 转换 Clash 格式: {txt_file} -> {yaml_file}，写入 {len(lines)} 条规则')
+              
+              print(f'[成功] 转换完成: {txt_file} -> {yaml_file}，写入 {len(lines)} 条有效规则')
 
-          def convert_v2rayn_cfg(txt_file, cfg_file):
-              print(f'[提示] 正在生成 v2rayN JSON 规则文件: {cfg_file}')
-              if not os.path.exists(txt_file):
-                  print(f'[警告] 源文件 {txt_file} 不存在，跳过。')
-                  return
-              
-              domains = []
-              with open(txt_file, 'r', encoding='utf-8') as f:
-                  for line in f:
-                      line = line.strip()
-                      if line and not line.startswith('#'):
-                          if line not in domains:
-                              domains.append(line)
-              
-              # 按你提供的 config.json 结构生成匹配的精简 JSON
-              config_data = {
-                "dns": {
-                  "servers": [
-                    {
-                      "address": "https://dns.alidns.com/dns-query",
-                      "domains": domains,
-                      "skipFallback": True,
-                      "tag": "direct-dns-1"
-                    }
-                  ]
-                },
-                "routing": {
-                  "rules": [
-                    {
-                      "type": "field",
-                      "outboundTag": "direct",
-                      "domain": domains
-                    }
-                  ]
-                }
-              }
-              
-              with open(cfg_file, 'w', encoding='utf-8') as f:
-                  json.dump(config_data, f, ensure_ascii=False, indent=2)
-              print(f'[成功] 生成 v2rayN JSON 格式: {txt_file} -> {cfg_file}，写入 {len(domains)} 个域名')
-
-          # 执行转换
-          convert_clash_yaml('direct.txt', 'my-direct.yaml')
-          convert_clash_yaml('ai.txt', 'my-ai.yaml')
-          convert_v2rayn_cfg('direct.txt', 'my_direct.cfg')
-          EOF
+          convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
+          convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
+          "
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
       - name: Setup SSH Config and Diagnostics
@@ -105,12 +64,17 @@ jobs:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
           echo "=================== [步骤 2] 配置 SSH 与 Gitee 域名映射 ==================="
+          echo "[诊断] 当前 Runner 环境中的 Git 版本:"
+          git --version
+          
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
+          # 1. 写入私钥文件并严格授权
           echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
           
+          # 2. 写入 SSH Config，彻底替代全局 GIT_SSH_COMMAND 变量，规避 Git 参数解析冲突
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -120,6 +84,9 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
           
+          echo "[提示] SSH 配置文件 ~/.ssh/config 建立完毕"
+          
+          echo "[诊断] 正在测试 Gitee SSH 免密连通性..."
           ssh -T git@gitee.com || true
           echo "=================== [步骤 2] SSH 诊断结束 ==================="
 
@@ -129,23 +96,34 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          echo "[提示] 开始执行 git clone..."
+          # 使用原生命令，直接依靠 ~/.ssh/config 自动匹配密钥
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 正在将生成的文件复制到目标仓库目录..."
+          echo "[提示] 正在将生成的 YAML 复制到目标仓库目录..."
           cp -v my-direct.yaml gitee_temp/
           cp -v my-ai.yaml gitee_temp/
-          cp -v my_direct.cfg gitee_temp/
           
           cd gitee_temp
+          echo "[诊断] 进入 gitee_temp 目录，当前路径为:"
+          pwd
+          
+          echo "[诊断] 查看已复制文件的目录状态:"
+          ls -la my-*.yaml
+          
+          echo "[诊断] 查看本地 git status:"
           git status
           
-          git add my-direct.yaml my-ai.yaml my_direct.cfg
+          git add my-direct.yaml my-ai.yaml
+          
+          echo "[诊断] 查看已暂存的修改差异 (git diff --staged):"
+          git diff --staged
           
           if git diff --staged --quiet; then
             echo "[提示] 经比对无任何文件变更，跳过 Commit 和 Push 操作。"
           else
             echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
-            git commit -m "auto: update rulesets (my-direct.yaml, my-ai.yaml, my_direct.cfg) from GitHub Actions [skip ci]"
+            git commit -m "auto: 更新Clash Verge规则成功 ${NOW} [skip ci]"
             git push origin master
             echo "[成功] 文件更新已顺利推送至 Gitee！"
           fi
