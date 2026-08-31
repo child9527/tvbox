@@ -378,7 +378,7 @@
     {
       "name": "proxy",
       "hosts": [
-        "https://gh-proxy.org/raw.githubusercontent.com",
+        "raw.githubusercontent.com",
         "googlevideo.com",
         "googleapis.com",
         "cdn.v82u1l.com",
