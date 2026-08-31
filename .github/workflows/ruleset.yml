@@ -67,18 +67,17 @@ jobs:
                   for line in raw_lines:
                       line = line.strip()
                       if not line or line.startswith('#'):
-                          continue
+                        continue
                       clean_line = line.lstrip('+').lstrip('.')
                       if clean_line and clean_line not in domains:
                           domains.append(clean_line)
               
-              # 纯净标准的 v2rayN 规则集 JSON 结构
+              # 符合 sing-box source 格式的规范规则集结构（必须包含 version 与 domain_suffix）
               rule_data = {
                   "version": 1,
                   "rules": [
                       {
-                          "outbound_tag": "direct",
-                          "domain": domains
+                          "domain_suffix": domains
                       }
                   ]
               }
