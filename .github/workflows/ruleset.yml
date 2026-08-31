@@ -7,7 +7,6 @@ on:
       - master
     paths:
       - 'direct.txt'
-      - 'ai.txt'
   workflow_dispatch:
 
 jobs:
@@ -51,9 +50,8 @@ jobs:
               
               print(f'[成功] 生成文件 {cfg_file}，共处理 {len(domains)} 条域名')
 
-          # 执行转换
+          # 仅执行 direct.txt 的转换
           convert_txt_to_cfg('direct.txt', 'my_direct.cfg')
-          convert_txt_to_cfg('ai.txt', 'my_ai.cfg')
           "
 
       - name: 配置 SSH 密钥
@@ -82,9 +80,8 @@ jobs:
           
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          # 复制生成的 cfg 文件到目标目录
+          # 仅复制 my_direct.cfg 到目标目录
           [ -f my_direct.cfg ] && cp -v my_direct.cfg gitee_temp/
-          [ -f my_ai.cfg ] && cp -v my_ai.cfg gitee_temp/
           
           cd gitee_temp
           
