@@ -67,11 +67,13 @@ jobs:
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
-                      # 清洗 Clash 专用的前缀格式，适配 v2rayN 域名匹配
-                      line = line.lstrip('+').lstrip('.')
-                      if line not in domains:
-                          domains.append(line)
+                      # 清洗可能存在的泛解析前缀，并确保为纯域名格式适配 v2rayN 规则匹配
+                      clean_line = line.lstrip('+').lstrip('.')
+                      if clean_line and clean_line not in domains:
+                          domains.append(clean_line)
               
+              # v2rayN 高级规则集/sing-box rule-set 格式（每行一个纯域名或带 domain: 前缀）
+              # 根据 sing-box / v2rayN 规则集规范，文本直排域名即可被解析
               with open(cfg_file, 'w', encoding='utf-8') as f:
                   f.write('\n'.join(domains) + '\n')
               
