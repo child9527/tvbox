@@ -17,3 +17,4 @@ gopeed.com
 zgg46.com
 link3.cc
 gh-proxy.org
+ghproxy.net
