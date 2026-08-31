@@ -26,7 +26,7 @@ jobs:
       - name: Convert TXT to Formats (Clash YAML & v2rayN JSON Config)
         run: |
           echo "=================== [步骤 1] 开始转换文本规则 ==================="
-          python -c "
+          python3 - << 'EOF'
           import os
           import json
 
@@ -38,14 +38,14 @@ jobs:
               
               lines = []
               with open(txt_file, 'r', encoding='utf-8') as f:
-                  raw_lines = f.readlines()
-                  for line in raw_lines:
+                  for line in f:
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
                       if not line.startswith('+.') and not line.startswith('.'):
+                      
                           line = '+.' + line
-                      lines.append(f'  - \'{line}\'')
+                      lines.append(f"  - '{line}'")
               
               with open(yaml_file, 'w', encoding='utf-8') as f:
                   f.write('payload:\n')
@@ -66,24 +66,24 @@ jobs:
                           if line not in domains:
                               domains.append(line)
               
-              # 构建精简的 v2rayN 路由/DNS 共用目标 JSON 结构
+              # 按你提供的 config.json 结构生成匹配的精简 JSON
               config_data = {
-                \"dns\": {
-                  \"servers\": [
+                "dns": {
+                  "servers": [
                     {
-                      \"address\": \"https://dns.alidns.com/dns-query\",
-                      \"domains\": domains,
-                      \"skipFallback\": true,
-                      \"tag\": \"direct-dns-1\"
+                      "address": "https://dns.alidns.com/dns-query",
+                      "domains": domains,
+                      "skipFallback": True,
+                      "tag": "direct-dns-1"
                     }
                   ]
                 },
-                \"routing\": {
-                  \"rules\": [
+                "routing": {
+                  "rules": [
                     {
-                      \"type\": \"field\",
-                      \"outboundTag\": \"direct\",
-                      \"domain\": domains
+                      "type": "field",
+                      "outboundTag": "direct",
+                      "domain": domains
                     }
                   ]
                 }
@@ -93,13 +93,11 @@ jobs:
                   json.dump(config_data, f, ensure_ascii=False, indent=2)
               print(f'[成功] 生成 v2rayN JSON 格式: {txt_file} -> {cfg_file}，写入 {len(domains)} 个域名')
 
-          # 1. 转换 Clash 规则
+          # 执行转换
           convert_clash_yaml('direct.txt', 'my-direct.yaml')
           convert_clash_yaml('ai.txt', 'my-ai.yaml')
-
-          # 2. 生成专供 v2rayN 使用的精简版 JSON 配置文件
           convert_v2rayn_cfg('direct.txt', 'my_direct.cfg')
-          "
+          EOF
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
       - name: Setup SSH Config and Diagnostics
