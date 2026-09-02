@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/fan.txt;md5;8432d174d72d5b608ae1bcd16d966847",
+  "spider": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/jar/fan.txt;md5;8432d174d72d5b608ae1bcd16d966847",
   "wallpaper": "https://wallpaper-1tg.pages.dev/",
   "sites": [
     {
@@ -354,8 +354,8 @@
       "key": "Jrsjs",
       "name": "⚽Jrs┃球迷",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/jrk.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/jrk.js",
       "style": {
         "type": "list"
       },
@@ -368,8 +368,8 @@
       "key": "酷奇",
       "name": "🎤酷奇┃MV",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/酷奇MV.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/酷奇MV.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -399,8 +399,8 @@
       "key": "虎牙直播js",
       "name": "🐯虎牙┃直播",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/huya2.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/huya2.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -415,8 +415,8 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃直播",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/斗鱼直播.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/斗鱼直播.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -431,8 +431,8 @@
       "key": "有声小说js",
       "name": "🎧有声┃小说",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/有声小说吧.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/有声小说吧.js",
       "style": {
         "type": "rect",
         "ratio": 1
@@ -582,8 +582,8 @@
       "key": "dr_兔小贝",
       "name": "📚儿童┃启蒙",
       "type": 3,
-      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
-      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
+      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -688,7 +688,7 @@
     {
       "name": "V4聚合（卡顿请按左┃右键换线）",
       "type": 0,
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/wwb521/live/main/tv.m3u",
+      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/wwb521/live/main/tv.m3u",
       "playerType": 2,
       "epg": "http://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}",
       "logo": "https://epg.v1.mk/logo/{name}.png"
@@ -696,7 +696,7 @@
     {
       "name": "V6范明明",
       "type": 0,
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
+      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
       "playerType": 2
     },
     {
