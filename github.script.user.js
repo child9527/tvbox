@@ -11,8 +11,8 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
-// @downloadURL  https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
+// @updateURL    https://web.ksx.qzz.io/https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
+// @downloadURL  https://web.ksx.qzz.io/https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
 // ==/UserScript==
 
 (async function() {
@@ -20,6 +20,7 @@
 
     const MIRROR_LIST = [
         "https://gh-proxy.org",
+        "https://web.ksx.qzz.io",
         "https://ghproxy.net"
     ];
 
