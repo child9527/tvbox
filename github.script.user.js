@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.3 功能增强版）
+// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.4 兼容增强版）
 // @namespace    http://tampermonkey.net/
-// @version      0.9.3
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（支持展示失败镜像 + 恢复官方原始地址）
+// @version      0.9.4
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美兼容 web.ksx.qzz.io 全路径）
 // @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
@@ -29,15 +29,15 @@
 
     const currentUrl = window.location.href;
 
-    // 检查当前是否已经在某个镜像站中，提取原始相对路径 rawPath
+    // 提取当前镜像信息和原始 URL
     let currentInMirror = "";
     let rawPath = currentUrl;
     
     for (const mirror of MIRROR_LIST) {
         if (currentUrl.startsWith(mirror)) {
             currentInMirror = mirror;
-            // 剥离镜像前缀及可能跟随的斜杠，还原原始 URL
-            rawPath = currentUrl.replace(new RegExp('^' + mirror + '/?'), '');
+            // 剥离镜像前缀及多余斜杠，精准匹配带 https:// 的代理全路径
+            rawPath = currentUrl.substring(mirror.length).replace(/^\/+/, '');
             break;
         }
     }
@@ -66,7 +66,9 @@
 
     // 渲染齿轮按钮
     const renderGearButton = () => {
+        if (document.getElementById("gh-mirror-gear")) return;
         const gear = document.createElement("div");
+        gear.id = "gh-mirror-gear";
         gear.textContent = "⚙️";
         gear.style.position = "fixed";
         gear.style.bottom = "10px";
@@ -84,10 +86,10 @@
             showFloatingTip(currentInMirror || fastestMirror, latencyMap, rawPath);
         };
 
-        document.body.appendChild(gear);
+        (document.body || document.documentElement).appendChild(gear);
     };
 
-    // DOM 加载完成后渲染 UI
+    // DOM 安全挂载 UI
     const initUI = () => {
         if (GM_getValue("float_hidden", false)) {
             renderGearButton();
@@ -96,10 +98,10 @@
         }
     };
 
-    if (document.body) {
-        initUI();
-    } else {
+    if (document.readyState === 'loading') {
         window.addEventListener('DOMContentLoaded', initUI);
+    } else {
+        initUI();
     }
 
     // 重定向控制逻辑：只有当不在镜像站、且找到了最快镜像时，才触发自动重定向
@@ -107,7 +109,7 @@
         window.location.replace(fastestMirror + '/' + rawPath);
     }
 
-    // 并发测速函数（即使用户请求失败，也会记录失败状态）
+    // 并发测速函数
     function getFastestMirror(mirrors, testUrl) {
         return new Promise((resolve) => {
             let completed = 0;
@@ -156,6 +158,7 @@
 
     // 浮窗渲染函数
     function showFloatingTip(activeMirror, map, targetPath) {
+        if (document.getElementById("gh-mirror-float")) return;
         const safeMap = map || {};
 
         const githubTheme = document.documentElement.dataset.colorMode;
@@ -165,6 +168,7 @@
         const floatTheme = isGithubDark ? "light" : "dark";
 
         const div = document.createElement('div');
+        div.id = "gh-mirror-float";
         div.style.position = 'fixed';
         div.style.bottom = '10px';
         div.style.right = '10px';
@@ -232,7 +236,7 @@
 
             const activeMap = currentLatencyData || {};
 
-            // 1. 优先追加“官方原始地址”选项
+            // 1. 官方原始地址选项
             const isOfficial = !activeMirror;
             const officialItem = document.createElement('div');
             officialItem.innerHTML = `<span style="color:${floatTheme === 'light' ? '#333' : '#ccc'}">🌐 官方原始地址</span>${isOfficial ? " ✔" : ""}`;
@@ -245,26 +249,26 @@
 
             officialItem.onclick = (e) => {
                 e.stopPropagation();
-                GM_setValue('fastest_mirror', ''); // 清空选中的镜像
-                window.location.replace(targetPath); // 回跳原始地址
+                GM_setValue('fastest_mirror', '');
+                window.location.replace(targetPath);
             };
             detailDiv.appendChild(officialItem);
 
-            // 2. 渲染全量镜像列表（即使全部测速失败也列出）
+            // 2. 镜像列表渲染
             MIRROR_LIST.forEach(m => {
                 const l = activeMap[m];
                 const isCurrent = (m === activeMirror);
 
-                let color = "#4ade80"; // 默认绿
+                let color = "#4ade80";
                 let statusText = "";
 
                 if (typeof l === 'number' || (!isNaN(l) && l !== "")) {
                     const numL = Number(l);
-                    if (numL > 150 && numL <= 400) color = "#facc15"; // 黄
-                    if (numL > 400) color = "#f87171"; // 红
+                    if (numL > 150 && numL <= 400) color = "#facc15";
+                    if (numL > 400) color = "#f87171";
                     statusText = ` (${numL}ms)`;
                 } else if (l) {
-                    color = "#9ca3af"; // 灰（失败/超时）
+                    color = "#9ca3af";
                     statusText = ` (${l})`;
                 } else {
                     color = "#9ca3af";
@@ -352,6 +356,6 @@
         div.appendChild(toggleBtn);
         div.appendChild(closeBtn);
         div.appendChild(detailDiv);
-        document.body.appendChild(div);
+        (document.body || document.documentElement).appendChild(div);
     }
 })();
