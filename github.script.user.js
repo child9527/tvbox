@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.4 兼容增强版）
+// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.5 链接精准拼接版）
 // @namespace    http://tampermonkey.net/
-// @version      0.9.4
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美兼容 web.ksx.qzz.io 全路径）
+// @version      0.9.5
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美支持 raw.githubusercontent.com 直跳）
 // @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
@@ -29,17 +29,24 @@
 
     const currentUrl = window.location.href;
 
-    // 提取当前镜像信息和原始 URL
+    // 检查当前是否已经在某个镜像站中
     let currentInMirror = "";
     let rawPath = currentUrl;
     
     for (const mirror of MIRROR_LIST) {
         if (currentUrl.startsWith(mirror)) {
             currentInMirror = mirror;
-            // 剥离镜像前缀及多余斜杠，精准匹配带 https:// 的代理全路径
+            // 剥离镜像前缀及多余斜杠，精准还原原始请求 URL
             rawPath = currentUrl.substring(mirror.length).replace(/^\/+/, '');
             break;
         }
+    }
+
+    // 辅助工具：安全拼接镜像前缀与目标 URL
+    function buildMirrorUrl(mirror, target) {
+        if (!mirror) return target;
+        const cleanTarget = target.replace(/^\/+/, '');
+        return `${mirror.replace(/\/+$/, '')}/${cleanTarget}`;
     }
 
     let fastestMirror = GM_getValue('fastest_mirror', '') || '';
@@ -61,6 +68,15 @@
             console.warn("[镜像助手] 所有镜像测速失败，保持当前地址");
             fastestMirror = '';
             latencyMap = result ? (result.latencyMap || {}) : {};
+        }
+    }
+
+    // 重定向控制逻辑：只要不在镜像站中，且有有效最快镜像，优先触发跳转
+    if (!currentInMirror && fastestMirror) {
+        const targetTarget = buildMirrorUrl(fastestMirror, rawPath);
+        if (targetTarget !== currentUrl) {
+            window.location.replace(targetTarget);
+            return; // 立即阻断后续执行
         }
     }
 
@@ -104,11 +120,6 @@
         initUI();
     }
 
-    // 重定向控制逻辑：只有当不在镜像站、且找到了最快镜像时，才触发自动重定向
-    if (!currentInMirror && fastestMirror) {
-        window.location.replace(fastestMirror + '/' + rawPath);
-    }
-
     // 并发测速函数
     function getFastestMirror(mirrors, testUrl) {
         return new Promise((resolve) => {
@@ -119,9 +130,10 @@
 
             mirrors.forEach(mirror => {
                 const startTime = performance.now();
+                const testTarget = buildMirrorUrl(mirror, testUrl);
                 GM_xmlhttpRequest({
                     method: "HEAD",
-                    url: `${mirror}/${testUrl}`,
+                    url: testTarget,
                     timeout: 3000,
                     onload: function(response) {
                         const duration = performance.now() - startTime;
@@ -161,7 +173,7 @@
         if (document.getElementById("gh-mirror-float")) return;
         const safeMap = map || {};
 
-        const githubTheme = document.documentElement.dataset.colorMode;
+        const githubTheme = document.documentElement ? document.documentElement.dataset.colorMode : "light";
         const isGithubDark = githubTheme === "dark" ||
             (githubTheme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
@@ -287,7 +299,7 @@
                     e.stopPropagation();
                     GM_setValue('fastest_mirror', m);
                     GM_setValue('last_test_time', Date.now());
-                    window.location.replace(m + '/' + targetPath);
+                    window.location.replace(buildMirrorUrl(m, targetPath));
                 };
 
                 detailDiv.appendChild(p);
