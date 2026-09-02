@@ -168,28 +168,38 @@ jobs:
 
           def process_url(url, base_url):
               if not isinstance(url, str):
-                  return url
+              return url
 
+              # 1. 相对路径补全处理
               if "./" in url:
-                  extra_param = ""
-                  clean_url = url
-                  if ";" in url:
-                      parts = url.split(";", 1)
-                      clean_url = parts[0]
-                      extra_param = ";" + parts[1]
+              extra_param = ""
+              clean_url = url
+              if ";" in url:
+                  parts = url.split(";", 1)
+                  clean_url = parts[0]
+                  extra_param = ";" + parts[1]
 
-                  if clean_url.startswith("./"):
-                      clean_url = base_url + clean_url[2:]
-                  elif "./" in clean_url:
-                      clean_url = re.sub(r'\./', base_url, clean_url)
+              if clean_url.startswith("./"):
+                  clean_url = base_url + clean_url[2:]
+              elif "./" in clean_url:
+                  clean_url = re.sub(r'\./', base_url, clean_url)
 
-                  url = clean_url + extra_param
+              url = clean_url + extra_param
 
+              # 2. GitHub 资源智能镜像替换处理
               is_gh, raw_url, extra_param = extract_raw_github_url(url)
               if is_gh:
+                  # 检查原链接是否已经是套用了镜像的形式（即 url 与剥离后的 raw_url 不一致）
+                  clean_url_no_param = url.split(";")[0]
+                  has_original_mirror = (clean_url_no_param != raw_url)
+
+             if has_original_mirror:
+                  # 如果原作者加了某种镜像，测试该镜像是否仍然有效
                   if is_url_accessible(url):
-                      return url  # 依然有效，保留原作者设置
-                  
+                  return url  # 原作者镜像有效，保留原样
+
+                  # 如果原作者使用的是纯 GitHub 直连链接（没有镜像），或者原作者的镜像已经失效：
+                  # 统一强制替换为我们并发测速选出的最快保底镜像
                   return f"{accent_prefix}{raw_url}{extra_param}"
 
               return url
