@@ -28,11 +28,13 @@
     'use strict';
 
     const MIRROR_LIST = [
-        "https://gh-proxy.com",
-        "https://gh-proxy.org",
-        "https://ghproxy.net",
+        "https://github.moeyy.xyz/",
         "https://web.ksx.qzz.io",
-        "https://wget.la"
+        "https://wget.la",
+        "https://gh-proxy.com",
+        "https://gh-proxy.org/",
+        "https://ghproxy.net/",
+        "https://mirror.ghproxy.com/"
     ];
 
     const currentUrl = window.location.href;
