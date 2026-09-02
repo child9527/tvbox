@@ -1,14 +1,15 @@
 // ==UserScript==
-// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.2 浮窗持久化版）
+// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.3 功能增强版）
 // @namespace    http://tampermonkey.net/
-// @version      0.9.2
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（解决跳转后浮窗消失问题）
+// @version      0.9.3
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（支持展示失败镜像 + 恢复官方原始地址）
 // @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
 // @match        https://gh-proxy.org/*
 // @match        https://ghproxy.net/*
+// @match        https://web.ksx.qzz.io/*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -22,19 +23,21 @@
 
     const MIRROR_LIST = [
         "https://gh-proxy.org",
-        "https://ghproxy.net"
+        "https://ghproxy.net",
+        "https://web.ksx.qzz.io"
     ];
 
     const currentUrl = window.location.href;
 
-    // 检查当前是否已经在某个镜像站中
+    // 检查当前是否已经在某个镜像站中，提取原始相对路径 rawPath
     let currentInMirror = "";
     let rawPath = currentUrl;
+    
     for (const mirror of MIRROR_LIST) {
         if (currentUrl.startsWith(mirror)) {
             currentInMirror = mirror;
-            // 还原出原始路径 (去掉镜像前缀和分隔符斜杠)
-            rawPath = currentUrl.replace(mirror + '/', '');
+            // 剥离镜像前缀及可能跟随的斜杠，还原原始 URL
+            rawPath = currentUrl.replace(new RegExp('^' + mirror + '/?'), '');
             break;
         }
     }
@@ -55,8 +58,9 @@
             GM_setValue('last_latency_map', latencyMap);
             GM_setValue('last_test_time', now);
         } else {
-            console.warn("[镜像助手] 所有镜像测速失败，停留在原始地址");
-            fastestMirror = ''; 
+            console.warn("[镜像助手] 所有镜像测速失败，保持当前地址");
+            fastestMirror = '';
+            latencyMap = result ? (result.latencyMap || {}) : {};
         }
     }
 
@@ -103,7 +107,7 @@
         window.location.replace(fastestMirror + '/' + rawPath);
     }
 
-    // 并发测速函数
+    // 并发测速函数（即使用户请求失败，也会记录失败状态）
     function getFastestMirror(mirrors, testUrl) {
         return new Promise((resolve) => {
             let completed = 0;
@@ -125,18 +129,26 @@
                                 minTime = duration;
                                 bestMirror = mirror;
                             }
+                        } else {
+                            tempLatencyMap[mirror] = "失败";
                         }
                         checkFinish();
                     },
-                    onerror: checkFinish,
-                    ontimeout: checkFinish
+                    onerror: function() {
+                        tempLatencyMap[mirror] = "失败";
+                        checkFinish();
+                    },
+                    ontimeout: function() {
+                        tempLatencyMap[mirror] = "超时";
+                        checkFinish();
+                    }
                 });
             });
 
             function checkFinish() {
                 completed++;
                 if (completed === mirrors.length) {
-                    resolve(bestMirror ? { mirror: bestMirror, latencyMap: tempLatencyMap } : null);
+                    resolve({ mirror: bestMirror, latencyMap: tempLatencyMap });
                 }
             }
         });
@@ -175,7 +187,7 @@
         div.style.transform = `translate(${savedX}px, ${savedY}px)`;
 
         const title = document.createElement('span');
-        title.textContent = activeMirror ? `当前镜像: ${activeMirror}` : "当前镜像: 官方原始地址(未重定向)";
+        title.textContent = activeMirror ? `当前镜像: ${activeMirror}` : "当前: 官方原始地址";
 
         const toggleBtn = document.createElement('span');
         toggleBtn.textContent = ' ▼';
@@ -201,17 +213,17 @@
             e.stopPropagation();
             refreshBtn.textContent = '测速中...';
             const result = await getFastestMirror(MIRROR_LIST, targetPath);
-            if (result && result.mirror) {
-                GM_setValue('fastest_mirror', result.mirror);
+            if (result) {
+                if (result.mirror) {
+                    GM_setValue('fastest_mirror', result.mirror);
+                    fastestMirror = result.mirror;
+                }
                 GM_setValue('last_latency_map', result.latencyMap);
                 GM_setValue('last_test_time', Date.now());
                 latencyMap = result.latencyMap || {};
-                fastestMirror = result.mirror;
                 renderMirrorList(latencyMap);
-            } else {
-                refreshBtn.textContent = '测速全部失败';
-                setTimeout(() => { refreshBtn.textContent = '重新测速'; }, 2000);
             }
+            refreshBtn.textContent = '重新测速';
         };
 
         const renderMirrorList = (currentLatencyData) => {
@@ -219,25 +231,48 @@
             detailDiv.appendChild(refreshBtn);
 
             const activeMap = currentLatencyData || {};
-            const sorted = Object.entries(activeMap).sort((a, b) => a[1] - b[1]);
 
-            if (sorted.length === 0) {
-                const emptyTip = document.createElement('div');
-                emptyTip.textContent = '暂无有效延迟数据';
-                emptyTip.style.opacity = '0.6';
-                detailDiv.appendChild(emptyTip);
-                return;
-            }
+            // 1. 优先追加“官方原始地址”选项
+            const isOfficial = !activeMirror;
+            const officialItem = document.createElement('div');
+            officialItem.innerHTML = `<span style="color:${floatTheme === 'light' ? '#333' : '#ccc'}">🌐 官方原始地址</span>${isOfficial ? " ✔" : ""}`;
+            officialItem.style.cursor = 'pointer';
+            officialItem.style.padding = '2px 0';
+            officialItem.style.fontWeight = isOfficial ? 'bold' : 'normal';
 
-            sorted.forEach(([m, l]) => {
+            officialItem.onmouseover = () => officialItem.style.opacity = '0.7';
+            officialItem.onmouseout = () => officialItem.style.opacity = '1';
+
+            officialItem.onclick = (e) => {
+                e.stopPropagation();
+                GM_setValue('fastest_mirror', ''); // 清空选中的镜像
+                window.location.replace(targetPath); // 回跳原始地址
+            };
+            detailDiv.appendChild(officialItem);
+
+            // 2. 渲染全量镜像列表（即使全部测速失败也列出）
+            MIRROR_LIST.forEach(m => {
+                const l = activeMap[m];
                 const isCurrent = (m === activeMirror);
 
-                let color = "#4ade80"; // green
-                if (l > 150 && l <= 400) color = "#facc15"; // yellow
-                if (l > 400) color = "#f87171"; // red
+                let color = "#4ade80"; // 默认绿
+                let statusText = "";
+
+                if (typeof l === 'number' || (!isNaN(l) && l !== "")) {
+                    const numL = Number(l);
+                    if (numL > 150 && numL <= 400) color = "#facc15"; // 黄
+                    if (numL > 400) color = "#f87171"; // 红
+                    statusText = ` (${numL}ms)`;
+                } else if (l) {
+                    color = "#9ca3af"; // 灰（失败/超时）
+                    statusText = ` (${l})`;
+                } else {
+                    color = "#9ca3af";
+                    statusText = ` (未测速)`;
+                }
 
                 const p = document.createElement('div');
-                p.innerHTML = `<span style="color:${color}">${m} (${l}ms)</span>${isCurrent ? " ✔" : ""}`;
+                p.innerHTML = `<span style="color:${color}">${m}${statusText}</span>${isCurrent ? " ✔" : ""}`;
                 p.style.cursor = 'pointer';
                 p.style.padding = '2px 0';
 
