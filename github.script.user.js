@@ -1,18 +1,20 @@
 // ==UserScript==
-// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.1 稳健修复版）
+// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.2 浮窗持久化版）
 // @namespace    http://tampermonkey.net/
-// @version      0.9.1
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（优雅兜底 + 稳健数据类型）
+// @version      0.9.2
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（解决跳转后浮窗消失问题）
 // @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
+// @match        https://gh-proxy.org/*
+// @match        https://ghproxy.net/*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://web.ksx.qzz.io/https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
-// @downloadURL  https://web.ksx.qzz.io/https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
+// @updateURL    https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
+// @downloadURL  https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
 // ==/UserScript==
 
 (async function() {
@@ -20,19 +22,24 @@
 
     const MIRROR_LIST = [
         "https://gh-proxy.org",
-        "https://web.ksx.qzz.io",
         "https://ghproxy.net"
     ];
 
     const currentUrl = window.location.href;
 
-    // 如果当前已经在镜像站里，直接放行
+    // 检查当前是否已经在某个镜像站中
+    let currentInMirror = "";
+    let rawPath = currentUrl;
     for (const mirror of MIRROR_LIST) {
-        if (currentUrl.startsWith(mirror)) return;
+        if (currentUrl.startsWith(mirror)) {
+            currentInMirror = mirror;
+            // 还原出原始路径 (去掉镜像前缀和分隔符斜杠)
+            rawPath = currentUrl.replace(mirror + '/', '');
+            break;
+        }
     }
 
     let fastestMirror = GM_getValue('fastest_mirror', '') || '';
-    // 防御性初始化，确保始终是对象
     let latencyMap = GM_getValue('last_latency_map', null) || {}; 
     const lastTestTime = GM_getValue('last_test_time', 0) || 0;
     const now = Date.now();
@@ -40,7 +47,7 @@
 
     // 缓存过期或缺失 → 重新测速
     if (!fastestMirror || (now - lastTestTime > CACHE_EXPIRE)) {
-        const result = await getFastestMirror(MIRROR_LIST, currentUrl);
+        const result = await getFastestMirror(MIRROR_LIST, rawPath);
         if (result && result.mirror) {
             fastestMirror = result.mirror;
             latencyMap = result.latencyMap || {};
@@ -48,8 +55,7 @@
             GM_setValue('last_latency_map', latencyMap);
             GM_setValue('last_test_time', now);
         } else {
-            console.warn("[镜像助手] 所有镜像测速失败，停留在原始地址，不进行重定向");
-            // 测速全败时不执行后续重定向跳转
+            console.warn("[镜像助手] 所有镜像测速失败，停留在原始地址");
             fastestMirror = ''; 
         }
     }
@@ -71,18 +77,18 @@
         gear.onclick = () => {
             GM_setValue("float_hidden", false);
             gear.remove();
-            showFloatingTip(fastestMirror, latencyMap, currentUrl);
+            showFloatingTip(currentInMirror || fastestMirror, latencyMap, rawPath);
         };
 
         document.body.appendChild(gear);
     };
 
-    // DOM 加载完成后根据状态渲染 UI
+    // DOM 加载完成后渲染 UI
     const initUI = () => {
         if (GM_getValue("float_hidden", false)) {
             renderGearButton();
         } else {
-            showFloatingTip(fastestMirror, latencyMap, currentUrl);
+            showFloatingTip(currentInMirror || fastestMirror, latencyMap, rawPath);
         }
     };
 
@@ -92,9 +98,9 @@
         window.addEventListener('DOMContentLoaded', initUI);
     }
 
-    // 核心兜底逻辑：只有找到有效最快镜像时才执行 Replace 重定向
-    if (fastestMirror) {
-        window.location.replace(fastestMirror + '/' + currentUrl);
+    // 重定向控制逻辑：只有当不在镜像站、且找到了最快镜像时，才触发自动重定向
+    if (!currentInMirror && fastestMirror) {
+        window.location.replace(fastestMirror + '/' + rawPath);
     }
 
     // 并发测速函数
@@ -137,8 +143,7 @@
     }
 
     // 浮窗渲染函数
-    function showFloatingTip(currentMirror, map, targetPath) {
-        // 安全类型保证
+    function showFloatingTip(activeMirror, map, targetPath) {
         const safeMap = map || {};
 
         const githubTheme = document.documentElement.dataset.colorMode;
@@ -169,9 +174,8 @@
         const savedY = GM_getValue("float_pos_y", 0) || 0;
         div.style.transform = `translate(${savedX}px, ${savedY}px)`;
 
-        // 标题显示
         const title = document.createElement('span');
-        title.textContent = currentMirror ? `当前镜像: ${currentMirror}` : "当前镜像: 官方原始地址(测速失败)";
+        title.textContent = activeMirror ? `当前镜像: ${activeMirror}` : "当前镜像: 官方原始地址(未重定向)";
 
         const toggleBtn = document.createElement('span');
         toggleBtn.textContent = ' ▼';
@@ -203,7 +207,6 @@
                 GM_setValue('last_test_time', Date.now());
                 latencyMap = result.latencyMap || {};
                 fastestMirror = result.mirror;
-                title.textContent = `当前镜像: ${fastestMirror}`;
                 renderMirrorList(latencyMap);
             } else {
                 refreshBtn.textContent = '测速全部失败';
@@ -227,7 +230,7 @@
             }
 
             sorted.forEach(([m, l]) => {
-                const isCurrent = (m === currentMirror);
+                const isCurrent = (m === activeMirror);
 
                 let color = "#4ade80"; // green
                 if (l > 150 && l <= 400) color = "#facc15"; // yellow
