@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         GitHub & Raw 镜像自动测速与重定向（v0.9.5 链接精准拼接版）
-// @namespace    http://tampermonkey.net/
-// @version      0.9.5
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美支持 raw.githubusercontent.com 直跳）
+// @name         GitHub & Raw 镜像自动测速与重定向
+// @namespace    https://gitee.com/child9527
+// @version      0.9.6
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美支持切回官方与Raw直跳）
 // @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
@@ -44,7 +44,7 @@
 
     // 辅助工具：安全拼接镜像前缀与目标 URL
     function buildMirrorUrl(mirror, target) {
-        if (!mirror) return target;
+        if (!mirror || mirror === 'OFFICIAL') return target;
         const cleanTarget = target.replace(/^\/+/, '');
         return `${mirror.replace(/\/+$/, '')}/${cleanTarget}`;
     }
@@ -55,8 +55,8 @@
     const now = Date.now();
     const CACHE_EXPIRE = 6 * 60 * 60 * 1000;
 
-    // 缓存过期或缺失 → 重新测速
-    if (!fastestMirror || (now - lastTestTime > CACHE_EXPIRE)) {
+    // 只有在未显式指定为 OFFICIAL，且缓存过期或未曾设置时，才自动测速
+    if (fastestMirror !== 'OFFICIAL' && (!fastestMirror || (now - lastTestTime > CACHE_EXPIRE))) {
         const result = await getFastestMirror(MIRROR_LIST, rawPath);
         if (result && result.mirror) {
             fastestMirror = result.mirror;
@@ -66,17 +66,17 @@
             GM_setValue('last_test_time', now);
         } else {
             console.warn("[镜像助手] 所有镜像测速失败，保持当前地址");
-            fastestMirror = '';
+            fastestMirror = 'OFFICIAL';
             latencyMap = result ? (result.latencyMap || {}) : {};
         }
     }
 
-    // 重定向控制逻辑：只要不在镜像站中，且有有效最快镜像，优先触发跳转
-    if (!currentInMirror && fastestMirror) {
+    // 重定向控制逻辑：只有当不在镜像站、且用户选定了有效镜像（非 OFFICIAL）时触发自动重定向
+    if (!currentInMirror && fastestMirror && fastestMirror !== 'OFFICIAL') {
         const targetTarget = buildMirrorUrl(fastestMirror, rawPath);
         if (targetTarget !== currentUrl) {
             window.location.replace(targetTarget);
-            return; // 立即阻断后续执行
+            return; // 阻断后续执行
         }
     }
 
@@ -202,8 +202,10 @@
         const savedY = GM_getValue("float_pos_y", 0) || 0;
         div.style.transform = `translate(${savedX}px, ${savedY}px)`;
 
+        const isCurrentlyOfficial = !activeMirror || activeMirror === 'OFFICIAL';
+
         const title = document.createElement('span');
-        title.textContent = activeMirror ? `当前镜像: ${activeMirror}` : "当前: 官方原始地址";
+        title.textContent = isCurrentlyOfficial ? "当前: 官方原始地址" : `当前镜像: ${activeMirror}`;
 
         const toggleBtn = document.createElement('span');
         toggleBtn.textContent = ' ▼';
@@ -249,19 +251,18 @@
             const activeMap = currentLatencyData || {};
 
             // 1. 官方原始地址选项
-            const isOfficial = !activeMirror;
             const officialItem = document.createElement('div');
-            officialItem.innerHTML = `<span style="color:${floatTheme === 'light' ? '#333' : '#ccc'}">🌐 官方原始地址</span>${isOfficial ? " ✔" : ""}`;
+            officialItem.innerHTML = `<span style="color:${floatTheme === 'light' ? '#333' : '#ccc'}">🌐 官方原始地址</span>${isCurrentlyOfficial ? " ✔" : ""}`;
             officialItem.style.cursor = 'pointer';
             officialItem.style.padding = '2px 0';
-            officialItem.style.fontWeight = isOfficial ? 'bold' : 'normal';
+            officialItem.style.fontWeight = isCurrentlyOfficial ? 'bold' : 'normal';
 
             officialItem.onmouseover = () => officialItem.style.opacity = '0.7';
             officialItem.onmouseout = () => officialItem.style.opacity = '1';
 
             officialItem.onclick = (e) => {
                 e.stopPropagation();
-                GM_setValue('fastest_mirror', '');
+                GM_setValue('fastest_mirror', 'OFFICIAL');
                 window.location.replace(targetPath);
             };
             detailDiv.appendChild(officialItem);
