@@ -28,9 +28,11 @@
     'use strict';
 
     const MIRROR_LIST = [
+        "https://gh-proxy.com",
         "https://gh-proxy.org",
         "https://ghproxy.net",
-        "https://web.ksx.qzz.io"
+        "https://web.ksx.qzz.io",
+        "https://wget.la"
     ];
 
     const currentUrl = window.location.href;
