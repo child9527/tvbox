@@ -1,21 +1,27 @@
 // ==UserScript==
 // @name         GitHub & Raw 镜像自动测速与重定向
 // @namespace    https://gitee.com/child9527
-// @version      0.9.6
-// @description  自动测速 + 手动切换镜像 + 浮窗增强（完美支持切回官方与Raw直跳）
-// @author       You
+// @version      0.9.9
+// @description  自动测速 + 手动切换镜像 + 浮窗增强
+// @author       child9527
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
 // @match        https://gh-proxy.org/*
 // @match        https://ghproxy.net/*
 // @match        https://web.ksx.qzz.io/*
+// @connect      github.com
+// @connect      raw.githubusercontent.com
+// @connect      gh-proxy.org
+// @connect      ghproxy.net
+// @connect      web.ksx.qzz.io
+// @connect      *
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://raw.githubusercontent.com/child9527/tvbox/refs/heads/main/github.script.user.js
-// @downloadURL  https://raw.githubusercontent.com/child9527/tvbox/refs/heads/main/github.script.user.js
+// @updateURL    https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
+// @downloadURL  https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
 // ==/UserScript==
 
 (async function() {
@@ -310,12 +316,28 @@
         renderMirrorList(safeMap);
 
         let expanded = false;
+
+        const closeDropdown = () => {
+            expanded = false;
+            detailDiv.style.display = 'none';
+            toggleBtn.textContent = ' ▼';
+        };
+
         toggleBtn.onclick = (e) => {
             e.stopPropagation();
             expanded = !expanded;
             detailDiv.style.display = expanded ? 'block' : 'none';
             toggleBtn.textContent = expanded ? ' ▲' : ' ▼';
         };
+
+        // 点击页面其他任何区域时自动收起列表
+        const onDocumentClick = (e) => {
+            if (expanded && !div.contains(e.target)) {
+                closeDropdown();
+            }
+        };
+
+        document.addEventListener('click', onDocumentClick);
 
         let isDragging = false;
         let startX = 0, startY = 0;
@@ -361,6 +383,7 @@
             GM_setValue("float_hidden", true);
             document.removeEventListener("mousemove", onMouseMove);
             document.removeEventListener("mouseup", onMouseUp);
+            document.removeEventListener("click", onDocumentClick);
             div.remove();
             renderGearButton();
         };
