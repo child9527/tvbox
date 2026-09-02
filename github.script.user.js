@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         GitHub & Raw 镜像自动测速与重定向
 // @namespace    https://gitee.com/child9527
-// @version      0.9.9
-// @description  自动测速 + 手动切换镜像 + 浮窗增强
-// @author       child9527
+// @version      1.0.1
+// @description  自动测速 + 手动切换镜像 + 浮窗增强（多镜像支持，含失效镜像自动降级回退机制）
+// @author       You
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
@@ -34,6 +34,16 @@
 
 (async function() {
     'use strict';
+
+    // 注入基础悬停样式，替代 JS 中的 onmouseover/onmouseout 监听，规避警告
+    const style = document.createElement('style');
+    style.textContent = `
+        #gh-mirror-gear { opacity: 0.6; transition: opacity 0.2s; }
+        #gh-mirror-gear:hover { opacity: 1 !important; }
+        .gh-mirror-item { opacity: 1; transition: opacity 0.2s; }
+        .gh-mirror-item:hover { opacity: 0.7 !important; }
+    `;
+    (document.head || document.documentElement).appendChild(style);
 
     const MIRROR_LIST = [
         "https://github.moeyy.xyz",
@@ -67,13 +77,40 @@
         return `${mirror.replace(/\/+$/, '')}/${cleanTarget}`;
     }
 
+    // 预检单个镜像是否可用（快速探针）
+    function isMirrorAlive(mirror, testUrl) {
+        return new Promise((resolve) => {
+            const testTarget = buildMirrorUrl(mirror, testUrl);
+            GM_xmlhttpRequest({
+                method: "HEAD",
+                url: testTarget,
+                timeout: 2500, // 2.5s 探针，超时即判定失效
+                onload: function(response) {
+                    resolve(response.status < 400);
+                },
+                onerror: function() { resolve(false); },
+                ontimeout: function() { resolve(false); }
+            });
+        });
+    }
+
     let fastestMirror = GM_getValue('fastest_mirror', '') || '';
     let latencyMap = GM_getValue('last_latency_map', null) || {}; 
     const lastTestTime = GM_getValue('last_test_time', 0) || 0;
     const now = Date.now();
     const CACHE_EXPIRE = 6 * 60 * 60 * 1000;
 
-    // 只有在未显式指定为 OFFICIAL，且缓存过期或未曾设置时，才自动测速
+    // 1. 如果已保存的镜像不是 OFFICIAL，且不在镜像站内，先进行“死节点拦截”
+    if (!currentInMirror && fastestMirror && fastestMirror !== 'OFFICIAL') {
+        const alive = await isMirrorAlive(fastestMirror, rawPath);
+        if (!alive) {
+            console.warn(`[镜像助手] 记忆镜像 ${fastestMirror} 已失效/无法访问，自动重置并降级为官方地址！`);
+            GM_setValue('fastest_mirror', 'OFFICIAL');
+            fastestMirror = 'OFFICIAL';
+        }
+    }
+
+    // 2. 只有在未显式指定为 OFFICIAL，且缓存过期或未曾设置时，才自动测速
     if (fastestMirror !== 'OFFICIAL' && (!fastestMirror || (now - lastTestTime > CACHE_EXPIRE))) {
         const result = await getFastestMirror(MIRROR_LIST, rawPath);
         if (result && result.mirror) {
@@ -89,7 +126,7 @@
         }
     }
 
-    // 重定向控制逻辑：只有当不在镜像站、且用户选定了有效镜像（非 OFFICIAL）时触发自动重定向
+    // 3. 执行重定向控制逻辑
     if (!currentInMirror && fastestMirror && fastestMirror !== 'OFFICIAL') {
         const targetTarget = buildMirrorUrl(fastestMirror, rawPath);
         if (targetTarget !== currentUrl) {
@@ -110,9 +147,6 @@
         gear.style.fontSize = "18px";
         gear.style.cursor = "pointer";
         gear.style.zIndex = "999999";
-        gear.style.opacity = "0.6";
-        gear.onmouseover = () => gear.style.opacity = "1";
-        gear.onmouseout = () => gear.style.opacity = "0.6";
 
         gear.onclick = () => {
             GM_setValue("float_hidden", false);
@@ -270,13 +304,11 @@
 
             // 1. 官方原始地址选项
             const officialItem = document.createElement('div');
+            officialItem.className = 'gh-mirror-item';
             officialItem.innerHTML = `<span style="color:${floatTheme === 'light' ? '#333' : '#ccc'}">🌐 官方原始地址</span>${isCurrentlyOfficial ? " ✔" : ""}`;
             officialItem.style.cursor = 'pointer';
             officialItem.style.padding = '2px 0';
             officialItem.style.fontWeight = isCurrentlyOfficial ? 'bold' : 'normal';
-
-            officialItem.onmouseover = () => officialItem.style.opacity = '0.7';
-            officialItem.onmouseout = () => officialItem.style.opacity = '1';
 
             officialItem.onclick = (e) => {
                 e.stopPropagation();
@@ -307,12 +339,10 @@
                 }
 
                 const p = document.createElement('div');
+                p.className = 'gh-mirror-item';
                 p.innerHTML = `<span style="color:${color}">${m}${statusText}</span>${isCurrent ? " ✔" : ""}`;
                 p.style.cursor = 'pointer';
                 p.style.padding = '2px 0';
-
-                p.onmouseover = () => p.style.opacity = '0.7';
-                p.onmouseout = () => p.style.opacity = '1';
 
                 p.onclick = (e) => {
                     e.stopPropagation();
