@@ -1,27 +1,27 @@
 {
   "urls": [
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/0821.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/0821.json",
       "name": "高天流云 No.1"
     },
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
       "name": "高天流云 PG"
     },
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
       "name": "高天流云 FTY"
     },
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
       "name": "高天流云 FM"
     },
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/js.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/js.json",
       "name": "高天流云 JS"
     },
     {
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/XYQ.json",
+      "url": "https://raw.githubusercontent.com/qist/tvbox/master/XYQ.json",
       "name": "高天流云 XYQ"
     }
   ]

@@ -828,8 +828,8 @@
       "key": "去看吧",
       "name": "🫣看吧┃动漫┃蓝光",
       "type": 3,
-      "api": "https://github.moeyy.xyz/https://raw.githubusercontent.com/PizazzGY/TVBox/main/JS/drpy.min.js",
-      "ext": "https://github.moeyy.xyz/https://raw.githubusercontent.com/PizazzGY/TVBox/main/JS/去看吧.js"
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/PizazzGY/TVBox/main/JS/drpy.min.js",
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/PizazzGY/TVBox/main/JS/去看吧.js"
     },
     {
       "key": "csp_Ysj",
@@ -869,8 +869,8 @@
       "key": "虎牙直播js",
       "name": "🐯虎牙┃娱乐┃蓝光",
       "type": 3,
-      "api": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.js",
-      "ext": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/huya2.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.js",
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/huya2.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -885,8 +885,8 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃娱乐┃蓝光",
       "type": 3,
-      "api": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/斗鱼直播.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/斗鱼直播.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -901,8 +901,8 @@
       "key": "有声小说js",
       "name": "📻️戏曲┃娱乐┃蓝光",
       "type": 3,
-      "api": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://gh-proxy.net/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/有声小说吧.js",
+      "api": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "ext": "https://gh-proxy.org/https://raw.githubusercontent.com/fantaiying7/EXT/main/有声小说吧.js",
       "style": {
         "type": "rect",
         "ratio": 1
