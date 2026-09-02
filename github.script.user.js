@@ -14,8 +14,8 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
-// @downloadURL  https://raw.githubusercontent.com/child9527/mybox/main/github.script.user.js
+// @updateURL    https://raw.githubusercontent.com/child9527/tvbox/refs/heads/main/github.script.user.js
+// @downloadURL  https://raw.githubusercontent.com/child9527/tvbox/refs/heads/main/github.script.user.js
 // ==/UserScript==
 
 (async function() {
