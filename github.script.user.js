@@ -7,11 +7,19 @@
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
+// @match        https://github.moeyy.xyz/*
+// @match        https://wget.la/*
+// @match        https://gh-proxy.com/*
+// @match        https://mirror.ghproxy.com/*
 // @match        https://gh-proxy.org/*
 // @match        https://ghproxy.net/*
 // @match        https://web.ksx.qzz.io/*
 // @connect      github.com
 // @connect      raw.githubusercontent.com
+// @connect      github.moeyy.xyz
+// @connect      wget.la
+// @connect      gh-proxy.com
+// @connect      mirror.ghproxy.com
 // @connect      gh-proxy.org
 // @connect      ghproxy.net
 // @connect      web.ksx.qzz.io
@@ -20,21 +28,21 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
-// @downloadURL  https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
+// @updateURL    https://wget.la/https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
+// @downloadURL  https://wget.la/https://raw.githubusercontent.com/child9527/tvbox/main/github.script.user.js
 // ==/UserScript==
 
 (async function() {
     'use strict';
 
     const MIRROR_LIST = [
-        "https://github.moeyy.xyz/",
+        "https://github.moeyy.xyz",
         "https://web.ksx.qzz.io",
         "https://wget.la",
         "https://gh-proxy.com",
-        "https://gh-proxy.org/",
-        "https://ghproxy.net/",
-        "https://mirror.ghproxy.com/"
+        "https://gh-proxy.org",
+        "https://ghproxy.net",
+        "https://mirror.ghproxy.com"
     ];
 
     const currentUrl = window.location.href;
