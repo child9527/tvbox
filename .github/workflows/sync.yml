@@ -103,7 +103,7 @@ jobs:
                   pass
               return mirror, None
 
-          # Step 1: 先测速，选出我们备选池里确定可用且最快的一个“保底镜像”
+          # Step 1: 先测速，选出备选池里确定可用且最快的一个保底镜像
           print("⚡ 正在对备选镜像进行并发响应测速...")
           results = {}
           with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
@@ -120,7 +120,6 @@ jobs:
           print(f"🚀 【镜像选择】全局最快 GitHub 加速镜像选用: {accent_prefix}")
           print("==================================================\n")
 
-          # Step 2: 剥离函数——无论原作者嵌套了什么前缀代理，精准提取出末尾的纯粹原始 GitHub 资源路径
           def extract_raw_github_url(url):
               """提取纯 GitHub 地址及额外附加参数"""
               if not isinstance(url, str) or not url.startswith(("http://", "https://")):
@@ -168,38 +167,36 @@ jobs:
 
           def process_url(url, base_url):
               if not isinstance(url, str):
-              return url
+                  return url
 
-              # 1. 相对路径补全处理
+              # 相对路径补全处理
               if "./" in url:
-              extra_param = ""
-              clean_url = url
-              if ";" in url:
-                  parts = url.split(";", 1)
-                  clean_url = parts[0]
-                  extra_param = ";" + parts[1]
+                  extra_param = ""
+                  clean_url = url
+                  if ";" in url:
+                      parts = url.split(";", 1)
+                      clean_url = parts[0]
+                      extra_param = ";" + parts[1]
 
-              if clean_url.startswith("./"):
-                  clean_url = base_url + clean_url[2:]
-              elif "./" in clean_url:
-                  clean_url = re.sub(r'\./', base_url, clean_url)
+                  if clean_url.startswith("./"):
+                      clean_url = base_url + clean_url[2:]
+                  elif "./" in clean_url:
+                      clean_url = re.sub(r'\./', base_url, clean_url)
 
-              url = clean_url + extra_param
+                  url = clean_url + extra_param
 
-              # 2. GitHub 资源智能镜像替换处理
+              # GitHub 资源智能镜像替换处理
               is_gh, raw_url, extra_param = extract_raw_github_url(url)
               if is_gh:
-                  # 检查原链接是否已经是套用了镜像的形式（即 url 与剥离后的 raw_url 不一致）
                   clean_url_no_param = url.split(";")[0]
                   has_original_mirror = (clean_url_no_param != raw_url)
 
-             if has_original_mirror:
-                  # 如果原作者加了某种镜像，测试该镜像是否仍然有效
-                  if is_url_accessible(url):
-                  return url  # 原作者镜像有效，保留原样
+                  if has_original_mirror:
+                      if is_url_accessible(url):
+                          return url  # 原作者自带的镜像依然有效，保留
 
-                  # 如果原作者使用的是纯 GitHub 直连链接（没有镜像），或者原作者的镜像已经失效：
-                  # 统一强制替换为我们并发测速选出的最快保底镜像
+                  # 若原作者使用的是纯 GitHub 直连（未加镜像），或原镜像失效：
+                  # 统一替换为当前最快镜像
                   return f"{accent_prefix}{raw_url}{extra_param}"
 
               return url
@@ -296,7 +293,7 @@ jobs:
                       json_obj = None
 
               if json_obj is not None:
-                  print(f"🛠️ [智能解包与重构] 遍历 JSON 中所有链接，自动识别并替换原作者已失效的代理镜像...")
+                  print(f"🛠️ [智能解包与重构] 遍历 JSON 中所有链接，自动识别并替换直连及失效代理镜像...")
                   processed_data = traverse_and_replace(json_obj, task_base_url)
 
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
@@ -386,7 +383,6 @@ jobs:
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
-              # 尝试加密，容错不退出
               python tvbox.py "$target" "$bin_file" enc || true
 
               if [ ! -f "$bin_file" ]; then
@@ -406,7 +402,6 @@ jobs:
           fi
           echo "--------------------------------------------------"
 
-          # 输出加密成功的 JSON 文件列表及标记给后续步骤使用
           if [ ${#processed_json[@]} -gt 0 ]; then
             echo "has_encrypted=true" >> $GITHUB_OUTPUT
             echo "encrypted_files=${processed_json[*]}" >> $GITHUB_OUTPUT
