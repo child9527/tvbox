@@ -85,14 +85,19 @@ jobs:
           }
           DEFAULT_WEIGHT = 0.30                 # 第四优先（所有其他保底镜像）
 
-          MIRRORS = [
+          MIRRORS = [              
               "https://web.ksx.qzz.io/",
               "https://gh-proxy.com/",
               "https://wget.la/",
-              "https://github.moeyy.xyz/",
               "https://gh-proxy.org/",
               "https://ghproxy.net/",
               "https://mirror.ghproxy.com/",
+              "https://gh.ddlc.top/",
+              "https://gh.api.99988866.xyz/",
+              "https://gh.cache.icu/",
+              "https://gh.con.sh/",
+              "https://gh.llkk.cc/",
+              "https://ghproxy.vip/",
           ]
 
           HEADERS = {
