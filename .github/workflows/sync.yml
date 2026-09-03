@@ -79,11 +79,11 @@ jobs:
 
           # ===== 镜像列表与个人优先级权重字典设置 =====
           MIRROR_WEIGHTS = {
-              "https://web.ksx.qzz.io/": 0.10,  # 第一优先
-              "https://gh-proxy.com/": 0.25,     # 第二优先
-              "https://wget.la/": 0.45,          # 第三优先
+              "https://web.ksx.qzz.io/": 0.10,   # 第一优先
+              "https://gh-proxy.com/": 0.15,     # 第二优先
+              "https://wget.la/": 0.20,          # 第三优先
           }
-          DEFAULT_WEIGHT = 1.00                 # 第四优先（所有其他保底镜像）
+          DEFAULT_WEIGHT = 0.30                 # 第四优先（所有其他保底镜像）
 
           MIRRORS = [
               "https://web.ksx.qzz.io/",
