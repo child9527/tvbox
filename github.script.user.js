@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         GitHub & Raw 镜像自动测速与重定向
 // @namespace    https://gitee.com/child9527
-// @version      1.0.1
+// @version      1.0.0
 // @description  自动测速 + 手动切换镜像 + 浮窗增强（多镜像支持，含失效镜像自动降级回退机制）
-// @author       You
+// @author       child9527
 // @match        https://github.com/*
 // @match        https://*.github.com/*
 // @match        https://raw.githubusercontent.com/*
