@@ -1,5 +1,5 @@
 {
-  "spider": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;c86f7dceed9cf4edc5d14189bd2ef123",
+  "spider": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;afb927772af9cb73b0b7639943542882",
   "lives": [
     {
       "name": "live",
@@ -1187,6 +1187,58 @@
       "name": "百度 • 网盘",
       "type": 3,
       "api": "csp_PanBaidu",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "迅雷云盘",
+      "name": "迅雷 • 云盘",
+      "type": 3,
+      "api": "csp_PanXunlei",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "光鸭网盘",
+      "name": "光鸭 • 网盘",
+      "type": 3,
+      "api": "csp_PanGuangya",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "天翼云盘",
+      "name": "天翼 • 云盘",
+      "type": 3,
+      "api": "csp_PanTianyi",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "123云盘",
+      "name": "123 • 云盘",
+      "type": 3,
+      "api": "csp_Pan123",
       "searchable": 0,
       "filterable": 0,
       "changeable": 0,

@@ -654,7 +654,7 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃直播",
       "type": 3,
-      "api": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/drpy2.min.js",
+      "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
       "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/斗鱼直播.js",
       "style": {
         "type": "rect",
@@ -772,7 +772,7 @@
       "name": "📚儿童┃启蒙",
       "type": 3,
       "api": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/drpy2.min.js",
-      "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/fantaiying7/EXT/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
+      "ext": "https://git.yylx.win/https://raw.githubusercontent.com/fantaiying7/EXT/refs/heads/main/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -1009,7 +1009,7 @@
     {
       "name": "🦸┃tangTV「直播」",
       "type": 0,
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/alantang1977/JunTV/main/output/result.m3u",
+      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/JunTV/refs/heads/main/output/result.m3u",
       "playerType": 1
     },
     {
