@@ -1,5 +1,5 @@
 {
-  "spider": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;afb927772af9cb73b0b7639943542882",
+  "spider": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;ac037e008306b2f338c759a8968cd067",
   "lives": [
     {
       "name": "migu",
@@ -1087,14 +1087,14 @@
       "key": "路漫漫",
       "name": "路漫漫 • 动漫",
       "type": 3,
-      "api": "https://pan.vma.cc/pan/down.php/ec67b9045d393737f073d2c9365533f0.js",
+      "api": "https://pan.29o.cn/down.php/136fd915b6164bb2dcec424a091bb699.js",
       "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/js/LMM.js"
     },
     {
       "key": "去看吧",
       "name": "去看吧 • 动漫",
       "type": 3,
-      "api": "https://pan.vma.cc/pan/down.php/ec67b9045d393737f073d2c9365533f0.js",
+      "api": "https://pan.29o.cn/down.php/136fd915b6164bb2dcec424a091bb699.js",
       "ext": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/js/QKB.js"
     },
     {
