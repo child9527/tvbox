@@ -1,5 +1,5 @@
 {
-  "spider": "https://img.51shazhu.com/autoupload/g1b6f/20260831/KWkR/0X0/08312007.png;md5;a413bae12a3db560d0f542480905c3bb",
+  "spider": "https://img.51shazhu.com/autoupload/g1b6f/20260903/zrpf/0X0/09032043.png;md5;ac037e008306b2f338c759a8968cd067",
   "wallpaper": "http://127.0.0.1:9978/proxy?do=wallpaper",
   "logo": "https://pic7.fukit.cn/autoupload/gE6Y0Af2tjXBCNig6CtNDI12_FRYNb81z6UPhMWD8iI/20251224/dJkT/1080X1080/logo.jpg/webp",
   "danmaku": "http://127.0.0.1:9978/proxy?do=danmaku&name={name}&episode={episode}",
@@ -833,7 +833,7 @@
       "name": "剧圈 • 影视",
       "type": 3,
       "api": "csp_XYQHiker",
-      "ext": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/movie/json/JQYS.json"
+      "ext": "https://pizazz.us.ci/movie/json/JQYS.json"
     },
     {
       "key": "1905",
@@ -958,15 +958,15 @@
       "key": "路漫漫",
       "name": "路漫漫 • 动漫",
       "type": 3,
-      "api": "https://pan.vma.cc/pan/down.php/ec67b9045d393737f073d2c9365533f0.js",
-      "ext": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/anime/js/LMM.js"
+      "api": "https://pan.29o.cn/down.php/136fd915b6164bb2dcec424a091bb699.js",
+      "ext": "https://pizazz.us.ci/anime/js/LMM.js"
     },
     {
       "key": "去看吧",
       "name": "去看吧 • 动漫",
       "type": 3,
-      "api": "https://pan.vma.cc/pan/down.php/ec67b9045d393737f073d2c9365533f0.js",
-      "ext": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/anime/js/QKB.js"
+      "api": "https://pan.29o.cn/down.php/136fd915b6164bb2dcec424a091bb699.js",
+      "ext": "https://pizazz.us.ci/anime/js/QKB.js"
     },
     {
       "key": "荐片",
@@ -1021,7 +1021,7 @@
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
-      "ext": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/magnet/json/DYG.json"
+      "ext": "https://pizazz.us.ci/magnet/json/DYG.json"
     },
     {
       "key": "阿里云盘",
@@ -1067,6 +1067,58 @@
       "name": "百度 • 网盘",
       "type": 3,
       "api": "csp_PanBaidu",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "迅雷云盘",
+      "name": "迅雷 • 云盘",
+      "type": 3,
+      "api": "csp_PanXunlei",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "光鸭网盘",
+      "name": "光鸭 • 网盘",
+      "type": 3,
+      "api": "csp_PanGuangya",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "天翼云盘",
+      "name": "天翼 • 云盘",
+      "type": 3,
+      "api": "csp_PanTianyi",
+      "searchable": 0,
+      "filterable": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list",
+        "ratio": 1.433
+      }
+    },
+    {
+      "key": "123云盘",
+      "name": "123 • 云盘",
+      "type": 3,
+      "api": "csp_Pan123",
       "searchable": 0,
       "filterable": 0,
       "changeable": 0,
@@ -1330,7 +1382,7 @@
       "searchable": 0,
       "quickSearch": 0,
       "changeable": 0,
-      "api": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/other/py/爱听音乐.py"
+      "api": "https://pizazz.us.ci/other/py/爱听音乐.py"
     },
     {
       "key": "网络直播",
@@ -1439,7 +1491,7 @@
       "quickSearch": 0,
       "changeable": 0,
       "ext": {
-        "json": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/education/json/SEJY.json",
+        "json": "https://pizazz.us.ci/education/json/SEJY.json",
         "cookie": "http://127.0.0.1:9978/file/TVBox/bili_cookie.txt"
       },
       "style": {
@@ -1456,7 +1508,7 @@
       "quickSearch": 0,
       "changeable": 0,
       "ext": {
-        "json": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/education/json/XXKT.json",
+        "json": "https://pizazz.us.ci/education/json/XXKT.json",
         "cookie": "http://127.0.0.1:9978/file/TVBox/bili_cookie.txt"
       },
       "style": {
@@ -1473,7 +1525,7 @@
       "quickSearch": 0,
       "changeable": 0,
       "ext": {
-        "json": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/education/json/CZKT.json",
+        "json": "https://pizazz.us.ci/education/json/CZKT.json",
         "cookie": "http://127.0.0.1:9978/file/TVBox/bili_cookie.txt"
       },
       "style": {
@@ -1490,7 +1542,7 @@
       "quickSearch": 0,
       "changeable": 0,
       "ext": {
-        "json": "https://wget.la/https://raw.githubusercontent.com/PizazzGY/NewTVBox/main/education/json/GZKT.json",
+        "json": "https://pizazz.us.ci/education/json/GZKT.json",
         "cookie": "http://127.0.0.1:9978/file/TVBox/bili_cookie.txt"
       },
       "style": {
