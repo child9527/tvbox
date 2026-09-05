@@ -1,27 +1,27 @@
 {
   "urls": [
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/0821.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/0821.json",
       "name": "高天流云 No.1"
     },
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
       "name": "高天流云 PG"
     },
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
       "name": "高天流云 FTY"
     },
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
       "name": "高天流云 FM"
     },
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/js.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/js.json",
       "name": "高天流云 JS"
     },
     {
-      "url": "https://web.ksx.qzz.io/https://raw.githubusercontent.com/qist/tvbox/master/XYQ.json",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/XYQ.json",
       "name": "高天流云 XYQ"
     }
   ]
