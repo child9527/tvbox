@@ -7,6 +7,7 @@ on:
 
 jobs:
   decrypt_and_commit:
+    name: one加密、mtv6下载及推送
     runs-on: ubuntu-latest
     permissions:
       contents: write
