@@ -1,10 +1,10 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/fan.txt;md5;9bf5c1f491cc633ff14e1fee5c91daa9",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/fan.txt;md5;dab654f794a271c3d7a33d18acfbfa95",
   "wallpaper": "https://饭的动态壁纸.xxooo.cf/",
   "sites": [
     {
       "key": "点我切源",
-      "name": "<9.07更新> 修复海绵 奥特",
+      "name": "<9.10更新> 修复文采  海绵",
       "type": 3,
       "api": "csp_DouDouGuard",
       "indexs": 1,

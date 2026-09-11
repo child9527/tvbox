@@ -1959,7 +1959,7 @@
     {
       "name": "🧩┃PG直播",
       "type": 0,
-      "url": "https://gh-proxy.org/https://raw.githubusercontent.com/alantang1977/pg/refs/heads/main/live.m3u",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/alantang1977/pg/main/live.m3u",
       "playerType": 1,
       "logo": "https://live.fanmingming.com/tv/{name}.png"
     },
