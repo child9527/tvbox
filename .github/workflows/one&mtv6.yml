@@ -25,15 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pycryptodome
 
-      - name: 执行核心调度逻辑
+            - name: 执行核心调度逻辑
         id: process_logic
         run: |
           python - << 'EOF'
           import os, time, random, sys, urllib.request
 
-          # -----------------------------------------
-          # URL 子集（以后只需在这里加一行）
-          # -----------------------------------------
           targets = [
               {
                   "name": "one",
@@ -52,15 +49,13 @@ jobs:
           STATE_FILE = "next_run.txt"
           current_time = int(time.time())
 
-          # -----------------------------------------
-          # 读取 next_run.txt（固定两行）
-          # -----------------------------------------
+          # 读取原文件所有行
+          lines = []
           if os.path.exists(STATE_FILE):
               with open(STATE_FILE, "r", encoding="utf-8") as f:
                   lines = f.read().splitlines()
-          else:
-              lines = ["", ""]
 
+          # 确保至少有两行
           while len(lines) < 2:
               lines.append("")
 
@@ -73,27 +68,24 @@ jobs:
           # 第 2 行：TAB 分隔的 name:size
           size_map = {}
           if lines[1].strip():
-              parts = lines[1].split("\t")
-              for p in parts:
+              for p in lines[1].split("\t"):
                   if ":" in p:
                       name, size = p.split(":", 1)
                       size_map[name] = size
 
-          # -----------------------------------------
           # 判断首次运行
-          # -----------------------------------------
           is_first_run = (not os.path.exists(STATE_FILE))
           for t in targets:
               if not os.path.exists(t["local"]):
                   is_first_run = True
 
-          # -----------------------------------------
           # 时间未到 → 退出
-          # -----------------------------------------
           if not is_first_run and current_time < target_time:
               with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                   for t in targets:
                       f.write(f"should_decrypt_{t['name']}=false\n")
+                      if not t["decrypt"]:
+                          f.write(f"should_download_{t['name']}=false\n")
               sys.exit(0)
 
           print(">> 时间已到/首次运行，开始伪装 TVBox HEAD 请求...")
@@ -105,61 +97,43 @@ jobs:
           }
 
           results = {}
-
-          # -----------------------------------------
-          # 循环处理所有 URL
-          # -----------------------------------------
           for t in targets:
               local_size = size_map.get(t["name"], "")
               remote_size = ""
-
               try:
                   req = urllib.request.Request(t["url"], headers=headers, method="HEAD")
                   with urllib.request.urlopen(req, timeout=12) as resp:
                       remote_size = resp.headers.get("Content-Length", "").strip()
-                  print(f"[{t['name']}] 远程大小: {remote_size}, 本地记录: {local_size}")
               except Exception as e:
                   print(f"[{t['name']}] HEAD 请求失败: {e}")
 
               need = is_first_run or (remote_size and remote_size != local_size)
-
               results[t["name"]] = {
                   "need": need,
                   "size": remote_size if remote_size else local_size,
-                  "decrypt": t["decrypt"],
-                  "url": t["url"],
-                  "local": t["local"]
+                  "decrypt": t["decrypt"]
               }
 
-          # -----------------------------------------
-          # 更新 next_run.txt（仍然只写两行）
-          # -----------------------------------------
+          # 更新前两行，保留第 3 行及以后
           random_delay = random.randint(24 * 3600, 72 * 3600)
           next_target_time = current_time + random_delay
-
           size_line = "\t".join([f"{name}:{results[name]['size']}" for name in results])
 
+          lines[0] = str(next_target_time)
+          lines[1] = size_line
+
           with open(STATE_FILE, "w", encoding="utf-8") as f:
-              f.write(str(next_target_time) + "\n")
-              f.write(size_line + "\n")
+              f.write("\n".join(lines) + "\n")
 
-          # -----------------------------------------
-          # 输出解密标志
-          # -----------------------------------------
+          # 输出标志
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               for t in targets:
-                  flag = results[t["name"]]["need"] and results[t["name"]]["decrypt"]
-                  f.write(f"should_decrypt_{t['name']}={'true' if flag else 'false'}\n")
-
-          # -----------------------------------------
-          # 输出下载标志（明文文件）
-          # -----------------------------------------
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              for t in targets:
-                  if not t["decrypt"]:  # 明文文件
+                  if t["decrypt"]:
+                      f.write(f"should_decrypt_{t['name']}={'true' if results[t['name']]['need'] else 'false'}\n")
+                  else:
                       f.write(f"should_download_{t['name']}={'true' if results[t['name']]['need'] else 'false'}\n")
-
           EOF
+
 
       - name: 解密 one.json
         if: steps.process_logic.outputs.should_decrypt_one == 'true'
