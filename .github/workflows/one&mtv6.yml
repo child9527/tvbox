@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pycryptodome
 
-            - name: 执行核心调度逻辑
+      - name: 执行核心调度逻辑
         id: process_logic
         run: |
           python - << 'EOF'
@@ -83,8 +83,9 @@ jobs:
           if not is_first_run and current_time < target_time:
               with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                   for t in targets:
-                      f.write(f"should_decrypt_{t['name']}=false\n")
-                      if not t["decrypt"]:
+                      if t["decrypt"]:
+                          f.write(f"should_decrypt_{t['name']}=false\n")
+                      else:
                           f.write(f"should_download_{t['name']}=false\n")
               sys.exit(0)
 
@@ -111,7 +112,9 @@ jobs:
               results[t["name"]] = {
                   "need": need,
                   "size": remote_size if remote_size else local_size,
-                  "decrypt": t["decrypt"]
+                  "decrypt": t["decrypt"],
+                  "url": t["url"],
+                  "local": t["local"]
               }
 
           # 更新前两行，保留第 3 行及以后
@@ -133,7 +136,6 @@ jobs:
                   else:
                       f.write(f"should_download_{t['name']}={'true' if results[t['name']]['need'] else 'false'}\n")
           EOF
-
 
       - name: 解密 one.json
         if: steps.process_logic.outputs.should_decrypt_one == 'true'
@@ -157,4 +159,3 @@ jobs:
             git push
           else
             echo "没有文件发生改动，无需 Push。"
-          fi
