@@ -35,18 +35,18 @@ jobs:
               {
                   "name": "one",
                   "url": "https://9877.kstore.space/one.json",
-                  "local": "one.json",
+                  "local": "json/one.json",
                   "decrypt": True
               },
               {
                   "name": "mtv6",
                   "url": "https://d.kstore.dev/download/2843/mtv6.txt",
-                  "local": "mtv6.json",
+                  "local": "json/mtv6.json",
                   "decrypt": False
               }
           ]
 
-          STATE_FILE = "next_run.txt"
+          STATE_FILE = "task/next_run.txt"
           current_time = int(time.time())
 
           # 读取原文件所有行
@@ -140,12 +140,12 @@ jobs:
       - name: 解密 one.json
         if: steps.process_logic.outputs.should_decrypt_one == 'true'
         run: |
-          python tvbox.py "https://9877.kstore.space/one.json" "one.json" dec
+          python scripts/tvbox.py "https://9877.kstore.space/one.json" "json/one.json" dec
 
       - name: 下载 mtv6.json（明文）
         if: steps.process_logic.outputs.should_download_mtv6 == 'true'
         run: |
-          curl -L "https://d.kstore.dev/download/2843/mtv6.txt" -o "mtv6.json"
+          curl -L "https://d.kstore.dev/download/2843/mtv6.txt" -o "json/mtv6.json"
 
       - name: 提交改动
         run: |
@@ -153,7 +153,7 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
 
-          git add next_run.txt one.json mtv6.json
+          git add task/next_run.txt json/one.json json/mtv6.json
           if ! git diff --staged --quiet; then
             git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
             git push
