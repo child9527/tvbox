@@ -12,6 +12,7 @@ on:
 
 jobs:
   convert-and-push:
+    name: 转换规则并推送
     runs-on: ubuntu-latest
 
     steps:
