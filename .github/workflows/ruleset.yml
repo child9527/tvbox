@@ -6,8 +6,8 @@ on:
       - main
       - master
     paths:
-      - 'direct.txt'
-      - 'ai.txt'
+      - 'clash_rules/direct.txt'
+      - 'clash_rules/ai.txt'
   workflow_dispatch:
 
 jobs:
@@ -54,8 +54,8 @@ jobs:
               
               print(f'[成功] 转换完成: {txt_file} -> {yaml_file}，写入 {len(lines)} 条有效规则')
 
-          convert_txt_to_yaml('direct.txt', 'my-direct.yaml')
-          convert_txt_to_yaml('ai.txt', 'my-ai.yaml')
+          convert_txt_to_yaml('clash_rules/direct.txt', 'my-direct.yaml')
+          convert_txt_to_yaml('clash_rules/ai.txt', 'my-ai.yaml')
           "
           echo "=================== [步骤 1] 规则转换结束 ==================="
 
@@ -70,11 +70,9 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # 1. 写入私钥文件并严格授权
           echo "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
           chmod 600 ~/.ssh/gitee_id_ed25519
           
-          # 2. 写入 SSH Config，彻底替代全局 GIT_SSH_COMMAND 变量，规避 Git 参数解析冲突
           cat << 'EOF' > ~/.ssh/config
           Host gitee.com
               HostName gitee.com
@@ -97,7 +95,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           echo "[提示] 开始执行 git clone..."
-          # 使用原生命令，直接依靠 ~/.ssh/config 自动匹配密钥
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
           echo "[提示] 正在将生成的 YAML 复制到目标仓库目录..."
@@ -123,7 +120,7 @@ jobs:
             echo "[提示] 经比对无任何文件变更，跳过 Commit 和 Push 操作。"
           else
             echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
-            git commit -m "auto: 更新Clash Verge规则成功 ${NOW} [skip ci]"
+            git commit -m "auto: 更新Clash Verge规则成功 [skip ci]"
             git push origin master
             echo "[成功] 文件更新已顺利推送至 Gitee！"
           fi
