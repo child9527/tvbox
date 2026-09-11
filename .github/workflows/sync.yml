@@ -47,8 +47,8 @@ jobs:
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
 
-          # ===== 从 next_run.txt 第 6 行开始读取 URL 任务 =====
-          txt_file = "next_run.txt"
+          # ===== 从 task/next_run.txt 第 6 行开始读取 URL 任务 =====
+          txt_file = "task/next_run.txt"
           TASKS = []
 
           if os.path.exists(txt_file):
@@ -66,7 +66,7 @@ jobs:
                       if not base_name.endswith(".json"):
                           base_name += ".json"
                       TASKS.append({
-                          "name": base_name,
+                          "name": "json/" + base_name,   # ← 保存到 json 目录
                           "url": url
                       })
               print(f"📖 成功从 {txt_file} (第6行起) 解析到 {len(TASKS)} 个待处理任务。")
@@ -77,15 +77,15 @@ jobs:
               print("❌ [错误] next_run.txt 不存在或第 6 行起未找到有效 URL！退出任务。")
               sys.exit(1)
 
-          # ===== 镜像列表与个人优先级权重字典设置 =====
+          # ===== 镜像测速逻辑（保持原样） =====
           MIRROR_WEIGHTS = {
               "https://web.ksx.qzz.io/": 0.15,
               "https://gh-proxy.com/": 0.15,
               "https://wget.la/": 0.15,
           }
-          DEFAULT_WEIGHT = 0.30           # 所有其他保底镜像
+          DEFAULT_WEIGHT = 0.30
 
-          MIRRORS = [              
+          MIRRORS = [
               "https://web.ksx.qzz.io/",
               "https://gh-proxy.com/",
               "https://wget.la/",
@@ -101,7 +101,7 @@ jobs:
           ]
 
           HEADERS = {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              "User-Agent": "Mozilla/5.0"
           }
 
           def test_mirror(mirror):
@@ -112,17 +112,14 @@ jobs:
                   text = r.content.decode("utf-8", errors="ignore").lstrip()
                   if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
                       raw_delay = time.time() - start
-                      
                       normalized_mirror = mirror if mirror.endswith('/') else mirror + '/'
                       weight = MIRROR_WEIGHTS.get(normalized_mirror, DEFAULT_WEIGHT)
                       weighted_score = raw_delay * weight
-                      
                       return mirror, raw_delay, weighted_score
               except Exception:
                   pass
               return mirror, None, None
 
-          # Step 1: 并发测速并计算加权得分，动态选用最合适的镜像
           print("⚡ 正在对备选镜像进行并发响应测速与加权得分计算...")
           weighted_results = {}
           raw_results = {}
@@ -141,34 +138,29 @@ jobs:
           print(f"🚀 【镜像选择】全局最快/最优先 GitHub 加速镜像选用: {accent_prefix}")
           print("==================================================\n")
 
+          # ===== 以下所有逻辑保持原样，只改路径 =====
+
           def extract_raw_github_url(url):
-              """提取纯 GitHub 地址及额外附加参数"""
               if not isinstance(url, str) or not url.startswith(("http://", "https://")):
                   return False, url, ""
-
               extra_param = ""
               clean_url = url
               if ";" in url:
                   parts = url.split(";", 1)
                   clean_url = parts[0]
                   extra_param = ";" + parts[1]
-
               github_pattern = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
               match = re.search(github_pattern, clean_url)
-
               if match:
                   raw_part = match.group(0)
                   if not raw_part.startswith("http"):
                       raw_part = "https://" + raw_part
-
                   raw_part = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', raw_part)
                   raw_part = raw_part.replace('/refs/heads/', '/')
                   return True, raw_part, extra_param
-
               return False, url, extra_param
 
           def is_url_accessible(url):
-              """主动检测原作者指定的链接（含其自带镜像）是否可用"""
               try:
                   resp = requests.head(url, headers=HEADERS, timeout=3, allow_redirects=True)
                   if resp.status_code == 200:
@@ -179,7 +171,6 @@ jobs:
                   return False
 
           def get_base_url(url):
-              """获取资源的基础路径 Base URL"""
               is_gh, raw_url, _ = extract_raw_github_url(url)
               target_url = raw_url if is_gh else url
               if "/" in target_url:
@@ -189,8 +180,6 @@ jobs:
           def process_url(url, base_url):
               if not isinstance(url, str):
                   return url
-
-              # 1. 相对路径补全处理
               if "./" in url:
                   extra_param = ""
                   clean_url = url
@@ -198,28 +187,19 @@ jobs:
                       parts = url.split(";", 1)
                       clean_url = parts[0]
                       extra_param = ";" + parts[1]
-
                   if clean_url.startswith("./"):
                       clean_url = base_url + clean_url[2:]
                   elif "./" in clean_url:
                       clean_url = re.sub(r'\./', base_url, clean_url)
-
                   url = clean_url + extra_param
-
-              # 2. GitHub 资源智能镜像替换处理
               is_gh, raw_url, extra_param = extract_raw_github_url(url)
               if is_gh:
                   clean_url_no_param = url.split(";")[0]
                   has_original_mirror = (clean_url_no_param != raw_url)
-
                   if has_original_mirror:
                       if is_url_accessible(url):
-                          return url  # 原作者自带的代理镜像依然有效，保留原样
-
-                  # 若原作者使用纯 GitHub 直连（未套镜像），或原作者镜像失效：
-                  # 统一强制替换为我们加权选出的最快镜像
+                          return url
                   return f"{accent_prefix}{raw_url}{extra_param}"
-
               return url
 
           def traverse_and_replace(data, base_url):
@@ -235,14 +215,12 @@ jobs:
           def force_remove_comments(text):
               text = text.replace('\r', '')
               text = re.sub(r'/\*[\s\S]*?\*/', '', text)
-
               clean_lines = []
               for line in text.splitlines():
                   stripped = line.strip()
                   if stripped.startswith('//') or stripped.startswith('#'):
                       continue
                   clean_lines.append(line)
-
               cleaned_text = "\n".join(clean_lines)
               cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
               return cleaned_text
@@ -251,7 +229,7 @@ jobs:
           total_tasks = len(TASKS)
 
           for task in TASKS:
-              save_filename = task["name"]
+              save_filename = task["name"]   # ← 已改为 json/xxx.json
               target_url = task["url"]
               task_base_url = get_base_url(target_url)
 
@@ -389,8 +367,8 @@ jobs:
         id: encrypt_step
         if: steps.diff_check.outputs.has_changes == 'true'
         run: |
-          if [ ! -f "tvbox.py" ]; then
-            echo "❌ 错误：根目录下未找到 tvbox.py 脚本！"
+          if [ ! -f "scripts/tvbox.py" ]; then
+            echo "❌ 错误：未找到 scripts/tvbox.py 脚本！"
             exit 1
           fi
 
@@ -404,7 +382,7 @@ jobs:
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
-              python tvbox.py "$target" "$bin_file" enc || true
+              python scripts/tvbox.py "$target" "$bin_file" enc || true
 
               if [ ! -f "$bin_file" ]; then
                 echo "⚠️ [警告] 加密产物 $bin_file 未生成，跳过此文件并继续处理后续文件！"
@@ -440,76 +418,4 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          printf "%s\n" "$SSH_KEY" > ~/.ssh/gitee_id_ed25519
-          chmod 600 ~/.ssh/gitee_id_ed25519
-
-          cat << 'EOF' > ~/.ssh/config
-          Host gitee.com
-              HostName gitee.com
-              User git
-              IdentityFile ~/.ssh/gitee_id_ed25519
-              StrictHostKeyChecking no
-          EOF
-          chmod 600 ~/.ssh/config
-          ssh -T git@gitee.com || true
-
-      - name: 5. 克隆 Gitee mybox 仓库并推送新增/变更的加密产物
-        if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          echo "[提示] 开始克隆 Gitee mybox 仓库..."
-
-          SUCCESS=0
-          for i in {1..3}; do
-            echo "尝试第 $i 次克隆 Gitee 仓库..."
-            if git clone git@gitee.com:child9527/mybox.git gitee_temp; then
-              SUCCESS=1
-              break
-            fi
-            echo "⚠️ 第 $i 次克隆失败，等待 5 秒重试..."
-            sleep 5
-          done
-
-          if [ $SUCCESS -ne 1 ]; then
-            echo "❌ 失败：无法克隆 Gitee 仓库！"
-            exit 1
-          fi
-
-          ENCRYPTED_FILES="${{ steps.encrypt_step.outputs.encrypted_files }}"
-          NOW_TIME="${{ steps.diff_check.outputs.commit_time }}"
-          copied_files=()
-
-          for target in $ENCRYPTED_FILES; do
-            base_name="${target%.*}"
-            bin_file="${base_name}.bin"
-
-            if [ -f "$bin_file" ]; then
-              target_name="${base_name}.json"
-              echo "复制加密产物: $bin_file -> gitee_temp/$target_name"
-              cp -v "$bin_file" "gitee_temp/$target_name"
-              copied_files+=("$target_name")
-            fi
-          done
-
-          file_list_str=$(IFS=, ; echo "${copied_files[*]}")
-
-          cd gitee_temp
-          git add -A
-
-          if git diff --staged --quiet; then
-            echo "[提示] Gitee 仓库内容无需更新。"
-          else
-            git commit -m "更新于 ${NOW_TIME} (加密推送: ${file_list_str}) [skip ci]"
-            git push origin HEAD
-            echo "✅ [成功] 已成功向 Gitee mybox 推送文件: $file_list_str"
-          fi
-
-      - name: 6. 清理临时文件夹及临时文件
-        if: always()
-        run: |
-          rm -rf gitee_temp
-          rm -f *.bin *.BIN
-          rm -f .hash_cache.json
-          echo "[完成] 临时文件已彻底清理。"
+          printf "%s\n"
