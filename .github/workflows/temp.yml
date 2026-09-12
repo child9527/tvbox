@@ -6,19 +6,17 @@ on:
 jobs:
   decode-xc:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # ← 关键修复点：允许 git push
 
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
 
       - name: 安装依赖
         run: |
@@ -99,4 +97,3 @@ jobs:
           else
             echo "XC.json 无变化，跳过提交。"
           fi
-
