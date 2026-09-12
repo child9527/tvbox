@@ -1,23 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
 import datetime
+import requests
+from bs4 import BeautifulSoup
 
 OUTPUT = "index.html"
 
-def list_json_files():
-    root = "json"
-    files = []
-    if os.path.exists(root):
-        for f in os.listdir(root):
-            if f.endswith(".json"):
-                files.append(f)
-    return sorted(files)
+# Gitee 仓库原始文件链接前缀
+GITEE_RAW_PREFIX = "https://gitee.com/child9527/mybox/raw/master/"
+
+# Gitee 仓库文件列表页面
+GITEE_FILE_LIST_URL = "https://gitee.com/child9527/mybox/tree/master/"
+
+
+def fetch_gitee_json_files():
+    """从 Gitee 仓库抓取所有 *.json 文件名"""
+    print("正在从 Gitee 获取 JSON 文件列表...")
+
+    resp = requests.get(GITEE_FILE_LIST_URL)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    json_files = []
+
+    # Gitee 文件列表的 class 名为 "file-name"
+    for tag in soup.find_all("a", class_="file-name"):
+        filename = tag.text.strip()
+        if filename.endswith(".json"):
+            json_files.append(filename)
+
+    # 按文件名长度排序（去掉 .json）
+    json_files = sorted(json_files, key=lambda x: len(x.replace(".json", "")))
+
+    print(f"发现 {len(json_files)} 个 JSON 文件：", json_files)
+    return json_files
+
 
 def generate_html():
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    json_files = list_json_files()
+    json_files = fetch_gitee_json_files()
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -31,7 +54,6 @@ def generate_html():
             --card-bg: #2d2d2d;
             --text-color: #e0e0e0;
             --accent-color: #ff4757;
-            --link-color: #3498db;
             --success-color: #2ecc71;
             --border-radius: 8px;
         }}
@@ -96,7 +118,6 @@ def generate_html():
         }}
 
         .copy-pill {{ 
-            font-family: -apple-system, sans-serif;
             font-size: 0.8rem;
             color: #bbb; 
             cursor: pointer;
@@ -130,12 +151,13 @@ def generate_html():
         <div class="compact-grid">
 """
 
-    # 自动生成 json 文件列表
+    # 自动生成 Gitee JSON 文件列表
     for f in json_files:
-        url = f"https://child9527.github.io/json/{f}"
+        name = f.replace(".json", "")  # 去掉 .json
+        url = f"{GITEE_RAW_PREFIX}{f}"
         html += f"""
             <div class="data-card">
-                <span class="data-label">{f}</span>
+                <span class="data-label">{name}</span>
                 <span class="copy-pill" data-value="{url}" onclick="copy(this)">点击复制</span>
             </div>
 """
@@ -171,6 +193,7 @@ function copy(el) {{
         f.write(html)
 
     print(f"index.html 已生成 → {OUTPUT}")
+
 
 if __name__ == "__main__":
     generate_html()
