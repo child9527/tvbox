@@ -5,6 +5,7 @@ on:
     paths:
     - 'json/one.json'
     - 'json/mtv6.json'
+    - 'task/json.txt'
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
