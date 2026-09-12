@@ -1,0 +1,38 @@
+name: Generate index.html
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Generate index.html
+        run: |
+          python scripts/index.py
+
+      - name: Commit index.html
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add index.html
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto Update index.html"
+            git push
+          else
+            echo "index.html 无变化，跳过提交"
+          fi
