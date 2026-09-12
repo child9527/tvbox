@@ -171,10 +171,6 @@ jobs:
         run: |
           curl -L "https://d.kstore.dev/download/2843/mtv6.txt" -o "json/mtv6.json"
 
-      - name: 解密 YourSmile66.json（每次定时器必执行）
-        run: |
-          echo "开始解密 YourSmile66.json ..."
-          python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "json/YourSmile66.json" dec
 
       - name: 提交改动
         run: |
@@ -182,7 +178,7 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
 
-          git add task/next_run.txt json/one.json json/mtv6.json json/YourSmile66.json
+          git add task/next_run.txt json/one.json json/mtv6.json
           if ! git diff --staged --quiet; then
             git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
             git push
