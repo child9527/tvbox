@@ -62,6 +62,10 @@ jobs:
           cd gitee_temp
           mkdir -p json
 
+          # 配置提交身份（这一段是关键修复）
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           # 清空 Gitee 的 json 目录（保持仓库干净）
           rm -f json/*.json || true
 
@@ -81,3 +85,4 @@ jobs:
           git push origin master
 
           echo "🚀 已强制推送所有加密后的 JSON 到 Gitee 的 mybox/json/ 目录！"
+
