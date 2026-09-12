@@ -17,11 +17,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 设置 Git 身份（必须最前）
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: 检出当前仓库
         uses: actions/checkout@v4
         with:
@@ -43,7 +38,289 @@ jobs:
           MY_REPO: ${{ github.repository }}
         run: |
           python - << 'EOF'
-          （你的原始 Python 代码保持不变）
+          import json
+          import os
+          import re
+          import time
+          import sys
+          from concurrent.futures import ThreadPoolExecutor
+          import requests
+          import commentjson
+
+          my_repo = os.environ.get('MY_REPO')
+          raw_github_prefix = "https://raw.githubusercontent.com/"
+
+          # ===== 从 task/json.txt 读取 URL 任务 =====
+          txt_file = "task/json.txt"
+          TASKS = []
+
+          if os.path.exists(txt_file):
+              with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
+                  all_lines = f.readlines()
+
+              # 从第一行开始读取全部 URL
+              target_lines = all_lines
+
+              for line in target_lines:
+                  line_str = line.strip()
+                  match = re.search(r'https?://[^\s]+', line_str)
+                  if match:
+                      url = match.group(0)
+                      base_name = url.split("?")[0].rstrip("/").split("/")[-1]
+                      if not base_name.endswith(".json"):
+                          base_name += ".json"
+                      TASKS.append({
+                          "name": "json/" + base_name,
+                          "url": url
+                      })
+
+              print(f"📖 成功从 {txt_file} 解析到 {len(TASKS)} 个待处理任务。")
+          else:
+              print(f"❌ [错误] 未找到文件 {txt_file}！")
+
+          if not TASKS:
+              print("❌ [错误] json.txt 未找到有效 URL！退出任务。")
+              sys.exit(1)
+
+
+          # ===== 镜像测速逻辑（保持原样） =====
+          MIRROR_WEIGHTS = {
+              "https://gh-proxy.com/": 0.15,
+              "https://wget.la/": 0.15,
+          }
+          DEFAULT_WEIGHT = 0.30
+
+          MIRRORS = [
+              "https://gh-proxy.com/",
+              "https://wget.la/",
+              "https://gh-proxy.org/",
+              "https://ghproxy.net/",
+              "https://mirror.ghproxy.com/",
+              "https://gh.ddlc.top/",
+              "https://gh.api.99988866.xyz/",
+              "https://gh.cache.icu/",
+              "https://gh.con.sh/",
+              "https://gh.llkk.cc/",
+              "https://ghproxy.vip/",
+          ]
+
+          HEADERS = {
+              "User-Agent": "Mozilla/5.0"
+          }
+
+          def test_mirror(mirror):
+              test_url = mirror + raw_github_prefix + "alantang1977/X/main/X.json"
+              try:
+                  start = time.time()
+                  r = requests.get(test_url, headers=HEADERS, timeout=4)
+                  text = r.content.decode("utf-8", errors="ignore").lstrip()
+                  if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
+                      raw_delay = time.time() - start
+                      normalized_mirror = mirror if mirror.endswith('/') else mirror + '/'
+                      weight = MIRROR_WEIGHTS.get(normalized_mirror, DEFAULT_WEIGHT)
+                      weighted_score = raw_delay * weight
+                      return mirror, raw_delay, weighted_score
+              except Exception:
+                  pass
+              return mirror, None, None
+
+          print("⚡ 正在对备选镜像进行并发响应测速与加权得分计算...")
+          weighted_results = {}
+          raw_results = {}
+          with ThreadPoolExecutor(max_workers=len(MIRRORS)) as executor:
+              futures = [executor.submit(test_mirror, m) for m in MIRRORS]
+              for future in futures:
+                  m, raw_delay, weighted_score = future.result()
+                  if raw_delay is not None:
+                      raw_results[m] = raw_delay
+                      weighted_results[m] = weighted_score
+                      print(f"  - 镜像: {m:<30} | 原始延迟: {raw_delay:.2f}s | 加权得分: {weighted_score:.3f}")
+
+          sorted_mirrors = sorted(weighted_results, key=weighted_results.get) if weighted_results else MIRRORS
+          accent_prefix = sorted_mirrors[0] if sorted_mirrors else "https://web.ksx.qzz.io/"
+          print("==================================================")
+          print(f"🚀 【镜像选择】全局最快/最优先 GitHub 加速镜像选用: {accent_prefix}")
+          print("==================================================\n")
+
+          # ===== 以下所有逻辑保持原样，只改路径 =====
+
+          def extract_raw_github_url(url):
+              if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+                  return False, url, ""
+              extra_param = ""
+              clean_url = url
+              if ";" in url:
+                  parts = url.split(";", 1)
+                  clean_url = parts[0]
+                  extra_param = ";" + parts[1]
+              github_pattern = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
+              match = re.search(github_pattern, clean_url)
+              if match:
+                  raw_part = match.group(0)
+                  if not raw_part.startswith("http"):
+                      raw_part = "https://" + raw_part
+                  raw_part = re.sub(r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)', r'https://raw.githubusercontent.com/\1/\2/\3/\4', raw_part)
+                  raw_part = raw_part.replace('/refs/heads/', '/')
+                  return True, raw_part, extra_param
+              return False, url, extra_param
+
+          def is_url_accessible(url):
+              try:
+                  resp = requests.head(url, headers=HEADERS, timeout=3, allow_redirects=True)
+                  if resp.status_code == 200:
+                      return True
+                  resp = requests.get(url, headers=HEADERS, timeout=3, stream=True, allow_redirects=True)
+                  return resp.status_code == 200
+              except Exception:
+                  return False
+
+          def get_base_url(url):
+              is_gh, raw_url, _ = extract_raw_github_url(url)
+              target_url = raw_url if is_gh else url
+              if "/" in target_url:
+                  return target_url.rsplit("/", 1)[0] + "/"
+              return target_url
+
+          def process_url(url, base_url):
+              if not isinstance(url, str):
+                  return url
+              if "./" in url:
+                  extra_param = ""
+                  clean_url = url
+                  if ";" in url:
+                      parts = url.split(";", 1)
+                      clean_url = parts[0]
+                      extra_param = ";" + parts[1]
+                  if clean_url.startswith("./"):
+                      clean_url = base_url + clean_url[2:]
+                  elif "./" in clean_url:
+                      clean_url = re.sub(r'\./', base_url, clean_url)
+                  url = clean_url + extra_param
+              is_gh, raw_url, extra_param = extract_raw_github_url(url)
+              if is_gh:
+                  clean_url_no_param = url.split(";")[0]
+                  has_original_mirror = (clean_url_no_param != raw_url)
+                  if has_original_mirror:
+                      if is_url_accessible(url):
+                          return url
+                  return f"{accent_prefix}{raw_url}{extra_param}"
+              return url
+
+          def traverse_and_replace(data, base_url):
+              if isinstance(data, dict):
+                  return {k: traverse_and_replace(v, base_url) for k, v in data.items()}
+              elif isinstance(data, list):
+                  return [traverse_and_replace(item, base_url) for item in data]
+              elif isinstance(data, str):
+                  return process_url(data, base_url)
+              else:
+                  return data
+
+          def force_remove_comments(text):
+              text = text.replace('\r', '')
+              text = re.sub(r'/\*[\s\S]*?\*/', '', text)
+              clean_lines = []
+              for line in text.splitlines():
+                  stripped = line.strip()
+                  if stripped.startswith('//') or stripped.startswith('#'):
+                      continue
+                  clean_lines.append(line)
+              cleaned_text = "\n".join(clean_lines)
+              cleaned_text = re.sub(r',\s*([\}\]])', r'\1', cleaned_text)
+              return cleaned_text
+
+          successful_files = []
+          total_tasks = len(TASKS)
+
+          for task in TASKS:
+              save_filename = task["name"]   # ← 已改为 json/xxx.json
+              target_url = task["url"]
+              task_base_url = get_base_url(target_url)
+
+              if os.path.exists(save_filename):
+                  print(f"🔄 [更新任务] 本地已存在 {save_filename}，开始拉取最新内容...")
+              else:
+                  print(f"✨ [新增任务] 本地暂无 {save_filename}，准备从上游拉取...")
+
+              resp_content = None
+              is_gh, raw_target_url, _ = extract_raw_github_url(target_url)
+
+              if is_gh:
+                  for mirror in sorted_mirrors:
+                      fetch_url = f"{mirror}{raw_target_url}"
+                      try:
+                          resp = requests.get(fetch_url, headers=HEADERS, timeout=8)
+                          if resp.status_code == 200:
+                              text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
+                              if text:
+                                  resp_content = text
+                                  print(f"--> [成功拉取] 已通过镜像 {mirror} 获取: {save_filename}")
+                                  break
+                      except requests.RequestException:
+                          continue
+
+                  if not resp_content:
+                      print(f"❌ GitHub 任务 {save_filename} 所有镜像均拉取失败，跳过！")
+                      if os.path.exists(save_filename):
+                          successful_files.append(save_filename)
+                      continue
+              else:
+                  try:
+                      resp = requests.get(target_url, headers=HEADERS, timeout=10)
+                      if resp.status_code == 200:
+                          text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
+                          if text:
+                              resp_content = text
+                              print(f"--> 直接从第三方 URL 成功获取: {save_filename}")
+                  except requests.RequestException:
+                      pass
+
+                  if not resp_content:
+                      print(f"❌ 第三方任务 {save_filename} 拉取失败，跳过！")
+                      if os.path.exists(save_filename):
+                          successful_files.append(save_filename)
+                      continue
+
+              cleaned_text = force_remove_comments(resp_content)
+
+              json_obj = None
+              try:
+                  json_obj = commentjson.loads(cleaned_text)
+              except Exception:
+                  pass
+
+              if json_obj is None:
+                  try:
+                      json_obj = json.loads(cleaned_text)
+                  except Exception:
+                      json_obj = None
+
+              if json_obj is not None:
+                  print(f"🛠️ [智能解包与重构] 遍历 JSON 中所有链接，自动识别并替换直连及失效代理镜像...")
+                  processed_data = traverse_and_replace(json_obj, task_base_url)
+
+                  final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
+
+                  with open(save_filename, "w", encoding="utf-8") as f:
+                      f.write(final_json_str)
+
+                  print(f"✅ 处理完成：导出标准 JSON -> {save_filename}\n")
+                  successful_files.append(save_filename)
+              else:
+                  print(f"❌ [校验失败] {save_filename} 内容非标准 JSON，保留旧版本。")
+                  if os.path.exists(save_filename):
+                      successful_files.append(save_filename)
+
+          print("--------------------------------------------------")
+          print(f"📊 【步骤 1 统计】TASKS 配置总数: {total_tasks} | 成功响应/已有文件数: {len(successful_files)}")
+          print(f"📄 待比对/提交的文件列表: {', '.join(successful_files)}")
+          print("--------------------------------------------------\n")
+
+          task_files_str = " ".join(successful_files)
+          github_output = os.environ.get('GITHUB_OUTPUT')
+          if github_output:
+              with open(github_output, "a") as f:
+                  f.write(f"task_files={task_files_str}\n")
           EOF
 
       - name: 2. 精准比对 GitHub 本地变更，使用中文时间和文件名格式化 Commit 提交
@@ -109,8 +386,7 @@ jobs:
               base_name="${target%.*}"
               bin_file="${base_name}.bin"
 
-              # ⭐ 使用新版 tvbox.py 调用格式
-              python scripts/tvbox.py enc "$target" "$bin_file" || true
+              python scripts/tvbox.py "$target" "$bin_file" enc || true
 
               if [ ! -f "$bin_file" ]; then
                 echo "⚠️ [警告] 加密产物 $bin_file 未生成，跳过此文件并继续处理后续文件！"
@@ -157,7 +433,7 @@ jobs:
               StrictHostKeyChecking no
           EOF
 
-      - name: 5. 推送加密产物到 Gitee 的 mybox/json/ 目录
+      - name: 5. 推送加密产物到 Gitee 的 mybox/json/ 目录（原逻辑）
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
@@ -186,7 +462,7 @@ jobs:
 
           git add json/*.json || true
 
-          if [ -n "$(git.status --porcelain json)" ]; then
+          if [ -n "$(git status --porcelain json)" ]; then
             NOW_TIME=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "同步加密 JSON 到 Gitee json/ 目录 (${NOW_TIME}) [skip ci]"
             git push origin master
