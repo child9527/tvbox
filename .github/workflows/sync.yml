@@ -3,7 +3,7 @@ name: 批量同步、加密与双端推送 (GitHub + Gitee)
 on:
   push: 
     paths:
-    - 'json/*'
+    - 'json/**'
     - 'task/json.txt'
   schedule:
     - cron: '0 2 * * *'
