@@ -1,0 +1,83 @@
+name: 强制推送加密 JSON 到 Gitee
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  force-push-gitee:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pycryptodome
+
+      - name: 加密所有本地 json/*.json → 生成 json/*.bin
+        run: |
+          mkdir -p json
+          for file in json/*.json; do
+            base="${file%.*}"
+            bin="${base}.bin"
+            echo "🔐 加密: $file → $bin"
+            python scripts/tvbox.py "$file" "$bin" enc
+          done
+
+      - name: 配置 SSH（用于推送到 Gitee）
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf "%s\n" "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cat >> ~/.ssh/config <<EOF
+          Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no
+          EOF
+
+      - name: 克隆 Gitee 仓库 mybox
+        run: |
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
+
+      - name: 强制推送加密后的 JSON 到 gitee/mybox/json/
+        run: |
+          cd gitee_temp
+          mkdir -p json
+
+          # 清空 Gitee 的 json 目录（保持仓库干净）
+          rm -f json/*.json || true
+
+          # 将本地 bin 改名为 json 并复制过去
+          for bin in ../json/*.bin; do
+            base="$(basename "$bin" .bin)"
+            target="json/${base}.json"
+            echo "📦 推送加密产物: $bin → $target"
+            cp "$bin" "$target"
+          done
+
+          # 删除本地 bin（你原逻辑）
+          rm -f ../json/*.bin
+
+          git add json/*.json
+          git commit -m "强制推送加密 JSON 到 Gitee json/ 目录 [skip ci]"
+          git push origin master
+
+          echo "🚀 已强制推送所有加密后的 JSON 到 Gitee 的 mybox/json/ 目录！"
