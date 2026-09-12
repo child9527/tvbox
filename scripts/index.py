@@ -18,7 +18,7 @@ def fetch_gitee_json_files():
     """从 Gitee 仓库抓取所有 *.json 文件名"""
     print("正在从 Gitee 获取 JSON 文件列表...")
 
-    resp = requests.get(GITEE_FILE_LIST_URL)
+    resp = requests.get(GITEE_FILE_LIST_URL, headers={"User-Agent": "Mozilla/5.0"})
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "html.parser")
