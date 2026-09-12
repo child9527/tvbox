@@ -27,7 +27,8 @@ jobs:
         id: try_dec
         run: |
           echo "开始使用 tvbox.py dec 解密 XC.json（最初方式）..."
-          python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "XC.json" dec
+          python scripts/tvbox.py "https://9877.kstore.space/one.json" "one.json" dec
+    #python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "XC.json" dec
 
       - name: 提交结果到仓库根目录XC
         run: |
