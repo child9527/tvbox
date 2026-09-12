@@ -25,7 +25,7 @@ jobs:
 
       - name: 下载 XC.json
         run: |
-          wget -O XC.json "https://github.com/yoursmile66/TVBox/raw/main/XC.json"
+          wget -O XC.json "https://gitee.com/child9527/mybox/raw/master/json/mtv6.json"
 
       - name: 解密 XC.json
         run: |
