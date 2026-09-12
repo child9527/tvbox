@@ -1,0 +1,86 @@
+name: 解密官方XC.json到根目录
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  decrypt-xc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: 下载 XC.json
+        run: |
+          wget -O XC.json "https://github.com/yoursmile66/TVBox/raw/main/XC.json"
+
+      - name: 解密 XC.json
+        run: |
+          cat > decrypt.js << 'EOF'
+          const fs = require("fs");
+          const CryptoJS = require("crypto-js");
+
+          function decryptAesBCB(encryptedData) {
+            var dataArr = encryptedData.split("");
+            var prefixCode = CryptoJS.enc.Utf8.parse("$#").toString();
+            var suffixCode = CryptoJS.enc.Utf8.parse("#$").toString();
+
+            var pwdMix = dataArr.splice(0, encryptedData.indexOf(suffixCode) + 4).join("");
+            var roundtimeInHax = dataArr.splice(dataArr.length - 26, 26).join("");
+            var encryptedText = dataArr.join("");
+
+            var pwdInHax = pwdMix.substring(prefixCode.length, pwdMix.length - suffixCode.length);
+
+            var roundTime = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(roundtimeInHax));
+            var pwd = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(pwdInHax));
+
+            var iv = CryptoJS.enc.Utf8.parse(roundTime.padEnd(16, "0"));
+            var pkBlocks = CryptoJS.enc.Utf8.parse(pwd.padEnd(16, "0"));
+
+            var cipherParams = CryptoJS.lib.CipherParams.create({
+              ciphertext: CryptoJS.enc.Hex.parse(encryptedText),
+            });
+
+            var decryptedData = CryptoJS.enc.Utf8.stringify(
+              CryptoJS.AES.decrypt(cipherParams, pkBlocks, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7,
+              })
+            );
+
+            return decryptedData;
+          }
+
+          const encrypted = fs.readFileSync("XC.json", "utf8").trim();
+          const decrypted = decryptAesBCB(encrypted);
+
+          fs.writeFileSync("XC_decrypted.json", decrypted);
+          console.log("解密完成 → XC_decrypted.json");
+          EOF
+
+          node decrypt.js
+
+      - name: 提交解密结果到仓库根目录
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add XC_decrypted.json
+
+          if [ -n "$(git status --porcelain XC_decrypted.json)" ]; then
+            git commit -m "自动解密 XC.json → XC_decrypted.json [skip ci]"
+            git push
+            echo "已推送解密文件到仓库根目录"
+          else
+            echo "无变化，跳过提交"
+          fi
