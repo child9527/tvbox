@@ -32,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pycryptodome commentjson
 
-      - name: 1. 多文件拉取、精简剔除注释行、JSON 格式统一校验与导出
+      - name: 1. 多文件拉取、精简剔除注释行、JSON 格式统一校验与导出（含自动解密）
         id: process_json
         env:
           MY_REPO: ${{ github.repository }}
@@ -46,6 +46,28 @@ jobs:
           from concurrent.futures import ThreadPoolExecutor
           import requests
           import commentjson
+          import subprocess
+
+          # 自动识别影视仓密文（Hex + 2423 + 2324）
+          def is_encrypted_xc(text: str) -> bool:
+              text = text.strip()
+              if all(c in "0123456789abcdefABCDEF" for c in text):
+                  return ("2423" in text and "2324" in text)
+              return False
+
+          def decrypt_with_tvbox(input_text: str) -> str:
+              """调用 tvbox.py 自动解密（使用自动识别模式）"""
+              tmp_in = "tmp_enc_input.txt"
+              tmp_out = "tmp_enc_output.json"
+
+              with open(tmp_in, "w", encoding="utf-8") as f:
+                  f.write(input_text)
+
+              # 自动识别模式：python tvbox.py infile outfile
+              subprocess.run(["python", "scripts/tvbox.py", tmp_in, tmp_out], check=True)
+
+              with open(tmp_out, "r", encoding="utf-8") as f:
+                  return f.read()
 
           my_repo = os.environ.get('MY_REPO')
           raw_github_prefix = "https://raw.githubusercontent.com/"
@@ -58,10 +80,7 @@ jobs:
               with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
                   all_lines = f.readlines()
 
-              # 从第一行开始读取全部 URL
-              target_lines = all_lines
-
-              for line in target_lines:
+              for line in all_lines:
                   line_str = line.strip()
                   match = re.search(r'https?://[^\s]+', line_str)
                   if match:
@@ -81,7 +100,6 @@ jobs:
           if not TASKS:
               print("❌ [错误] json.txt 未找到有效 URL！退出任务。")
               sys.exit(1)
-
 
           # ===== 镜像测速逻辑（保持原样） =====
           MIRROR_WEIGHTS = {
@@ -142,7 +160,7 @@ jobs:
           print(f"🚀 【镜像选择】全局最快/最优先 GitHub 加速镜像选用: {accent_prefix}")
           print("==================================================\n")
 
-          # ===== 以下所有逻辑保持原样，只改路径 =====
+          # ===== 以下所有逻辑保持原样，只新增“自动解密” =====
 
           def extract_raw_github_url(url):
               if not isinstance(url, str) or not url.startswith(("http://", "https://")):
@@ -233,18 +251,16 @@ jobs:
           total_tasks = len(TASKS)
 
           for task in TASKS:
-              save_filename = task["name"]   # ← 已改为 json/xxx.json
+              save_filename = task["name"]
               target_url = task["url"]
               task_base_url = get_base_url(target_url)
 
-              if os.path.exists(save_filename):
-                  print(f"🔄 [更新任务] 本地已存在 {save_filename}，开始拉取最新内容...")
-              else:
-                  print(f"✨ [新增任务] 本地暂无 {save_filename}，准备从上游拉取...")
+              print(f"📥 正在拉取: {target_url}")
 
               resp_content = None
               is_gh, raw_target_url, _ = extract_raw_github_url(target_url)
 
+              # ===== 拉取内容（保持原样） =====
               if is_gh:
                   for mirror in sorted_mirrors:
                       fetch_url = f"{mirror}{raw_target_url}"
@@ -254,16 +270,10 @@ jobs:
                               text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
                               if text:
                                   resp_content = text
-                                  print(f"--> [成功拉取] 已通过镜像 {mirror} 获取: {save_filename}")
+                                  print(f"--> [成功] 镜像 {mirror} 拉取成功")
                                   break
-                      except requests.RequestException:
+                      except:
                           continue
-
-                  if not resp_content:
-                      print(f"❌ GitHub 任务 {save_filename} 所有镜像均拉取失败，跳过！")
-                      if os.path.exists(save_filename):
-                          successful_files.append(save_filename)
-                      continue
               else:
                   try:
                       resp = requests.get(target_url, headers=HEADERS, timeout=10)
@@ -271,50 +281,48 @@ jobs:
                           text = resp.content.decode("utf-8", errors="ignore").replace("\ufeff", "").strip()
                           if text:
                               resp_content = text
-                              print(f"--> 直接从第三方 URL 成功获取: {save_filename}")
-                  except requests.RequestException:
+                              print(f"--> [成功] 第三方 URL 拉取成功")
+                  except:
                       pass
 
-                  if not resp_content:
-                      print(f"❌ 第三方任务 {save_filename} 拉取失败，跳过！")
-                      if os.path.exists(save_filename):
-                          successful_files.append(save_filename)
-                      continue
+              if not resp_content:
+                  print(f"❌ 拉取失败: {save_filename}")
+                  continue
 
+              # ⭐ 新增：自动识别加密 JSON → 自动解密
+              if is_encrypted_xc(resp_content):
+                  print(f"🔓 检测到加密 JSON → 自动解密: {save_filename}")
+                  resp_content = decrypt_with_tvbox(resp_content)
+
+              # ===== 清理注释（保持原样） =====
               cleaned_text = force_remove_comments(resp_content)
 
+              # ===== JSON 校验（保持原样） =====
               json_obj = None
               try:
                   json_obj = commentjson.loads(cleaned_text)
-              except Exception:
-                  pass
-
-              if json_obj is None:
+              except:
                   try:
                       json_obj = json.loads(cleaned_text)
-                  except Exception:
+                  except:
                       json_obj = None
 
               if json_obj is not None:
-                  print(f"🛠️ [智能解包与重构] 遍历 JSON 中所有链接，自动识别并替换直连及失效代理镜像...")
                   processed_data = traverse_and_replace(json_obj, task_base_url)
-
                   final_json_str = json.dumps(processed_data, ensure_ascii=False, indent=2)
 
+                  os.makedirs("json", exist_ok=True)
                   with open(save_filename, "w", encoding="utf-8") as f:
                       f.write(final_json_str)
 
-                  print(f"✅ 处理完成：导出标准 JSON -> {save_filename}\n")
+                  print(f"✅ 已保存到: {save_filename}")
                   successful_files.append(save_filename)
               else:
-                  print(f"❌ [校验失败] {save_filename} 内容非标准 JSON，保留旧版本。")
-                  if os.path.exists(save_filename):
-                      successful_files.append(save_filename)
+                  print(f"❌ 非标准 JSON，跳过: {save_filename}")
 
           print("--------------------------------------------------")
-          print(f"📊 【步骤 1 统计】TASKS 配置总数: {total_tasks} | 成功响应/已有文件数: {len(successful_files)}")
-          print(f"📄 待比对/提交的文件列表: {', '.join(successful_files)}")
-          print("--------------------------------------------------\n")
+          print(f"📊 步骤 1 完成，总任务: {total_tasks} | 成功: {len(successful_files)}")
+          print("--------------------------------------------------")
 
           task_files_str = " ".join(successful_files)
           github_output = os.environ.get('GITHUB_OUTPUT')
@@ -322,6 +330,7 @@ jobs:
               with open(github_output, "a") as f:
                   f.write(f"task_files={task_files_str}\n")
           EOF
+
 
       - name: 2. 精准比对 GitHub 本地变更，使用中文时间和文件名格式化 Commit 提交
         id: diff_check
