@@ -174,10 +174,7 @@ jobs:
       - name: 解密 YourSmile66.json（每次定时器必执行）
         run: |
           echo "开始解密 YourSmile66.json ..."
-          python scripts/tvbox.py \
-            "https://github.com/yoursmile66/TVBox/raw/refs/heads/main/XC.json" \
-            "json/YourSmile66.json" \
-            dec
+          python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "json/YourSmile66.json" dec
 
       - name: 提交改动
         run: |
