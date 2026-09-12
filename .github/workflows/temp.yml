@@ -1,22 +1,17 @@
-name: 强制推送加密 JSON 到 Gitee
+name: 解密 XC.json（保持 dec 调用方式）
 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  force-push-gitee:
+  decode-xc:
     runs-on: ubuntu-latest
 
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: 配置 Python 环境
+      - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -26,63 +21,77 @@ jobs:
           python -m pip install --upgrade pip
           pip install pycryptodome
 
-      - name: 加密所有本地 json/*.json → 生成 json/*.bin
+      - name: 尝试用 tvbox.py dec 解密（你要求的最初方式）
+        id: try_dec
         run: |
-          mkdir -p json
-          for file in json/*.json; do
-            base="${file%.*}"
-            bin="${base}.bin"
-            echo "🔐 加密: $file → $bin"
-            python scripts/tvbox.py "$file" "$bin" enc
-          done
+          echo "开始使用 tvbox.py dec 解密 XC.json（最初方式）..."
+          if python scripts/tvbox.py \
+            "https://github.com/yoursmile66/TVBox/raw/main/XC.json" \
+            "XC.json" \
+            dec; then
+            echo "dec_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "dec_ok=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: 配置 SSH（用于推送到 Gitee）
-        env:
-          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+      - name: 如果 dec 失败，则自动 gzip 解压还原 JSON（补救逻辑）
+        if: steps.try_dec.outputs.dec_ok == 'false'
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf "%s\n" "$SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "tvbox.py dec 失败，开始自动 gzip 解压 XC.json..."
 
-          cat >> ~/.ssh/config <<EOF
-          Host gitee.com
-              HostName gitee.com
-              User git
-              IdentityFile ~/.ssh/id_rsa
-              StrictHostKeyChecking no
+          python - << 'EOF'
+          import gzip
+          import json
+          import urllib.request
+
+          url = "https://github.com/yoursmile66/TVBox/raw/main/XC.json"
+          output = "XC.json"
+
+          print(f"下载 XC.json: {url}")
+
+          req = urllib.request.Request(url, headers={
+              "User-Agent": "okhttp/3.12.0",
+              "Accept-Encoding": "gzip"
+          })
+
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              raw = resp.read()
+
+          print("✓ 下载成功，尝试 gzip 解压...")
+
+          try:
+              data = gzip.decompress(raw)
+              print("✓ gzip 解压成功")
+          except Exception as e:
+              print("✗ gzip 解压失败:", e)
+              raise SystemExit(1)
+
+          try:
+              text = data.decode("utf-8", "ignore")
+              obj = json.loads(text)
+              print("✓ JSON 解析成功")
+          except Exception as e:
+              print("✗ JSON 解析失败:", e)
+              print("内容前 200 字符：")
+              print(text[:200])
+              raise SystemExit(1)
+
+          with open(output, "w", encoding="utf-8") as f:
+              json.dump(obj, f, ensure_ascii=False, indent=2)
+
+          print(f"✓ 已保存到根目录: {output}")
           EOF
 
-      - name: 克隆 Gitee 仓库 mybox
+      - name: 提交结果到仓库根目录
         run: |
-          git clone git@gitee.com:child9527/mybox.git gitee_temp
-
-      - name: 强制推送加密后的 JSON 到 gitee/mybox/json/
-        run: |
-          cd gitee_temp
-          mkdir -p json
-
-          # 配置提交身份（这一段是关键修复）
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 清空 Gitee 的 json 目录（保持仓库干净）
-          rm -f json/*.json || true
+          git add XC.json
 
-          # 将本地 bin 改名为 json 并复制过去
-          for bin in ../json/*.bin; do
-            base="$(basename "$bin" .bin)"
-            target="json/${base}.json"
-            echo "📦 推送加密产物: $bin → $target"
-            cp "$bin" "$target"
-          done
-
-          # 删除本地 bin（你原逻辑）
-          rm -f ../json/*.bin
-
-          git add json/*.json
-          git commit -m "强制推送加密 JSON 到 Gitee json/ 目录 [skip ci]"
-          git push origin master
-
-          echo "🚀 已强制推送所有加密后的 JSON 到 Gitee 的 mybox/json/ 目录！"
-
+          if ! git diff --staged --quiet; then
+            git commit -m "自动解密 XC.json（含 dec fallback）"
+            git push
+          else
+            echo "XC.json 无变化，跳过提交。"
+          fi
