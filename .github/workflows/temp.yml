@@ -10,11 +10,15 @@ jobs:
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+
 
       - name: 安装依赖
         run: |
