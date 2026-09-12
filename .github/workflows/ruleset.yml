@@ -98,21 +98,24 @@ jobs:
           echo "[提示] 开始执行 git clone..."
           git clone git@gitee.com:child9527/mybox.git gitee_temp
           
-          echo "[提示] 正在将生成的 YAML 复制到目标仓库目录..."
-          cp -v my-direct.yaml gitee_temp/
-          cp -v my-ai.yaml gitee_temp/
+          echo "[提示] 创建 clash_rules 目录（如果不存在）..."
+          mkdir -p gitee_temp/clash_rules
+          
+          echo "[提示] 正在将生成的 YAML 复制到目标仓库目录 clash_rules/ ..."
+          cp -v my-direct.yaml gitee_temp/clash_rules/
+          cp -v my-ai.yaml gitee_temp/clash_rules/
           
           cd gitee_temp
           echo "[诊断] 进入 gitee_temp 目录，当前路径为:"
           pwd
           
           echo "[诊断] 查看已复制文件的目录状态:"
-          ls -la my-*.yaml
+          ls -la clash_rules/my-*.yaml
           
           echo "[诊断] 查看本地 git status:"
           git status
           
-          git add my-direct.yaml my-ai.yaml
+          git add clash_rules/my-direct.yaml clash_rules/my-ai.yaml
           
           echo "[诊断] 查看已暂存的修改差异 (git diff --staged):"
           git diff --staged
@@ -123,6 +126,6 @@ jobs:
             echo "[提示] 检测到变更内容，开始提交并推送至 Gitee 远程仓库..."
             git commit -m "auto: 更新Clash Verge规则成功 [skip ci]"
             git push origin master
-            echo "[成功] 文件更新已顺利推送至 Gitee！"
+            echo "[成功] 文件更新已顺利推送至 Gitee clash_rules/ 目录！"
           fi
           echo "=================== [步骤 3] 全流程执行完毕 ==================="
