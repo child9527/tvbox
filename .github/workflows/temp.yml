@@ -25,7 +25,7 @@ jobs:
 
       - name: 下载 XC.json（你指定的 mtv6.json）
         run: |
-          wget -O XC.json "https://gitee.com/child9527/mybox/raw/master/json/mtv6.json"
+          wget -O XC.json "https://gitee.com/child9527/mybox/raw/master/json/X.json"
 
       - name: 解密 XC.json（你已经更新过的 tvbox.py）
         run: |
