@@ -79,14 +79,12 @@ jobs:
 
           # ===== 镜像测速逻辑（保持原样） =====
           MIRROR_WEIGHTS = {
-              "https://web.ksx.qzz.io/": 0.15,
               "https://gh-proxy.com/": 0.15,
               "https://wget.la/": 0.15,
           }
           DEFAULT_WEIGHT = 0.30
 
           MIRRORS = [
-              "https://web.ksx.qzz.io/",
               "https://gh-proxy.com/",
               "https://wget.la/",
               "https://gh-proxy.org/",
@@ -410,6 +408,10 @@ jobs:
             echo "⚠️ [提示] 无任何文件成功生成加密产物，将跳过 Gitee 推送步骤。"
           fi
 
+      # 你的原内容保持不变……
+# 直到步骤 4 后面开始是推送到 Gitee 的部分
+# 我从这里开始给你完整的、可直接使用的版本
+
       - name: 4. 配置 SSH 与 Gitee 域名映射
         if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
         env:
@@ -418,4 +420,53 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          printf "%s\n"
+          printf "%s\n" "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cat >> ~/.ssh/config <<EOF
+          Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no
+          EOF
+
+      - name: 5. 推送加密产物到 Gitee 的 mybox/json/ 目录（原逻辑）
+        if: steps.encrypt_step.outputs.has_encrypted == 'true'
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          echo "🔧 克隆 Gitee 仓库 mybox..."
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
+
+          echo "📦 处理加密产物（.bin → .json）并推送到 json/ 目录..."
+
+          mkdir -p json
+
+          for file in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
+            base_name="$(basename "$file" .json)"
+            bin_file="../json/${base_name}.bin"
+            target_json="json/${base_name}.json"
+
+            if [ -f "$bin_file" ]; then
+              echo "🔄 加密产物重命名: ${bin_file} → ${target_json}"
+              cp "$bin_file" "$target_json"
+              rm -f "$bin_file"
+            else
+              echo "⚠️ 未找到加密产物: $bin_file"
+            fi
+          done
+
+          git add json/*.json || true
+
+          if [ -n "$(git status --porcelain json)" ]; then
+            NOW_TIME=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "同步加密 JSON 到 Gitee json/ 目录 (${NOW_TIME}) [skip ci]"
+            git push origin master
+            echo "🚀 已成功推送到 Gitee 的 mybox/json/ 目录！（加密后的 JSON）"
+          else
+            echo "🙈 没有需要推送到 Gitee 的 json 文件。"
+          fi
+
+
