@@ -14,65 +14,22 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
 
-      - name: 设置 Node.js
-        uses: actions/setup-node@v4
+      - name: 设置 Python
+        uses: actions/setup-python@v4
         with:
-          node-version: "18"
+          python-version: "3.11"
 
-      - name: 安装依赖
+      - name: 安装 Python 依赖
         run: |
-          npm install crypto-js
+          pip install pycryptodome
 
-      - name: 下载 XC.json
+      - name: 下载 XC.json（你指定的 mtv6.json）
         run: |
           wget -O XC.json "https://gitee.com/child9527/mybox/raw/master/json/mtv6.json"
 
-      - name: 解密 XC.json
+      - name: 解密 XC.json（你已经更新过的 tvbox.py）
         run: |
-          cat > decrypt.js << 'EOF'
-          const fs = require("fs");
-          const CryptoJS = require("crypto-js");
-
-          function decryptAesBCB(encryptedData) {
-            var dataArr = encryptedData.split("");
-            var prefixCode = CryptoJS.enc.Utf8.parse("$#").toString();
-            var suffixCode = CryptoJS.enc.Utf8.parse("#$").toString();
-
-            var pwdMix = dataArr.splice(0, encryptedData.indexOf(suffixCode) + 4).join("");
-            var roundtimeInHax = dataArr.splice(dataArr.length - 26, 26).join("");
-            var encryptedText = dataArr.join("");
-
-            var pwdInHax = pwdMix.substring(prefixCode.length, pwdMix.length - suffixCode.length);
-
-            var roundTime = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(roundtimeInHax));
-            var pwd = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(pwdInHax));
-
-            var iv = CryptoJS.enc.Utf8.parse(roundTime.padEnd(16, "0"));
-            var pkBlocks = CryptoJS.enc.Utf8.parse(pwd.padEnd(16, "0"));
-
-            var cipherParams = CryptoJS.lib.CipherParams.create({
-              ciphertext: CryptoJS.enc.Hex.parse(encryptedText),
-            });
-
-            var decryptedData = CryptoJS.enc.Utf8.stringify(
-              CryptoJS.AES.decrypt(cipherParams, pkBlocks, {
-                iv: iv,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7,
-              })
-            );
-
-            return decryptedData;
-          }
-
-          const encrypted = fs.readFileSync("XC.json", "utf8").trim();
-          const decrypted = decryptAesBCB(encrypted);
-
-          fs.writeFileSync("XC_decrypted.json", decrypted);
-          console.log("解密完成 → XC_decrypted.json");
-          EOF
-
-          node decrypt.js
+          python scripts/tvbox.py XC.json XC_decrypted.json
 
       - name: 提交解密结果到仓库根目录
         run: |
