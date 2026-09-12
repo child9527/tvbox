@@ -8,10 +8,10 @@ from bs4 import BeautifulSoup
 OUTPUT = "index.html"
 
 # Gitee 仓库原始文件链接前缀
-GITEE_RAW_PREFIX = "https://gitee.com/child9527/mybox/raw/master/"
+GITEE_RAW_PREFIX = "https://gitee.com/child9527/mybox/raw/master/json"
 
 # Gitee 仓库文件列表页面
-GITEE_FILE_LIST_URL = "https://gitee.com/child9527/mybox/tree/master/"
+GITEE_FILE_LIST_URL = "https://gitee.com/child9527/mybox/tree/master/json"
 
 
 def fetch_gitee_json_files():
