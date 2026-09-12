@@ -3,38 +3,34 @@
 
 import datetime
 import requests
-from bs4 import BeautifulSoup
 
 OUTPUT = "index.html"
 
-# Gitee 仓库原始文件链接前缀
-GITEE_RAW_PREFIX = "https://gitee.com/child9527/mybox/raw/master/json"
-
-# Gitee 仓库文件列表页面
-GITEE_FILE_LIST_URL = "https://gitee.com/child9527/mybox/tree/master/json"
+# Gitee API：获取 json 目录下所有文件
+GITEE_API_URL = "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
 
 
 def fetch_gitee_json_files():
-    """从 Gitee 仓库抓取所有 *.json 文件名"""
-    print("正在从 Gitee 获取 JSON 文件列表...")
+    """从 Gitee API 获取所有 *.json 文件名和下载链接"""
+    print("正在从 Gitee API 获取 JSON 文件列表...")
 
-    resp = requests.get(GITEE_FILE_LIST_URL, headers={"User-Agent": "Mozilla/5.0"})
+    resp = requests.get(GITEE_API_URL, headers={"User-Agent": "Mozilla/5.0"})
     resp.raise_for_status()
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    data = resp.json()
 
     json_files = []
-
-    # Gitee 文件列表的 class 名为 "file-name"
-    for tag in soup.find_all("a", class_="file-name"):
-        filename = tag.text.strip()
-        if filename.endswith(".json"):
-            json_files.append(filename)
+    for item in data:
+        if item["name"].endswith(".json"):
+            json_files.append({
+                "name": item["name"],
+                "download_url": item["download_url"]
+            })
 
     # 按文件名长度排序（去掉 .json）
-    json_files = sorted(json_files, key=lambda x: len(x.replace(".json", "")))
+    json_files = sorted(json_files, key=lambda x: len(x["name"].replace(".json", "")))
 
-    print(f"发现 {len(json_files)} 个 JSON 文件：", json_files)
+    print(f"发现 {len(json_files)} 个 JSON 文件：", [f["name"] for f in json_files])
     return json_files
 
 
@@ -152,9 +148,9 @@ def generate_html():
 """
 
     # 自动生成 Gitee JSON 文件列表
-    for f in json_files:
-        name = f.replace(".json", "")  # 去掉 .json
-        url = f"{GITEE_RAW_PREFIX}{f}"
+    for item in json_files:
+        name = item["name"].replace(".json", "")
+        url = item["download_url"]
         html += f"""
             <div class="data-card">
                 <span class="data-label">{name}</span>
