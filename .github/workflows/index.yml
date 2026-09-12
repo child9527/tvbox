@@ -1,4 +1,4 @@
-name: Generate index.html
+name: 自动生成首页
 
 on:
   schedule:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-index:
+    name: 自动生成首页
     runs-on: ubuntu-latest
     permissions:
       contents: write
