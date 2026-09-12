@@ -474,32 +474,3 @@ jobs:
           else
             echo "🙈 没有需要推送到 Gitee 的 json 文件。"
           fi
-
-      - name: 6. 额外推送 yoursmlie66.json 到 Gitee 的 mybox/json/ 目录
-        if: steps.diff_check.outputs.has_changes == 'true'
-        env:
-          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
-        run: |
-          echo "📥 下载 yoursmlie66 的 XC.json..."
-          wget -O yoursmlie66.json "https://github.com/yoursmile66/TVBox/raw/main/XC.json"
-
-          echo "🔧 克隆 Gitee 仓库 mybox..."
-          git clone git@gitee.com:child9527/mybox.git gitee_extra
-          cd gitee_extra
-
-          mkdir -p json
-
-          echo "📦 推送 yoursmlie66.json 到 json/ 目录..."
-          cp ../yoursmlie66.json json/yoursmile66.json
-
-          git add json/yoursmile66.json
-
-          if [ -n "$(git status --porcelain json/yoursmile66.json)" ]; then
-            NOW_TIME=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "同步 yoursmlie66.json 到 Gitee json/ 目录 (${NOW_TIME}) [skip ci]"
-            git push origin master
-            echo "🚀 已成功推送 yoursmlie66.json 到 Gitee 的 mybox/json/ 目录！"
-          else
-            echo "🙈 yoursmlie66.json 无变更，跳过推送。"
-          fi
-
