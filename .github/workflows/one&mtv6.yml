@@ -80,6 +80,29 @@ jobs:
               if not os.path.exists(t["local"]):
                   is_first_run = True
 
+          # 打印当前时间与下一次运行时间（UTC + 北京时间）
+          import datetime
+
+          utc_now = datetime.datetime.utcnow()
+          bj_now = utc_now + datetime.timedelta(hours=8)
+
+          try:
+              target_ts = int(lines[0].strip()) if lines[0].strip() else 0
+          except:
+              target_ts = 0
+
+          target_utc = datetime.datetime.utcfromtimestamp(target_ts)
+          target_bj = target_utc + datetime.timedelta(hours=8)
+
+          print("==============================================")
+          print(f"当前时间（UTC）: {utc_now.strftime('%Y-%m-%d %H:%M:%S')}")
+          print(f"当前时间（北京时间）: {bj_now.strftime('%Y-%m-%d %H:%M:%S')}")
+          print(f"下一次运行时间（UTC）: {target_utc.strftime('%Y-%m-%d %H:%M:%S')}")
+          print(f"下一次运行时间（北京时间）: {target_bj.strftime('%Y-%m-%d %H:%M:%S')}")
+          print("==============================================")
+          print(f"是否进入执行阶段: {'是' if (is_first_run or current_time >= target_ts) else '否'}")
+          print("==============================================")
+
           # 时间未到 → 退出
           if not is_first_run and current_time < target_time:
               with open(os.environ["GITHUB_OUTPUT"], "a") as f:
