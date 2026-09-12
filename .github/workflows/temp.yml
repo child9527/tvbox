@@ -19,6 +19,10 @@ jobs:
         with:
           node-version: "18"
 
+      - name: 安装依赖
+        run: |
+          npm install crypto-js
+
       - name: 下载 XC.json
         run: |
           wget -O XC.json "https://github.com/yoursmile66/TVBox/raw/main/XC.json"
