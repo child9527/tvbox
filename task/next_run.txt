@@ -17,4 +17,5 @@ https://github.com/qist/tvbox/blob/master/jsm.json
 https://github.com/alantang1977/X/blob/main/X.json
 https://github.com/mcp2016/TVBox/blob/main/pj.json
 https://yydsok.com/api/bendi/yydsapi/nf/api.json
-https://github.com/child9527/tvbox/blob/main/mtv6.json
+https://github.com/child9527/tvbox/blob/main/json/mtv6.json
+https://github.com/child9527/tvbox/blob/main/json/one.json
