@@ -7,8 +7,8 @@ import datetime
 OUTPUT = "index.html"
 
 def list_json_files():
-    files = []
     root = "json"
+    files = []
     if os.path.exists(root):
         for f in os.listdir(root):
             if f.endswith(".json"):
@@ -17,72 +17,152 @@ def list_json_files():
 
 def generate_html():
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     json_files = list_json_files()
 
-    html = f"""
-<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>TVBox 自动订阅中心</title>
-<style>
-body {{
-    font-family: Arial, sans-serif;
-    background: #f7f7f7;
-    padding: 20px;
-}}
-.container {{
-    max-width: 800px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-}}
-h1 {{
-    text-align: center;
-}}
-.file-list {{
-    margin-top: 20px;
-}}
-.file-item {{
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}}
-a {{
-    color: #0078ff;
-    text-decoration: none;
-}}
-a:hover {{
-    text-decoration: underline;
-}}
-.footer {{
-    margin-top: 30px;
-    text-align: center;
-    color: #888;
-}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TVBox 自动订阅中心 - child9527</title>
+    <style>
+        :root {{
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #ff4757;
+            --link-color: #3498db;
+            --success-color: #2ecc71;
+            --border-radius: 8px;
+        }}
+
+        body {{
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }}
+
+        .container {{ max-width: 900px; margin: 0 auto; }}
+        
+        h2 {{ 
+            color: var(--accent-color); 
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.5rem;
+        }}
+
+        .section {{
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }}
+
+        .compact-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+        }}
+
+        .data-card {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #363636;
+            border-radius: 6px;
+            border: 1px solid #404040;
+            transition: background 0.2s, border-color 0.2s;
+        }}
+
+        .data-card:hover {{
+            background: #404040;
+            border-color: #555;
+        }}
+
+        .data-label {{ 
+            color: #ddd; 
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 12px;
+        }}
+
+        .copy-pill {{ 
+            font-family: -apple-system, sans-serif;
+            font-size: 0.8rem;
+            color: #bbb; 
+            cursor: pointer;
+            background: #2b2b2b;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid #484848;
+            transition: all 0.2s ease;
+            user-select: none;
+            flex-shrink: 0;
+        }}
+
+        .copy-pill:hover {{ 
+            background: #4a4a4a; 
+            color: #fff;
+            border-color: #666;
+        }}
+
+        .copy-pill.copied {{
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }}
+    </style>
 </head>
 <body>
-<div class="container">
-<h1>TVBox 自动订阅中心</h1>
-<p>自动生成时间：{now}</p>
 
-<h2>订阅文件列表</h2>
-<div class="file-list">
+<div class="container">
+    <h2>TVBox 自动订阅中心</h2>
+    <div class="section">
+        <div class="compact-grid">
 """
 
+    # 自动生成 json 文件列表
     for f in json_files:
-        html += f'<div class="file-item"><a href="json/{f}" target="_blank">{f}</a></div>\n'
+        url = f"https://child9527.github.io/json/{f}"
+        html += f"""
+            <div class="data-card">
+                <span class="data-label">{f}</span>
+                <span class="copy-pill" data-value="{url}" onclick="copy(this)">点击复制</span>
+            </div>
+"""
 
-    html += """
+    html += f"""
+        </div>
+    </div>
+
+    <div style="color:#888; font-size:0.8rem; margin-top:20px;">
+        自动生成时间：{now}
+    </div>
 </div>
 
-<div class="footer">
-TVBox 自动化系统 · GitHub Pages 自动发布
-</div>
+<script>
+function copy(el) {{
+    const value = el.getAttribute("data-value");
+    navigator.clipboard.writeText(value).then(() => {{
+        el.classList.add("copied");
+        el.innerText = "已复制";
+        setTimeout(() => {{
+            el.classList.remove("copied");
+            el.innerText = "点击复制";
+        }}, 1500);
+    }});
+}}
+</script>
 
-</div>
 </body>
 </html>
 """
