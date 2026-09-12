@@ -17,15 +17,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: 设置 Git 身份（必须最前）
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: 检出当前仓库
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: 配置 Python 环境
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
 
       - name: 安装 Python 依赖
         run: |
