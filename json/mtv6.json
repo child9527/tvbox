@@ -28,6 +28,8 @@
     }
   ],
   "sites": [
+  
+  
     {
       "key": "bfzy",
       "name": "西瓜采集{秒开}",
@@ -79,11 +81,11 @@
         "动漫"
       ]
     },
-    {
+        {
       "key": "YunDuo",
       "name": "☁️┆云朵┆4K",
       "type": 3,
-      "jar": "https://tc-new.z.wiki/autoupload/iYHTWVx6T8RrCmqdGD6MOdiO_OyvX7mIgxFBfDMDErs/20260628/0oQT/fish06281030.jar",
+          "jar": "https://tc-new.z.wiki/autoupload/iYHTWVx6T8RrCmqdGD6MOdiO_OyvX7mIgxFBfDMDErs/20260628/0oQT/fish06281030.jar",
       "api": "csp_YunDuo",
       "searchable": 1,
       "changeable": 1,
@@ -116,7 +118,7 @@
       "ext": "http://172.247.227.203:25321/mtys.php",
       "jar": "http://47.120.41.246:8025/vip/jar/xiaomi.php"
     },
-    {
+  {
       "key": "柠檬",
       "name": "柠檬秒播",
       "type": 3,
@@ -125,20 +127,21 @@
       "jar": "https://ncstatic.clewm.net/rsrc/2025/0725/20/318ccef14687421637f5aa0ba1021e33.png;md5;939FFBC2941A28CA533F2653FA4B449E",
       "ext": "7lj763gg402i7942503g839jg74h8h88highi40799jh6i6k454419l0l5184k0g549h0kg2i01i838i2h42g891lgg1"
     },
-    {
+{
       "api": "csp_QQGuard",
       "changeable": 0,
       "ext": "",
       "filterable": 1,
       "indexs": 0,
-      "jar": "http://825826.xyz:666/tvbox/TYY2/TYY.jar",
+       "jar": "http://825826.xyz:666/tvbox/TYY2/TYY.jar",
       "key": "csp_QQ",
       "name": "腾讯4K",
       "quickSearch": 1,
       "searchable": 1,
       "type": 3
     },
-    {
+ 
+      {
       "key": "😍皮皮影院",
       "name": "😍皮皮影院",
       "jar": "http://150.158.52.248/tgyg/XBPQ.jar",
@@ -160,7 +163,8 @@
         "分类url": "https://www.yfyxx.cc/{cateId}-{catePg}.html"
       }
     },
-    {
+  
+     {
       "key": "苹果",
       "name": "苹果｜APP",
       "type": 3,
@@ -181,14 +185,15 @@
         "decrypt": "0"
       }
     },
-    {
+ 
+      {
       "key": "优酷",
       "name": "优酷{战争}",
       "type": 3,
       "api": "https://wget.la/https://raw.githubusercontent.com/fskl1/H/refs/heads/lib/drpy2.min.js",
       "ext": "https://fastlink.cokey.xyz/f/9Y0jHb/%E4%BC%98%E9%85%B7.js"
     },
-    {
+  {
       "key": "csp_539影视",
       "name": "🍁┃539┃战争",
       "type": 3,
@@ -199,6 +204,7 @@
         "分类": "短剧$25#电视剧$2#电影$1#动漫$4#综艺$3"
       }
     },
+      
     {
       "key": "蓝鹰",
       "name": "蓝鹰┃秒播",
@@ -214,6 +220,7 @@
         "ua": "okhttp/3.10.0"
       }
     },
+    
     {
       "key": "爱看剧",
       "name": "爱看剧{秒播}",
@@ -255,6 +262,7 @@
       "jar": "https://wxkb-res-1258476243.cos.ap-shanghai.myqcloud.com/web/img/8848100788856671/tnQoXVV84noj4smGHqBG6i_20260326065606#.jpg;md5;6b81056369cafcfad1adfa5fe5bc678a",
       "ext": "https://vip.wwgz.cn:5200"
     },
+
     {
       "key": "麦田",
       "name": "🌾┃麦田秒播",
@@ -280,7 +288,8 @@
       "timeout": 12,
       "ext": "https://vip.wwgz.cn:5200"
     },
-    {
+    
+      {
       "key": "csp_鹦鹉影院",
       "name": "鹦鹉｜影院",
       "type": 3,
@@ -299,10 +308,10 @@
       "name": "🍁┃海瑞┃影院",
       "type": 3,
       "api": "csp_XBPQ",
-      "ext": "https://gh-proxy.com/https://raw.githubusercontent.com/LIUJEI/TB/master/XYQ/海瑞.png",
+      "ext": "https://gh-proxy.com/raw.githubusercontent.com/LIUJEI/TB/master/XYQ/海瑞.png",
       "类型": "影视"
     },
-    {
+      {
       "name": "小黄人｜1920",
       "key": "AppV6Xhr",
       "type": 3,
@@ -338,7 +347,8 @@
       "changeable": 1,
       "ext": "291f288565eb2ea7fcb9caa81e70fa9b13ee50aa4880a55d5da44a22bc07d90a87c2078c271197d29b708c0e51da4326089ccfa0765319fe6aa5788b0e8073f192d9a15ffb277a378829dc70346b083810b66a73e4176fe1ba51cde68ee64c68c04a8d1ed92e586688e09ade2701dfba3ccf720c024287dc3187c946399bdd4ad5785674bcad46f894c081f80e3ac064289ddf0889b44c566d6d0d8b9e4ee774160d3cd5859e6448e5ea2012623a0fa0f97104f39e462f89d3d03f6a6ab9ab4afd799c08cb4621ef0cfca86fb4fda635a0137523cc5c8fe4c2f820857f6168879b8a0f2a92949b3ade404d5c2b5951b09caa7a1b23c373ef5a548de6704b799989da3fed86a6562e0806b571f4e7fe85b1310caa105a87b222bda8c72759b75d4d1e230b51c235015d961f1a8bf67cbfccfaa8b970e3fdac81f13155239b9dbae209dd9e96559a3a25640c2b7932b0c2ecfa327dab44fa646fd6a23ef1fd0df73b645d8dddbf5bc9c39318330189e5fc2335be5e897c3a27d09ad9be406bba1b0f84280d1219b843b87896ae6642fa3be042b62ee11d7fffdc220ce2c0cf83721836a38685353afff339e4b7dd5621f6acc8899fedc64351b518fde91661a9a5b948ee57e4de5d018d21bc2f045ac225ee031b843618002025559e9e66093706adcbd16902307fe1ac031c7293fc5ea0fafb6af4ef975421cd50eea958fac6cc83d2819666fa9cdc1b0d23b256034949e75276e51010f8743f9440edb6bf568819364eba2d68b9aa720fcc91f6465ae92375c6f06043e95c4566acd6483b175f90e9d189b6cde6ad7a7f9d66c386e49c0264cda18df57c073d74154cfc8e24aefab25f323cc84e196daf501cfabeb643a0c9cab0e0c7550875adb0870789b3edc49a9f8f772960bfe9fbc15943a31c3096baf8b1e62f5f01e6bb7f45dc56f24d5d3c7e1dd33c9a7aa0f18ade601a4780121e758db79c03e75436d38e96c463713e37e477bc6770d7b131f440d9a4fe1ba7295c2a211387aa319587c8f5be8cfab47bddd1ef1dffbbca22b3069205674f90a80223d91f005fbda1cf09124152b119bc3fc260725931c6b3e7608c8463e84c46ddd1ff16f78da180b7efb7ddbddaf4e209d3753a07f70b85393bc11eb73ab878cd5e59b846c839bcea083220a08bcb7815e4908cbdfb53d6a7aead5c9a4380c14f8c5e4319fed342d5985d1b907a576756dc28512a16c74bc57e4c6b415070fd1a1a59aa3619de7bc5989e440a5ff8512dd260fb4e0926f479b46d9a232755567b3b52e0765718acbf491c894519ddaa3fa22dc07d40afd142445473592ef60bf398652ad7edd36b05ac951d08f8a3305cfceffe4d104f3f4ebd10f17607575e967e0af17d594f7fb57e43a22b26cd72a667cc8753584897ffe060636ad0c378450dab2c6ad9239d58949d75399e9a212b7d5c13472e0df6425ce49dfce3fb3be3b8bead3329260d63b45eeb4481594fed19da2c72b1017644046b8aab0a1f8dc01ecbbce3fc4ac4cf71c37f6918c69a40ba2ee04661872a06ab8855e29dd2c25a2502406fef84e96164cb3e202ec89b07233931cf444f66ad16fa5fefe53b7d6605d2b7bb3a95b9b71eb9bc56e10b049b96cde60646e78190978d5409475dfcf909599b059f939040ca3888d37cbea9c7814d93ac428f91e8b08044d99cfad3772522f9cefc1c34a33fe2ff464817ed69d4f8bd2417ade9507a033147d121b5483dba44e28b3a150cfc57f856eea30b85e80e28aa1da7f0aa491410885317dc31535b7baaeaa4b06025022088bc6aced130a13d82444de650ca173902aff94aee29a2276ff924ecc9a99de41476d8324362443ab2125574455da3145041d790a7962548f93d56be50a5d696fc3b3db75f74934c727ff813c5c8e75f89e2f4014d22710bcfedcb02ab4f59b25c01def2c9d8476b59310d9dff88473b5fc054076513e3255280594ee6076b89dd42a53b667312c2d34c95f08a80ef474f6eb6a3b2c1a707cf3c8032de400162e08b131edbe0f8be74097daf48c29d7e88a4948271633a6398a42c8567f54840a7ad9a388c9895fc2effa499b74fb9856321e62104"
     },
-    {
+   
+        {
       "key": "蓝鹰",
       "name": "蓝鹰┃秒播",
       "type": 3,
@@ -352,7 +362,7 @@
         "ua": "okhttp/3.10.0"
       }
     },
-    {
+       {
       "key": "yim壹米csp_Wwys",
       "name": "旺旺┃无广",
       "type": 3,
@@ -621,6 +631,7 @@
         "buildSignature": "03DD38CE4C3D62D0F0DEFACC06768D14EB382C7BD77A05B2EBF4D66E154A0D47"
       }
     },
+   
     {
       "key": "qc",
       "name": "龙马┃采集",
@@ -1232,7 +1243,8 @@
         "动漫"
       ]
     },
-    {
+  
+       {
       "key": "泥泥视频(ku)",
       "name": "泥视影视(ku)",
       "type": 3,
@@ -1316,8 +1328,7 @@
       "jar": "https://maoys1.oss-cn-hangzhou.aliyuncs.com/1019.txt;md5;282C31437FAD9E7959CC2E06E7705930",
       "api": "csp_XBiu",
       "ext": "http://m.huade315.com/show/{cateId}--------{catePg}---.html"
-    },
-    {
+    }, {
       "key": "csp_XBiu12",
       "name": "12{网页}",
       "type": 3,
@@ -1325,21 +1336,21 @@
       "api": "csp_XBiu",
       "ext": "https://123.149ddccvas.shop/q/static/{cateId}/go-{catePg}.html"
     },
-    {
+      {
       "key": "csp_月光影院",
       "name": "月光｜影院",
       "type": 3,
       "jar": "https://2843.kstore.space/tvkj.jar",
       "api": "csp_XBPQ",
       "ext": {
-        "请求头": "手机",
-        "简介": "剧情介绍:+description\">&&</div>",
-        "数组": "module-item\">&&module-item-text",
-        "图片": "data-src=\"&&\"",
-        "副标题": "video-class\">&&</span>",
-        "分类url": "https://jxhwsl.com/index.php/vod/show/area/{area}/class/{class}/id/{cateId}/page/{catePg}/year/{year}.html",
-        "分类": "短剧$99#电视剧$79#电影$61#动漫$93#综艺$88"
-      }
+ "请求头": "手机",
+ "简介": "剧情介绍:+description\">&&</div>",
+ "数组": "module-item\">&&module-item-text",
+ "图片": "data-src=\"&&\"",
+ "副标题": "video-class\">&&</span>",
+ "分类url": "https://jxhwsl.com/index.php/vod/show/area/{area}/class/{class}/id/{cateId}/page/{catePg}/year/{year}.html",
+ "分类": "短剧$99#电视剧$79#电影$61#动漫$93#综艺$88"
+}
     },
     {
       "key": "csp_全网影院",
@@ -1348,12 +1359,12 @@
       "jar": "https://2843.kstore.space/tvkj.jar",
       "api": "csp_XBPQ",
       "ext": {
-        "请求头": "手机",
-        "简介": "剧情介绍:+stui-content__desc col-pd clearfix\">&&</div>",
-        "数组": "stui-vodlist__thumb lazyload&&</a>",
-        "分类url": "https://www.qkw1.com/qkwshow/{cateId}-{area}--{class}-----{catePg}---{year}.html",
-        "分类": "短剧$duanju#电视剧$tv#电影$dy#动漫$dm#综艺$zy"
-      }
+ "请求头": "手机",
+ "简介": "剧情介绍:+stui-content__desc col-pd clearfix\">&&</div>",
+ "数组": "stui-vodlist__thumb lazyload&&</a>",
+ "分类url": "https://www.qkw1.com/qkwshow/{cateId}-{area}--{class}-----{catePg}---{year}.html",
+ "分类": "短剧$duanju#电视剧$tv#电影$dy#动漫$dm#综艺$zy"
+}
     },
     {
       "key": "csp_可以看影院",
@@ -1392,6 +1403,7 @@
       "api": "csp_XBiu",
       "ext": "https://www.zhongjiawuyou.com/xcyitp/{cateId}-{catePg}.html"
     },
+  
     {
       "key": "csp_XBiu鹦鹉",
       "name": "鹦鹉{网页}",
@@ -1439,7 +1451,7 @@
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
-      "ext": "https://gh-proxy.com/https://raw.githubusercontent.com/child9527/tvbox/main/json/八号影视.json"
+      "ext": "https://7337.kstore.space/kjtv/./json/八号影视.json"
     },
     {
       "key": "csp_XBPQ_七七",
@@ -1637,6 +1649,7 @@
         "分类": "电影$3#电视剧$1#动漫$2#综艺$4#剧情$21"
       }
     },
+ 
     {
       "key": "csp_xml_豪华",
       "name": "豪华采集",
@@ -1973,7 +1986,7 @@
       "key": "XBPQ_41888",
       "name": "非常好(XBPQ)",
       "type": 3,
-      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/AbaloneHunter/Film-TV/main/jar/%E5%86%85%E7%BD%AELzgo.jar",
+      "api": "https://ghfast.top/https://raw.githubusercontent.com/AbaloneHunter/Film-TV/refs/heads/main/jar/%E5%86%85%E7%BD%AELzgo.jar",
       "ext": {
         "分类": "电影$1#电视剧$2#综艺$3#动漫$4",
         "分类url": "https://www.tomato-china.net/vodshow/{cateId}-{area}-{by}-{class}-{lang}----{catePg}---{year}.html"
@@ -2567,7 +2580,7 @@
       "type": 1,
       "url": "https://jx.84jia.com/api/?key=rc4qjSqZr2z9DFDchk&url="
     },
-    {
+       {
       "name": "腾讯专用4K",
       "type": 1,
       "url": "http://127.0.0.1:6677/proxy?do=parse&key=687474703a2f2f3130332e34352e3136322e3230373a31333133312fe5b08fe8998ee696912e7068703f75726c3d2c687474703a2f2f34332e3133392e39342e39363a383836362f6170692f3f6b65793d37653637616233333165653235353636346632393839636132313731633264642675726c3d2c68747470733a2f2f6e6969756d612e71692d73696d706c652e746f702f6e6e2e7068703f75726c3d&filters=mall,mp4&url="
