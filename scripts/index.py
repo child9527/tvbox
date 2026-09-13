@@ -41,110 +41,128 @@ def generate_html():
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TVBox 自动订阅中心 - child9527</title>
-    <style>
-        :root {{
-            --bg-color: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --text-color: #e0e0e0;
-            --accent-color: #ff4757;
-            --success-color: #2ecc71;
-            --border-radius: 8px;
-        }}
+<meta charset="UTF-8">
+<title>TVBox 自动订阅中心 · Child9527</title>
+<style>
+body {{
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #1e1e1e;
+    color: #e0e0e0;
+}}
 
-        body {{
-            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }}
+/* 顶部导航栏 */
+.navbar {{
+    width: 100%;
+    background: #2b2b2b;
+    border-bottom: 2px solid #4aa3ff;
+    padding: 12px 20px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 0 12px rgba(74,163,255,0.3);
+}}
 
-        .container {{ max-width: 900px; margin: 0 auto; }}
-        
-        h2 {{ 
-            color: var(--accent-color); 
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 8px;
-            margin-top: 30px;
-            font-size: 1.5rem;
-        }}
+.navbar a {{
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: 0.2s;
+}}
 
-        .section {{
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }}
+.navbar a:hover {{
+    background: #4aa3ff;
+    color: #000;
+}}
 
-        .compact-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 10px;
-        }}
+/* 内容区块 */
+.section {{
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+}}
 
-        .data-card {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: #363636;
-            border-radius: 6px;
-            border: 1px solid #404040;
-            transition: background 0.2s, border-color 0.2s;
-        }}
+.section-title {{
+    color: #ffffff;
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+}}
 
-        .data-card:hover {{
-            background: #404040;
-            border-color: #555;
-        }}
+/* 卡片网格 */
+.compact-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}}
 
-        .data-label {{ 
-            color: #ddd; 
-            font-size: 0.9rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-right: 12px;
-        }}
+.data-card {{
+    background: #2b2b2b;
+    border: 1px solid #4aa3ff;
+    box-shadow: 0 0 12px rgba(74,163,255,0.4);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}}
 
-        .copy-pill {{ 
-            font-size: 0.8rem;
-            color: #bbb; 
-            cursor: pointer;
-            background: #2b2b2b;
-            padding: 4px 10px;
-            border-radius: 12px;
-            border: 1px solid #484848;
-            transition: all 0.2s ease;
-            user-select: none;
-            flex-shrink: 0;
-        }}
+.data-label {{
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}}
 
-        .copy-pill:hover {{ 
-            background: #4a4a4a; 
-            color: #fff;
-            border-color: #666;
-        }}
+.copy-pill {{
+    font-size: 0.8rem;
+    color: #bbb;
+    cursor: pointer;
+    background: #2b2b2b;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid #4aa3ff;
+    transition: 0.2s;
+}}
 
-        .copy-pill.copied {{
-            background: rgba(46, 204, 113, 0.15);
-            color: var(--success-color);
-            border-color: var(--success-color);
-        }}
-    </style>
+.copy-pill:hover {{
+    background: #4aa3ff;
+    color: #000;
+}}
+
+.copy-pill.copied {{
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border-color: #2ecc71;
+}}
+
+/* 底部 */
+.footer {{
+    text-align: center;
+    padding: 20px;
+    color: #888888;
+    margin-top: 40px;
+}}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>TVBox 自动订阅中心</h2>
-    <div class="section">
-        <div class="compact-grid">
+<!-- 导航栏 -->
+<div class="navbar">
+    <a href="https://child9527.github.io/" target="_blank">首页</a>
+    <a href="https://child9527.github.io/about/" target="_blank">关于本站</a>
+    <a href="https://child9527.github.io/software/" target="_blank">Software 软件中心</a>
+</div>
+
+<!-- 内容区块 -->
+<div class="section">
+    <h2 class="section-title">TVBox 自动订阅中心</h2>
+
+    <div class="compact-grid">
 """
 
     # 自动生成 Gitee JSON 文件列表
@@ -152,17 +170,16 @@ def generate_html():
         name = item["name"].replace(".json", "")
         url = item["download_url"]
         html += f"""
-            <div class="data-card">
-                <span class="data-label">{name}</span>
-                <span class="copy-pill" data-value="{url}" onclick="copy(this)">点击复制</span>
-            </div>
+        <div class="data-card">
+            <span class="data-label">{name}</span>
+            <span class="copy-pill" data-value="{url}" onclick="copy(this)">复制链接</span>
+        </div>
 """
 
     html += f"""
-        </div>
     </div>
 
-    <div style="color:#888; font-size:0.8rem; margin-top:20px;">
+    <div class="footer">
         自动生成时间：{now}
     </div>
 </div>
@@ -175,7 +192,7 @@ function copy(el) {{
         el.innerText = "已复制";
         setTimeout(() => {{
             el.classList.remove("copied");
-            el.innerText = "点击复制";
+            el.innerText = "复制链接";
         }}, 1500);
     }});
 }}
@@ -189,6 +206,7 @@ function copy(el) {{
         f.write(html)
 
     print(f"index.html 已生成 → {OUTPUT}")
+
 
 
 if __name__ == "__main__":
