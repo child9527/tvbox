@@ -31,26 +31,48 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           changed_files=()
+
+          # 1. 检查 GitHub 本地是否有变化
           for file in json/*.json; do
             git add -f "$file"
             if [ -n "$(git status --porcelain "$file")" ]; then
+              echo "🔍 本地变更: $file"
               changed_files+=("$file")
             else
               git restore --staged "$file"
             fi
+            done
+
+          # 2. 克隆 Gitee 仓库（只读）
+          echo "🔧 检查 Gitee 仓库是否缺少文件..."
+          git clone --depth=1 git@gitee.com:child9527/mybox.git gitee_check
+          mkdir -p gitee_check/json
+
+          # 3. 检查 Gitee 是否缺少某个 JSON
+          for file in json/*.json; do
+            base="$(basename "$file")"
+            if [ ! -f "gitee_check/json/$base" ]; then
+              echo "📌 Gitee 缺少文件: $base → 强制加入 changed_files"
+              changed_files+=("$file")
+            fi
           done
 
+          # 4. 判断是否有需要处理的文件
           if [ ${#changed_files[@]} -eq 0 ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-          git commit -m "更新于 ${NOW} [skip ci]"
-          git push
+          # 5. GitHub 只在本地有变化时 commit（不会因为 Gitee 缺失而 commit）
+          if [ -n "$(git status --porcelain json)" ]; then
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "更新于 ${NOW} [skip ci]"
+            git push
+          fi
 
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+
 
       - name: Step 3 - Encrypt
         id: encrypt_step
