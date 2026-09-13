@@ -115,29 +115,29 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" >> ~/.ssh/config
 
-          - name: Step 5 - Push to Gitee
-            if: steps.encrypt_step.outputs.has_encrypted == 'true'
-            run: |
-              git clone git@gitee.com:child9527/mybox.git gitee_temp
-              cd gitee_temp
+      - name: Step 5 - Push to Gitee
+        if: steps.encrypt_step.outputs.has_encrypted == 'true'
+        run: |
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
 
-              # ⭐ 必须在 Gitee 仓库里设置身份
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-              mkdir -p json
+          mkdir -p json
 
-              for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
-                base="$(basename "$f" .json)"
-                cp "../json/${base}.bin" "json/${base}.json"
-                rm -f "../json/${base}.bin"
-              done
+          for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
+            base="$(basename "$f" .json)"
+            cp "../json/${base}.bin" "json/${base}.json"
+            rm -f "../json/${base}.bin"
+          done
 
-              git add json/*.json
+          git add json/*.json
 
-              if [ -n "$(git status --porcelain json)" ]; then
-                NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-                git commit -m "同步加密 JSON (${NOW}) [skip ci]"
-                git push origin master
-              fi
+          if [ -n "$(git status --porcelain json)" ]; then
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "同步加密 JSON (${NOW}) [skip ci]"
+            git push origin master
+          fi
+
 
