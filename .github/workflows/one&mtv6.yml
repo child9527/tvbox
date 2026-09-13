@@ -177,12 +177,12 @@ jobs:
         if: steps.process_logic.outputs.should_decrypt_one == 'true'
         run: |
           echo "尝试下载 one.json ..."
-          if curl -L "https://9877.kstore.space/one.json" -o "json/one_tmp.json"; then
+          if curl -L --fail --silent --show-error "https://9877.kstore.space/one.json" -o "json/one_tmp.json"; then
             echo "下载成功，开始解密..."
             python scripts/tvbox.py "json/one_tmp.json" "json/one.json" dec || echo "解密失败，但继续执行后续步骤"
             rm -f json/one_tmp.json
           else
-            echo "❌ 无法下载 one.json，跳过解密步骤，继续执行后续任务"
+            echo "❌ 无法下载 one.json（HTTP 非 200 或文件不存在），跳过解密步骤"
           fi
 
       - name: 解密 yoursmile66.json
