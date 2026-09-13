@@ -176,7 +176,14 @@ jobs:
       - name: 解密 one.json
         if: steps.process_logic.outputs.should_decrypt_one == 'true'
         run: |
-          python scripts/tvbox.py "https://9877.kstore.space/one.json" "json/one.json" dec
+          echo "尝试下载 one.json ..."
+          if curl -L "https://9877.kstore.space/one.json" -o "json/one_tmp.json"; then
+            echo "下载成功，开始解密..."
+            python scripts/tvbox.py "json/one_tmp.json" "json/one.json" dec || echo "解密失败，但继续执行后续步骤"
+            rm -f json/one_tmp.json
+          else
+            echo "❌ 无法下载 one.json，跳过解密步骤，继续执行后续任务"
+          fi
 
       - name: 解密 yoursmile66.json
         if: steps.process_logic.outputs.should_decrypt_yoursmile66 == 'true'
@@ -187,7 +194,6 @@ jobs:
         if: steps.process_logic.outputs.should_download_mtv6 == 'true'
         run: |
           curl -L "https://d.kstore.dev/download/2843/mtv6.txt" -o "json/mtv6.json"
-
 
       - name: 提交改动
         run: |
