@@ -69,25 +69,18 @@ def decrypt_full(cipher_hex: str) -> str:
 # 完整影视仓加密
 # ============================================================
 
-def encrypt_full(data: str, key="KenKey2026", iv="2024010100000"):
-    """
-    影视仓协议加密（与 decrypt_full 完全对称）
-    """
-    # 1. keyHex = hex("$#"+key+"#$")
-    key_hex = binascii.hexlify(f"$#{key}#$".encode()).decode()
-    # 2. ivHex = hex(iv)  ← iv 必须是 13 字节，否则影视仓不认
-    iv_hex = binascii.hexlify(iv.encode()).decode()
-    if len(iv_hex) != 26:
-        raise ValueError("影视仓协议要求 iv 必须是 13 字节（hex 长度 26）")
-    # 3. AES-CBC 加密（影视仓要求 key/iv 补齐到 16 字节）
+def encrypt_full(data: str, key="1234567890123", iv="1234567890123"):
     key_bytes = key.ljust(16, "0").encode()
-    iv_bytes = iv.ljust(16, "0").encode()
+    iv_bytes  = iv.ljust(16, "0").encode()
+
     cipher = AES.new(key_bytes, AES.MODE_CBC, iv_bytes)
     encrypted = cipher.encrypt(pad(data.encode(), AES.block_size))
-    cipher_hex = binascii.hexlify(encrypted).decode()
-    # 4. 拼接成最终协议格式
-    return key_hex + cipher_hex + iv_hex
 
+    header_hex = binascii.hexlify(f"$#{key}#$".encode()).decode()
+    cipher_hex = encrypted.hex()
+    iv_hex = binascii.hexlify(iv.encode()).decode()
+
+    return header_hex + cipher_hex + iv_hex
 
 
 # ============================================================
