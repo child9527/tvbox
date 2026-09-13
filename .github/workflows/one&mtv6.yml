@@ -40,6 +40,12 @@ jobs:
                   "decrypt": True
               },
               {
+                  "name": "yoursmile66",
+                  "url": "https://github.com/yoursmile66/TVBox/raw/main/XC.json",
+                  "local": "json/yoursmile66.json",
+                  "decrypt": True
+              },
+              {
                   "name": "mtv6",
                   "url": "https://d.kstore.dev/download/2843/mtv6.txt",
                   "local": "json/mtv6.json",
@@ -132,7 +138,13 @@ jobs:
               except Exception as e:
                   print(f"[{t['name']}] HEAD 请求失败: {e}")
 
-              need = is_first_run or (remote_size and remote_size != local_size)
+              need = None
+              if t["name"] == "yoursmile66":
+                  # ⭐ 永远执行，不受随机定时器影响
+                  need = True
+              else:
+                  need = is_first_run or (remote_size and remote_size != local_size)
+
               results[t["name"]] = {
                   "need": need,
                   "size": remote_size if remote_size else local_size,
@@ -166,6 +178,11 @@ jobs:
         run: |
           python scripts/tvbox.py "https://9877.kstore.space/one.json" "json/one.json" dec
 
+      - name: 解密 yoursmile66.json
+        if: steps.process_logic.outputs.should_decrypt_yoursmile66 == 'true'
+        run: |
+          python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "json/yoursmile66.json" dec
+
       - name: 下载 mtv6.json（明文）
         if: steps.process_logic.outputs.should_download_mtv6 == 'true'
         run: |
@@ -178,7 +195,7 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
 
-          git add task/next_run.txt json/one.json json/mtv6.json
+          git add task/next_run.txt json/one.json json/mtv6.json json/yoursmile66.json
           if ! git diff --staged --quiet; then
             git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
             git push
