@@ -74,8 +74,10 @@ jobs:
 
           # ===== 从 task/json.txt 读取 URL 任务 =====
           txt_file = "task/json.txt"
-          TASKS = []
+          TASKS = []          # 主列表（来自 task/json.txt）
+          LOCAL_JSON = []     # 次列表（来自 json/ 目录）
 
+          # 读取 task/json.txt
           if os.path.exists(txt_file):
               with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
                   all_lines = f.readlines()
@@ -88,18 +90,45 @@ jobs:
                       base_name = url.split("?")[0].rstrip("/").split("/")[-1]
                       if not base_name.endswith(".json"):
                           base_name += ".json"
+
                       TASKS.append({
                           "name": "json/" + base_name,
-                          "url": url
+                          "url": url,
+                          "source": "task"
                       })
 
-              print(f"📖 成功从 {txt_file} 解析到 {len(TASKS)} 个待处理任务。")
+              print(f"📖 成功从 {txt_file} 解析到 {len(TASKS)} 个任务（主列表）")
           else:
               print(f"❌ [错误] 未找到文件 {txt_file}！")
 
-          if not TASKS:
-              print("❌ [错误] json.txt 未找到有效 URL！退出任务。")
-              sys.exit(1)
+          # 读取 json/ 目录下已有文件
+          os.makedirs("json", exist_ok=True)
+          for filename in os.listdir("json"):
+              if filename.endswith(".json"):
+                  LOCAL_JSON.append({
+                      "name": "json/" + filename,
+                      "url": None,
+                      "source": "local"
+                  })
+
+          print(f"📁 json/ 目录下已有 {len(LOCAL_JSON)} 个文件（次列表）")
+
+          # ===== 合并逻辑：以 task/json.txt 为主 =====
+          task_names = {item["name"] for item in TASKS}
+          extra_local = [item for item in LOCAL_JSON if item["name"] not in task_names]
+
+          FINAL_TASKS = TASKS + extra_local
+
+          print("--------------------------------------------------")
+          print(f"📦 合并后总任务数: {len(FINAL_TASKS)}")
+          print("📄 最终任务文件列表:")
+          for t in FINAL_TASKS:
+              print(f" - {t['name']} ({t['source']})")
+          print("--------------------------------------------------")
+
+          TASKS = FINAL_TASKS
+
+
 
           # ===== 镜像测速逻辑（保持原样） =====
           MIRROR_WEIGHTS = {
