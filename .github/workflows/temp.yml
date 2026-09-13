@@ -29,3 +29,23 @@ jobs:
           done
 
           echo "完成删除所有手动触发的 runs。"
+
+      - name: 删除所有 Pages Build Deployment runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "开始删除所有 Pages Build Deployment runs..."
+
+          gh api \
+            -X GET \
+            "repos/${{ github.repository }}/actions/runs?per_page=100" \
+            --paginate \
+            --jq '.workflow_runs[] | select(.name=="pages-build-deployment" or .event=="pages_build") | .id' |
+          while read -r run_id; do
+              echo "删除 Pages Build run: $run_id"
+              gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$run_id" --silent || \
+                  echo "删除失败: $run_id（继续下一条）"
+          done
+
+          echo "完成删除所有 Pages Build Deployment runs。"
+
