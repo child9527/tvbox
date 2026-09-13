@@ -223,11 +223,18 @@ jobs:
                   return False
 
           def get_base_url(url):
+              if not isinstance(url, str) or not url.strip():
+                  return ""
+
               is_gh, raw_url, _ = extract_raw_github_url(url)
-              target_url = raw_url if is_gh else url
+              target_url = raw_url if (is_gh and isinstance(raw_url, str)) else url
+              if not isinstance(target_url, str) or not target_url.strip():
+                  return ""
+
               if "/" in target_url:
                   return target_url.rsplit("/", 1)[0] + "/"
               return target_url
+
 
           def process_url(url, base_url):
               if not isinstance(url, str):
