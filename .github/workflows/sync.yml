@@ -1,5 +1,4 @@
-name: Sync JSON
-
+name: 同步多文件&推送到Gitee
 on:
   workflow_dispatch:
   push:
