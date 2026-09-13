@@ -4,6 +4,7 @@ on:
   push: 
     paths:
     - 'task/json.txt'
+    - 'json/**'
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
