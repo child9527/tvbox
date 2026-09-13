@@ -1,4 +1,5 @@
-name: 同步多文件&推送到Gitee
+name: 批量同步、加密与双端推送
+
 on:
   workflow_dispatch:
   push:
@@ -9,6 +10,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,6 +19,94 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests commentjson pycryptodome
 
-      - name: Run sync
+      - name: Step 1 - Sync JSON
+        id: sync_json
         run: |
           python scripts/sync.py
+
+      - name: Step 2 - Diff check
+        id: diff_check
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          changed_files=()
+          for file in json/*.json; do
+            git add -f "$file"
+            if [ -n "$(git status --porcelain "$file")" ]; then
+              changed_files+=("$file")
+            else
+              git restore --staged "$file"
+            fi
+          done
+
+          if [ ${#changed_files[@]} -eq 0 ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+          git commit -m "更新于 ${NOW} [skip ci]"
+          git push
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+
+      - name: Step 3 - Encrypt
+        id: encrypt_step
+        if: steps.diff_check.outputs.has_changes == 'true'
+        run: |
+          CHANGED="${{ steps.diff_check.outputs.changed_files }}"
+          processed=()
+
+          for f in $CHANGED; do
+            base="${f%.*}"
+            bin="${base}.bin"
+            python scripts/tvbox.py "$f" "$bin" enc || true
+            if [ -f "$bin" ]; then
+              processed+=("$f")
+            fi
+          done
+
+          if [ ${#processed[@]} -eq 0 ]; then
+            echo "has_encrypted=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "has_encrypted=true" >> $GITHUB_OUTPUT
+          echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
+
+      - name: Step 4 - Setup SSH
+        if: steps.encrypt_step.outputs.has_encrypted == 'true'
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Step 5 - Push to Gitee
+        if: steps.encrypt_step.outputs.has_encrypted == 'true'
+        run: |
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
+          mkdir -p json
+
+          for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
+            base="$(basename "$f" .json)"
+            cp "../json/${base}.bin" "json/${base}.json"
+            rm -f "../json/${base}.bin"
+          done
+
+          git add json/*.json
+          if [ -n "$(git status --porcelain json)" ]; then
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "同步加密 JSON (${NOW}) [skip ci]"
+            git push origin master
+          fi
