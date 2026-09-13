@@ -6,7 +6,7 @@ on:
     - 'task/json.txt'
     - 'json/**'
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 17 * * *'   #北京时间凌晨1点，考虑到延迟5个小时，实际运行时间早上6点左右
   workflow_dispatch:
 
 permissions:
