@@ -1,4 +1,4 @@
-name: 删除手动runs
+name: 删除手动Runs
 
 on:
   workflow_dispatch:
