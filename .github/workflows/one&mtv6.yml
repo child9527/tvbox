@@ -188,7 +188,14 @@ jobs:
       - name: 解密 yoursmile66.json
         if: steps.process_logic.outputs.should_decrypt_yoursmile66 == 'true'
         run: |
-          python scripts/tvbox.py "https://github.com/yoursmile66/TVBox/raw/main/XC.json" "json/yoursmile66.json" dec
+          echo "尝试下载 yoursmile66.json ..."
+          if curl -L "https://github.com/yoursmile66/TVBox/raw/main/XC.json" -o "json/yoursmile66_tmp.json"; then
+            echo "下载成功，开始解密..."
+            python scripts/tvbox.py "json/yoursmile66_tmp.json" "json/yoursmile66.json" dec || echo "解密失败，但继续执行后续步骤"
+            rm -f json/yoursmile66_tmp.json
+          else
+            echo "❌ 无法下载 yoursmile66.json，跳过解密步骤，继续执行后续任务"
+          fi
 
       - name: 下载 mtv6.json（明文）
         if: steps.process_logic.outputs.should_download_mtv6 == 'true'
