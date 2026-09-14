@@ -5,7 +5,7 @@ on:
     paths:
       - "scripts/index.py"
   workflow_run:
-    workflows: ["自动同步指定软件最新 Releases"]
+    workflows: ["批量同步、加密与双端推送"]
     types:
       - completed
   #schedule:
