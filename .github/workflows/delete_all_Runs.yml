@@ -2,8 +2,10 @@ name: 删除所有Runs和Artifacts
 
 on:
   schedule:
+    # 每个月28号凌晨1点运行一次
+    - cron: '0 17 28 * *'
     # 每半个月运行一次（每月 1 号和 15 号 00:00 UTC 执行）
-    - cron: '0 0 1,15 * *'
+    #- cron: '0 0 1,15 * *'
   workflow_dispatch: # 保留手动触发按钮
 
 jobs:
