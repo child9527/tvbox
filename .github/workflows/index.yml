@@ -4,8 +4,12 @@ on:
   push:
     paths:
       - "scripts/index.py"
-  schedule:
-    - cron: "0 */6 * * *"
+  workflow_run:
+    workflows: ["自动同步指定软件最新 Releases"]
+    types:
+      - completed
+  #schedule:
+  #  - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
