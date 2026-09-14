@@ -1,6 +1,8 @@
 name: 批量同步、加密与双端推送
 
 on:
+  schedule:
+    - cron: '0 17 * * *'   #北京时间凌晨1点运行
   workflow_dispatch:
   push:
     paths:
