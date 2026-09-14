@@ -21,14 +21,14 @@
     {
       "name": "migu720",
       "type": 0,
-      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/iTCoffe/Collect-iTV/main/LiTV.m3u",
+      "url": "https://ghfast.top/https://raw.githubusercontent.com/iTCoffe/Collect-iTV/main/LiTV.m3u",
       "playerType": 2,
       "timeout": 10
     },
     {
       "name": "iTV",
       "type": 0,
-      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/iTCoffe/Collect-iTV/main/Internet_iTV.m3u",
+      "url": "https://ghfast.top/https://raw.githubusercontent.com/iTCoffe/Collect-iTV/main/Internet_iTV.m3u",
       "playerType": 2,
       "timeout": 10
     },
@@ -122,7 +122,7 @@
           "https://logvardanmu.konfan.cn/87654321|公益源4",
           "https://danmu.iyo.us.ci/theft-dastardly-prognosis-hula-agenda2-dropkick|公益源5"
         ],
-        "titleMappingsUrl": "https://gh-proxy.com/https://raw.githubusercontent.com/goodcommunication/mydm/main/yins.json"
+        "titleMappingsUrl": "https://ghfast.top/https://raw.githubusercontent.com/goodcommunication/mydm/main/yins.json"
       }
     },
     {
@@ -234,7 +234,7 @@
       "name": "👽︎┃歪比┃巴卜",
       "type": 3,
       "playerType": 2,
-      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/IY-CPU/IY/main/lib/yb.js"
+      "api": "https://ghfast.top/https://raw.githubusercontent.com/IY-CPU/IY/main/lib/yb.js"
     },
     {
       "key": "星河",
