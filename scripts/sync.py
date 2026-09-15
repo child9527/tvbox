@@ -242,6 +242,7 @@ def main():
 
         # 3. 对比远程 MD5
         if remote_md5 == t.get("md5") and os.path.exists(filepath):
+            # 即使文件内容没有变化，也保持 timestamp 更新为本次检查时间
             continue
 
         # 4. 执行解密、清理与镜像剥离/重组
