@@ -1,241 +1,228 @@
-name: one&mtv6&yoursmile66自动解密并同步接口文件
+name: Auto Sync TVBox
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
-  decrypt_and_commit:
-    name: one加密、mtv6下载及推送
+  sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: 检出仓库
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 设置 Python
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.x"
 
-      - name: 安装依赖
+      - name: Run process logic
+        id: logic
         run: |
-          python -m pip install --upgrade pip
-          pip install pycryptodome
+          mkdir -p task json
 
-      - name: 执行核心调度逻辑
-        id: process_logic
-        run: |
           python - << 'EOF'
-          import os, time, random, sys, urllib.request
+import os, time, random, sys, urllib.request
+import datetime
 
-          targets = [
-              {
-                  "name": "one",
-                  "url": "https://9877.kstore.space/one.json",
-                  "local": "json/one.json",
-                  "decrypt": True
-              },
-              {
-                  "name": "yoursmile66",
-                  "url": "https://github.com/yoursmile66/TVBox/raw/main/XC.json",
-                  "local": "json/yoursmile66.json",
-                  "decrypt": True
-              },
-              {
-                  "name": "mtv6",
-                  "url": "https://d.kstore.dev/download/2843/mtv6.txt",
-                  "local": "json/mtv6.json",
-                  "decrypt": False
-              }
-          ]
+targets = [
+    {
+        "name": "one",
+        "url": "https://9877.kstore.space/one.json",
+        "local": "json/one.json",
+        "decrypt": True
+    },
+    {
+        "name": "yoursmile66",
+        "url": "https://github.com/yoursmile66/TVBox/raw/main/XC.json",
+        "local": "json/yoursmile66.json",
+        "decrypt": True
+    },
+    {
+        "name": "mtv6",
+        "url": "https://d.kstore.dev/download/2843/mtv6.txt",
+        "local": "json/mtv6.json",
+        "decrypt": False
+    }
+]
 
-          STATE_FILE = "task/next_run.txt"
-          current_time = int(time.time())
+STATE_FILE = "task/next_run.txt"
+current_time = int(time.time())
 
-          # 读取原文件所有行
-          lines = []
-          if os.path.exists(STATE_FILE):
-              with open(STATE_FILE, "r", encoding="utf-8") as f:
-                  lines = f.read().splitlines()
+# 读取 next_run.txt
+lines = []
+if os.path.exists(STATE_FILE):
+    with open(STATE_FILE, "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
 
-          # 确保至少有两行
-          while len(lines) < 2:
-              lines.append("")
+# ⭐ 确保至少有三行（第3行用于 xc_last_date）
+while len(lines) < 3:
+    lines.append("")
 
-          # 第 1 行：下一次运行时间
-          try:
-              target_time = int(lines[0].strip()) if lines[0].strip() else 0
-          except:
-              target_time = 0
+# 第 1 行：下一次运行时间戳
+try:
+    target_time = int(lines[0].strip()) if lines[0].strip() else 0
+except:
+    target_time = 0
 
-          # 第 2 行：TAB 分隔的 name:size
-          size_map = {}
-          if lines[1].strip():
-              for p in lines[1].split("\t"):
-                  if ":" in p:
-                      name, size = p.split(":", 1)
-                      size_map[name] = size
+# 第 2 行：size_map
+size_map = {}
+if lines[1].strip():
+    for p in lines[1].split("\t"):
+        if ":" in p:
+            name, size = p.split(":", 1)
+            size_map[name] = size
 
-          # 判断首次运行
-          is_first_run = (not os.path.exists(STATE_FILE))
-          for t in targets:
-              if not os.path.exists(t["local"]):
-                  is_first_run = True
+# 判断首次运行
+is_first_run = (not os.path.exists(STATEFILE))
+for t in targets:
+    if not os.path.exists(t["local"]):
+        is_first_run = True
 
-          # 打印当前时间与下一次运行时间（UTC + 北京时间）
-          import datetime
+# 打印时间信息
+utc_now = datetime.datetime.utcnow()
+bj_now = utc_now + datetime.timedelta(hours=8)
 
-          utc_now = datetime.datetime.utcnow()
-          bj_now = utc_now + datetime.timedelta(hours=8)
+target_utc = datetime.datetime.utcfromtimestamp(target_time)
+target_bj = target_utc + datetime.timedelta(hours=8)
 
-          try:
-              target_ts = int(lines[0].strip()) if lines[0].strip() else 0
-          except:
-              target_ts = 0
+print("==============================================")
+print(f"当前时间（UTC）: {utc_now.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"当前时间（北京时间）: {bj_now.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"下一次运行时间（UTC）: {target_utc.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"下一次运行时间（北京时间）: {target_bj.strftime('%Y-%m-%d %H:%M:%S')}")
+print("==============================================")
+print(f"是否进入执行阶段: {'是' if (is_first_run or current_time >= target_time) else '否'}")
+print("==============================================")
 
-          target_utc = datetime.datetime.utcfromtimestamp(target_ts)
-          target_bj = target_utc + datetime.timedelta(hours=8)
+# ⭐ 时间未到 → one / mtv6 不执行，但 XC 仍然要判断
+if not is_first_run and current_time < target_time:
+    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+        for t in targets:
+            name = t["name"]
 
-          print("==============================================")
-          print(f"当前时间（UTC）: {utc_now.strftime('%Y-%m-%d %H:%M:%S')}")
-          print(f"当前时间（北京时间）: {bj_now.strftime('%Y-%m-%d %H:%M:%S')}")
-          print(f"下一次运行时间（UTC）: {target_utc.strftime('%Y-%m-%d %H:%M:%S')}")
-          print(f"下一次运行时间（北京时间）: {target_bj.strftime('%Y-%m-%d %H:%M:%S')}")
-          print("==============================================")
-          print(f"是否进入执行阶段: {'是' if (is_first_run or current_time >= target_ts) else '否'}")
-          print("==============================================")
+            if name == "yoursmile66":
+                # ⭐ XC 每天一次 + 文件大小变化判断
+                xc_last_date = ""
+                if lines[2].startswith("xc_last_date="):
+                    xc_last_date = lines[2].split("=", 1)[1].strip()
 
-          # 时间未到 → 退出
-          if not is_first_run and current_time < target_time:
-              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                  for t in targets:
-                      if t["decrypt"]:
-                          f.write(f"should_decrypt_{t['name']}=false\n")
-                      else:
-                          f.write(f"should_download_{t['name']}=false\n")
-              sys.exit(0)
+                today = bj_now.strftime("%Y-%m-%d")
 
-          print(">> 时间已到/首次运行，开始伪装 TVBox HEAD 请求...")
+                remote_size = ""
+                try:
+                    req = urllib.request.Request(t["url"], headers={
+                        "User-Agent": "okhttp/3.12.0",
+                        "Accept": "*/*",
+                        "Connection": "Keep-Alive"
+                    }, method="HEAD")
+                    with urllib.request.urlopen(req, timeout=12) as resp:
+                        remote_size = resp.headers.get("Content-Length", "").strip()
+                except:
+                    pass
 
-          headers = {
-              "User-Agent": "okhttp/3.12.0",
-              "Accept": "*/*",
-              "Connection": "Keep-Alive"
-          }
+                local_size = size_map.get("yoursmile66", "")
+                size_changed = (remote_size and remote_size != local_size)
 
-          results = {}
-          for t in targets:
-              local_size = size_map.get(t["name"], "")
-              remote_size = ""
-              try:
-                  req = urllib.request.Request(t["url"], headers=headers, method="HEAD")
-                  with urllib.request.urlopen(req, timeout=12) as resp:
-                      remote_size = resp.headers.get("Content-Length", "").strip()
-              except Exception as e:
-                  print(f"[{t['name']}] HEAD 请求失败: {e}")
+                need = (today != xc_last_date) and size_changed
 
-              need = None
-              if t["name"] == "yoursmile66":
-                 # ⭐ 确保 next_run.txt 至少有三行（你已经手动留了第3行）
-              while len(lines) < 3:
-                  lines.append("")
+                if need:
+                    lines[2] = f"xc_last_date={today}"
 
-                # ⭐ 读取 xc_last_date（第3行）
-              xc_last_date = ""
-              if lines[2].startswith("xc_last_date="):
-                  xc_last_date = lines[2].split("=", 1)[1].strip()
+                f.write(f"should_decrypt_yoursmile66={'true' if need else 'false'}\n")
 
-                # ⭐ 今天的日期（北京时间）
-              bj_now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
-              today = bj_now.strftime("%Y-%m-%d")
+            else:
+                if t["decrypt"]:
+                    f.write(f"should_decrypt_{name}=false\n")
+                else:
+                    f.write(f"should_download_{name}=false\n")
 
-                # ⭐ 文件大小是否变化
-              local_size = size_map.get("yoursmile66", "")
-              remote_size = remote_size.strip() if remote_size else ""
-              size_changed = (remote_size and remote_size != local_size)
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
 
-                # ⭐ 最终判断：今天没执行过 + 文件大小变化
-              need = (today != xc_last_date) and size_changed
+    sys.exit(0)
 
-                # ⭐ 如果执行了，更新 xc_last_date（只写第3行）
-              if need:
-                  lines[2] = f"xc_last_date={today}"
+print(">> 时间已到/首次运行，开始伪装 TVBox HEAD 请求...")
 
-              else:
-                  need = is_first_run or (remote_size and remote_size != local_size)
+headers = {
+    "User-Agent": "okhttp/3.12.0",
+    "Accept": "*/*",
+    "Connection": "Keep-Alive"
+}
 
-              results[t["name"]] = {
-                  "need": need,
-                  "size": remote_size if remote_size else local_size,
-                  "decrypt": t["decrypt"],
-                  "url": t["url"],
-                  "local": t["local"]
-              }
+results = {}
+for t in targets:
+    name = t["name"]
+    local_size = size_map.get(name, "")
+    remote_size = ""
 
-          # 更新前两行，保留第 3 行及以后
-          random_delay = random.randint(24 * 3600, 72 * 3600)
-          next_target_time = current_time + random_delay
-          size_line = "\t".join([f"{name}:{results[name]['size']}" for name in results])
+    try:
+        req = urllib.request.Request(t["url"], headers=headers, method="HEAD")
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            remote_size = resp.headers.get("Content-Length", "").strip()
+    except Exception as e:
+        print(f"[{name}] HEAD 请求失败: {e}")
 
-          lines[0] = str(next_target_time)
-          lines[1] = size_line
+    if name == "yoursmile66":
+        xc_last_date = ""
+        if lines[2].startswith("xc_last_date="):
+            xc_last_date = lines[2].split("=", 1)[1].strip()
 
-          with open(STATE_FILE, "w", encoding="utf-8") as f:
-              f.write("\n".join(lines) + "\n")
+        today = bj_now.strftime("%Y-%m-%d")
+        size_changed = (remote_size and remote_size != local_size)
 
-          # 输出标志
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              for t in targets:
-                  if t["decrypt"]:
-                      f.write(f"should_decrypt_{t['name']}={'true' if results[t['name']]['need'] else 'false'}\n")
-                  else:
-                      f.write(f"should_download_{t['name']}={'true' if results[t['name']]['need'] else 'false'}\n")
-          EOF
+        need = (today != xc_last_date) and size_changed
 
-      - name: 解密 one.json
-        if: steps.process_logic.outputs.should_decrypt_one == 'true'
+        if need:
+            lines[2] = f"xc_last_date={today}"
+
+    else:
+        need = is_first_run or (remote_size and remote_size != local_size)
+
+    results[name] = {
+        "need": need,
+        "size": remote_size if remote_size else local_size,
+        "decrypt": t["decrypt"],
+        "url": t["url"],
+        "local": t["local"]
+    }
+
+random_delay = random.randint(24 * 3600, 72 * 3600)
+next_target_time = current_time + random_delay
+size_line = "\t".join([f"{name}:{results[name]['size']}" for name in results])
+
+lines[0] = str(next_target_time)
+lines[1] = size_line
+
+with open(STATE_FILE, "w", encoding="utf-8") as f:
+    f.write("\n".join(lines) + "\n")
+
+with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+    for t in targets:
+        name = t["name"]
+        if t["decrypt"]:
+            f.write(f"should_decrypt_{name}={'true' if results[name]['need'] else 'false'}\n")
+        else:
+            f.write(f"should_download_{name}={'true' if results[name]['need'] else 'false'}\n")
+
+EOF
+
+      - name: Decrypt JSON
+        if: steps.logic.outputs.should_decrypt_one == 'true' || steps.logic.outputs.should_decrypt_yoursmile66 == 'true'
         run: |
-          echo "尝试下载 one.json ..."
-          if curl -L --fail --silent --show-error "https://9877.kstore.space/one.json" -o "json/one_tmp.json"; then
-            echo "下载成功，开始解密..."
-            python scripts/tvbox.py "json/one_tmp.json" "json/one.json" dec || echo "解密失败，但继续执行后续步骤"
-            rm -f json/one_tmp.json
-          else
-            echo "❌ 无法下载 one.json（HTTP 非 200 或文件不存在），跳过解密步骤"
-          fi
+          echo "解密 JSON..."
 
-      - name: 解密 yoursmile66.json
-        if: steps.process_logic.outputs.should_decrypt_yoursmile66 == 'true'
+      - name: Download TXT
+        if: steps.logic.outputs.should_download_mtv6 == 'true'
         run: |
-          echo "尝试下载 yoursmile66.json ..."
-          if curl -L "https://github.com/yoursmile66/TVBox/raw/main/XC.json" -o "json/yoursmile66_tmp.json"; then
-            echo "下载成功，开始解密..."
-            python scripts/tvbox.py "json/yoursmile66_tmp.json" "json/yoursmile66.json" dec || echo "解密失败，但继续执行后续步骤"
-            rm -f json/yoursmile66_tmp.json
-          else
-            echo "❌ 无法下载 yoursmile66.json，跳过解密步骤，继续执行后续任务"
-          fi
+          echo "下载 TXT..."
 
-      - name: 下载 mtv6.json（明文）
-        if: steps.process_logic.outputs.should_download_mtv6 == 'true'
+      - name: Commit changes
         run: |
-          curl -L "https://d.kstore.dev/download/2843/mtv6.txt" -o "json/mtv6.json"
-
-      - name: 提交改动
-        run: |
-          BEIJING_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "action@github.com"
-
-          git add task/next_run.txt json/one.json json/mtv6.json json/yoursmile66.json
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto Sync: 更新于 $BEIJING_TIME"
-            git push
-          else
-            echo "没有文件发生改动，无需 Push。"
-          fi
-
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Auto Sync" || echo "No changes"
+          git push
