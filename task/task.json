@@ -1,146 +1,146 @@
 [
   {
-    "name": "0707.json",
+    "name": "0707",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/0707.json",
     "md5": "b3a552d486c958a7cf38f6359dde54b4",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:42"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "0825.json",
+    "name": "0825",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
     "md5": "37baccc8097ddb7c01256a2e4fed386a",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:42"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "0826.json",
+    "name": "0826",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
     "md5": "7a4591966c4ab63b77052e350ce06a58",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:43"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "0827.json",
+    "name": "0827",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
     "md5": "f5a74fa91724dc75fd946b323146dcf0",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:43"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "367.json",
+    "name": "367",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/367.json",
     "md5": "5c9db42876585fe4b4b8ce6740bfa937",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:43"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "9918.json",
+    "name": "9918",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/9918.json",
     "md5": "44eb62ad84290e032284ed1a79815926",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:43"
+    "timestamp": "2026-09-15 14:23:38"
   },
   {
-    "name": "99188.json",
+    "name": "99188",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/99188.json",
     "md5": "1cef4778f2a198edaf450f24e3149dab",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:43"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "dianshi.json",
+    "name": "dianshi",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/dianshi.json",
     "md5": "2a5285785f087874abf8b1e93eac5f87",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:44"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "fty.json",
+    "name": "fty",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/fty.json",
     "md5": "2c5ad7e09413f4dda9c98ae17529cb22",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:44"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "js.json",
+    "name": "js",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/js.json",
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:44"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "jsm.json",
+    "name": "jsm",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/jsm.json",
     "md5": "d26f8155a473f539740f5f0042fbff61",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:44"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "X.json",
+    "name": "X",
     "url": "https://raw.githubusercontent.com/alantang1977/X/main/X.json",
     "md5": "7c910ce14e69efd10ad192bdedc2018d",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:45"
+    "timestamp": "2026-09-15 14:23:39"
   },
   {
-    "name": "pj.json",
+    "name": "pj",
     "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json",
     "md5": "306b3dd1925556718acfb067e9271fe0",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:45"
+    "timestamp": "2026-09-15 14:23:40"
   },
   {
-    "name": "api.json",
+    "name": "api",
     "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json",
     "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:45"
+    "timestamp": "2026-09-15 14:23:40"
   },
   {
-    "name": "mtv6.json",
+    "name": "mtv6",
     "url": "https://d.kstore.dev/download/2843/mtv6.txt",
-    "md5": "d0d712ff65179360283d118b33251580",
-    "last_modified": null,
+    "md5": "6ba9c81a00ac64e5fc5f654436c5a448",
+    "last_modified": "2026-09-15 14:23:42",
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:53"
+    "timestamp": "2026-09-15 14:23:41"
   },
   {
-    "name": "one.json",
+    "name": "one",
     "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/one.json",
     "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
     "last_modified": null,
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:53"
+    "timestamp": "2026-09-15 14:23:42"
   },
   {
-    "name": "yoursmile66.json",
+    "name": "yoursmile66",
     "url": "https://raw.githubusercontent.com/yoursmile66/TVBox/main/XC.json",
-    "md5": "76f9d116c6263d8ed0e34680e4a3e0e4",
-    "last_modified": "2026-09-15 14:00:54",
+    "md5": "9021c4357b98f3d554dfceefb7678f07",
+    "last_modified": "2026-09-15 14:23:42",
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:54"
+    "timestamp": "2026-09-15 14:23:42"
   },
   {
-    "name": "leevi.json",
+    "name": "leevi",
     "url": "https://raw.githubusercontent.com/leevi0709/one/a796f1993e8bb20b1435083b8ced3da10b192e30/config.bin",
-    "md5": "a5c937df0fca6ca7c6491bfeb4ebef59",
-    "last_modified": "2026-09-15 14:00:54",
+    "md5": "b606028c027b2daa688fd5fd7cf0aedd",
+    "last_modified": "2026-09-15 14:23:43",
     "status": "ok",
-    "timestamp": "2026-09-15 14:00:54"
+    "timestamp": "2026-09-15 14:23:43"
   }
 ]
