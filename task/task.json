@@ -113,7 +113,7 @@
   },
   {
     "name": "mtv6.json",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/mtv6.json",
+    "url": "https://d.kstore.dev/download/2843/mtv6.txt",
     "md5": "d0d712ff65179360283d118b33251580",
     "last_modified": null,
     "status": "ok",
@@ -129,7 +129,7 @@
   },
   {
     "name": "yoursmile66.json",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/yoursmile66.json",
+    "url": "https://raw.githubusercontent.com/yoursmile66/TVBox/main/XC.json",
     "md5": "76f9d116c6263d8ed0e34680e4a3e0e4",
     "last_modified": "2026-09-15 14:00:54",
     "status": "ok",
@@ -137,7 +137,7 @@
   },
   {
     "name": "leevi.json",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/leevi.json",
+    "url": "https://raw.githubusercontent.com/leevi0709/one/a796f1993e8bb20b1435083b8ced3da10b192e30/config.bin",
     "md5": "a5c937df0fca6ca7c6491bfeb4ebef59",
     "last_modified": "2026-09-15 14:00:54",
     "status": "ok",
