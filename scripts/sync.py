@@ -58,13 +58,14 @@ def pick_best_mirror():
 # ============================================================
 def replace_relative_paths(content, best_mirror):
     """
-    1. 清理别人硬编码的第三方加速前缀（例如 https://web.ksx.qzz.io/https://raw.github... -> https://raw.github...）
+    1. 清理别人硬编码的第三方加速前缀（支持多层循环剥离，如 https://web.ksx.qzz.io/https://raw.github...）
     2. 将 ./ 相对路径替换为 最快镜像 + GitHub Raw 路径
     3. 将所有裸露的 raw.githubusercontent.com 替换为你 mirror.txt 里测出的最快镜像
     """
-    # 步骤 A: 剥离嵌套的前置第三方代理前缀
-    nested_pattern = r'https?://[^/"\'\s]+/(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
-    content = re.sub(nested_pattern, r'\1', content)
+    # 步骤 A: 剥离嵌套的前置第三方代理前缀（打破域名斜杠限制，支持完整剥离）
+    nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
+    while re.search(nested_pattern, content):
+        content = re.sub(nested_pattern, r'\1', content)
 
     # 步骤 B: 将 ./ 相对路径替换为当前仓库的 raw 路径 + 最快镜像
     rel_pattern = r'(\"|\')\.\/([^\"\']+)\1'
@@ -91,7 +92,7 @@ def extract_raw(url):
         return False, url, ""
     
     # 清理 URL 中可能嵌套的前置第三方代理
-    url = re.sub(r'^https?://[^/"\'\s]+/(https?://)', r'\1', url)
+    url = re.sub(r'^https?://[^"\'\s]+/+(https?://)', r'\1', url)
 
     pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
     m = re.search(pat, url)
