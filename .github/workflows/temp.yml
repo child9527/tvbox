@@ -1,84 +1,76 @@
-name: 导出URL信息到JSON
+name: Update Task JSON Remote MD5 (Temporary)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 仅支持手动触发
 
 jobs:
-  export:
+  update-md5:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: '3.x'
 
-      - name: Export URLs
+      - name: Install dependencies
         run: |
-          mkdir -p task
+          python -m pip install --upgrade pip
+          pip install requests
 
-          python - << 'EOF'
-          import os, urllib.request, json, datetime, hashlib
+      - name: Run temporary MD5 updater script
+        run: |
+          python -c '
+          import os, json, requests, hashlib, re
 
-          txt_file = "task/json.txt"
-          output_file = "task/url_info.json"
+          TASK_FILE = os.path.join("task", "task.json")
+          HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-          headers = {"User-Agent": "okhttp/3.12.0", "Accept": "*/*", "Connection": "Keep-Alive"}
+          def extract_raw(url):
+              if not isinstance(url, str): return False, url
+              pat = r"(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s\"'\''<>]+"
+              m = re.search(pat, url)
+              if not m: return False, url
+              raw = m.group(0)
+              if not raw.startswith("http"): raw = "https://" + raw
+              raw = re.sub(r"https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)", r"https://raw.githubusercontent.com/\1/\2/\3/\4", raw)
+              raw = raw.replace("/refs/heads/", "/")
+              return True, raw
 
-          results = []
-          now = datetime.datetime.utcnow().isoformat()
+          if os.path.exists(TASK_FILE):
+              with open(TASK_FILE, "r", encoding="utf-8") as f:
+                  tasks = json.load(f)
 
-          def convert_github_url(url: str) -> str:
-              # 将 github.com/.../blob/master/... 转换成 raw.githubusercontent.com/.../master/...
-              if "github.com" in url and "/blob/" in url:
-                  parts = url.split("/")
-                  # https://github.com/{user}/{repo}/blob/{branch}/{path}
-                  user, repo, branch = parts[3], parts[4], parts[6]
-                  path = "/".join(parts[7:])
-                  return f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}"
-              return url
-
-          if os.path.exists(txt_file):
-              with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
-                  urls = [line.strip() for line in f if line.strip()]
-
-              for url in urls:
-                  raw_url = convert_github_url(url)
-                  entry = {
-                      "name": raw_url.split("?")[0].rstrip("/").split("/")[-1],
-                      "url": raw_url,
-                      "md5": None,
-                      "last_modified": None,  # 占位，后续由另一个工作流更新
-                      "status": "failed",
-                      "timestamp": now
-                  }
-
+              updated_count = 0
+              for t in tasks:
+                  url = t.get("url")
+                  if not url: continue
+                  
+                  is_gh, raw = extract_raw(url)
                   try:
-                      # GET 请求获取内容并计算 md5
-                      req = urllib.request.Request(raw_url, headers=headers)
-                      with urllib.request.urlopen(req, timeout=20) as resp:
-                          data = resp.read()
-                          entry["md5"] = hashlib.md5(data).hexdigest()
-                          entry["status"] = "ok"
-
+                      r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
+                      if r.status_code == 200:
+                          raw_content = r.content.decode("utf-8", errors="ignore").strip()
+                          remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+                          if t.get("md5") != remote_md5:
+                              t["md5"] = remote_md5
+                              updated_count += 1
                   except Exception as e:
-                      entry["status"] = f"error: {e}"
+                      pass
 
-                  results.append(entry)
+              with open(TASK_FILE, "w", encoding="utf-8") as f:
+                  json.dump(tasks, f, ensure_ascii=False, indent=2)
+                  
+              print(f"✅ 完成！共更新了 {updated_count} 个条目的远程 MD5。")
+          '
 
-          with open(output_file, "w", encoding="utf-8") as f:
-              json.dump(results, f, ensure_ascii=False, indent=2)
-
-          print(f"已导出 {len(results)} 条记录到 {output_file}")
-          EOF
-
-      - name: Commit JSON
+      - name: Commit and Push changes
         run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add task/url_info.json || echo "No files"
-          git commit -m "Export URL info" || echo "No changes"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add task/task.json
+          git status
+          git diff-index --quiet HEAD || git commit -m "chore: 初始化/校准 task.json 为远程源文件 MD5"
           git push
