@@ -29,7 +29,7 @@ def load_mirrors():
 
 
 # ============================================================
-# 镜像测速
+# 镜像测速（用于替换 JSON 内 URL）
 # ============================================================
 def test_mirror(mirror):
     test_url = mirror + RAW_PREFIX + "alantang1977/X/main/X.json"
@@ -105,15 +105,13 @@ def get_base_url(url):
         return ""
     is_gh, raw, _ = extract_raw(url)
     target = raw if is_gh else url
-    if not isinstance(target, str) or not target.strip():
-        return ""
     if "/" in target:
         return target.rsplit("/", 1)[0] + "/"
     return target
 
 
 # ============================================================
-# URL 替换
+# URL 替换（使用 pick_best_mirror）
 # ============================================================
 def process_url(url, base_url, mirror):
     if not isinstance(url, str):
@@ -134,7 +132,7 @@ def process_url(url, base_url, mirror):
 
         url = clean + extra
 
-    # GitHub RAW
+    # GitHub RAW → 替换为镜像前缀
     is_gh, raw, extra = extract_raw(url)
     if is_gh:
         return f"{mirror}{raw}{extra}"
@@ -192,7 +190,7 @@ def decrypt(text):
 # 主逻辑（同步 JSON）
 # ============================================================
 def main():
-    mirror = pick_best_mirror()
+    mirror = pick_best_mirror()  # 仅用于替换 JSON 内 URL
 
     # 读取任务
     tasks = []
@@ -229,31 +227,26 @@ def main():
                 continue
             content = open(name, "r", encoding="utf-8", errors="ignore").read()
             base = ""
+
         else:
             print(f"📥 拉取: {url}")
             is_gh, raw, _ = extract_raw(url)
-            content = None
 
-            if is_gh:
-                for m in load_mirrors():
-                    try:
-                        r = requests.get(m + raw, headers=HEADERS, timeout=8)
-                        if r.status_code == 200:
-                            txt = r.content.decode("utf-8", errors="ignore").strip()
-                            if txt:
-                                content = txt
-                                print(f"--> 成功: {m}")
-                                break
-                    except:
-                        pass
-            else:
-                try:
+            # ⭐ 拉取源 JSON：不使用镜像，直接访问 RAW 或原始 URL
+            try:
+                if is_gh:
+                    r = requests.get(raw, headers=HEADERS, timeout=10)
+                else:
                     r = requests.get(url, headers=HEADERS, timeout=10)
-                    if r.status_code == 200:
-                        content = r.content.decode("utf-8", errors="ignore").strip()
-                        print("--> 成功")
-                except:
-                    pass
+
+                if r.status_code == 200:
+                    content = r.content.decode("utf-8", errors="ignore").strip()
+                    print("--> 成功（直连）")
+                else:
+                    content = None
+
+            except:
+                content = None
 
             if not content:
                 print(f"❌ 拉取失败: {name}")
@@ -279,7 +272,7 @@ def main():
                 print(f"❌ 非标准 JSON: {name}")
                 continue
 
-        # URL 替换
+        # URL 替换（使用 pick_best_mirror）
         obj2 = traverse(obj, base, mirror)
 
         # 保存
