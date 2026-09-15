@@ -117,28 +117,42 @@ def load_tasks():
         with open("task.json", "r", encoding="utf-8") as f:
             tasks = json.load(f)
 
+    # 打印已有 task.json 名称集合
+    existing_names = {t["name"].strip().lower() for t in tasks}
+    print("📂 已有 task.json 名称集合:")
+    for n in existing_names:
+        print(" -", n)
+
     # 打印当前 json 目录文件列表
     print("📂 当前 json 目录文件:")
     for fn in os.listdir("json"):
         print(" -", fn)
 
-    existing_names = {t["name"].strip().lower() for t in tasks}
+    # 强制更新/补充逻辑
     for fn in os.listdir("json"):
-        if fn.endswith(".json") and fn.strip().lower() not in existing_names:
+        if fn.endswith(".json"):
             filepath = os.path.join("json", fn)
             if os.path.exists(filepath):
                 with open(filepath, "rb") as f:
                     md5_val = hashlib.md5(f.read()).hexdigest()
             else:
                 md5_val = None
-            tasks.append({
-                "name": fn,
-                "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
-                "md5": md5_val,
-                "last_modified": None,
-                "status": "local",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-            })
+
+            found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
+            if found:
+                # 更新已有条目
+                found["url"] = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
+                found["md5"] = md5_val
+            else:
+                # 补充新条目
+                tasks.append({
+                    "name": fn,
+                    "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
+                    "md5": md5_val,
+                    "last_modified": None,
+                    "status": "local",
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                })
     return tasks
 
 # ============================================================
