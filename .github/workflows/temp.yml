@@ -19,7 +19,7 @@ jobs:
       - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
-          pip install requests commentjson
+          pip install requests commentjson pycryptodome
 
       - name: 只重置 leevi 的 MD5 记录
         run: |
@@ -31,7 +31,6 @@ jobs:
               with open(task_file, 'r', encoding='utf-8') as f:
                   data = commentjson.load(f)
               
-              # 仅寻找 name 为 leevi 的项并将其 MD5 置空
               for item in data:
                   if isinstance(item, dict) and item.get('name') == 'leevi':
                       item['md5'] = ''
@@ -46,33 +45,54 @@ jobs:
         run: |
           python scripts/sync.py
 
-      - name: 配置 Git 并推送到 Gitee
-        env:
-          GITEE_KEY: ${{ secrets.GITEE_SSH_KEY }}
+      - name: 加密 leevi.json
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 暂存变更
-          git add json/ task/
-
-          # 检查是否有变更并提交
-          if git diff --staged --quiet; then
-            echo "没有识别到文件变更"
-          else
-            git commit -m "build: 重新清洗并更新 leevi 镜像配置 [skip ci]" || true
+          if [ -f "json/leevi.json" ]; then
+            python scripts/tvbox.py "json/leevi.json" "json/leevi.bin" enc || true
           fi
 
-          # 配置 SSH 密钥
+      - name: 配置 SSH 传输
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
           mkdir -p ~/.ssh
-          echo "$GITEE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
           chmod 700 ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host gitee.com
+            HostName gitee.com
+            User git
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no" >> ~/.ssh/config
 
-          # SSH 配置
-          ssh-keyscan -t ed25519,rsa gitee.com >> ~/.ssh/known_hosts 2>/dev/null
-          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+      - name: 推送到 Gitee
+        run: |
+          # 按照 sync.yml 的方法，克隆 Gitee 目标仓库
+          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
 
-          # 修正仓库地址为 mybox.git
-          git remote add gitee git@gitee.com:child9527/mybox.git || git remote set-url gitee git@gitee.com:child9527/mybox.git
-          git push -f gitee main
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p json task
+
+          # 覆盖加密后的 leevi.json
+          if [ -f "../json/leevi.bin" ]; then
+            cp "../json/leevi.bin" "json/leevi.json"
+          fi
+
+          # 同步更新后的 task.json
+          if [ -f "../task/task.json" ]; then
+            cp "../task/task.json" "task/task.json"
+          fi
+
+          git add json/leevi.json task/task.json
+
+          if [ -n "$(git status --porcelain)" ]; then
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "临时重置并更新 leevi.json 及 task.json (${NOW}) [skip ci]"
+            git pull --rebase origin master
+            git push origin master
+          else
+            echo "🎉 Gitee 侧无变动，跳过推送"
+          fi
