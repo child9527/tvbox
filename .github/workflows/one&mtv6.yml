@@ -30,52 +30,32 @@ jobs:
 import os, time, random, sys, urllib.request
 import datetime
 
-# ============================================================
-# 任务配置：三个目标文件
-# ============================================================
+# 三个任务配置
 targets = [
-    {
-        "name": "one",
-        "url": "https://9877.kstore.space/one.json",
-        "local": "json/one.json",
-        "decrypt": True
-    },
-    {
-        "name": "yoursmile66",
-        "url": "https://github.com/yoursmile66/TVBox/raw/main/XC.json",
-        "local": "json/yoursmile66.json",
-        "decrypt": True
-    },
-    {
-        "name": "mtv6",
-        "url": "https://d.kstore.dev/download/2843/mtv6.txt",
-        "local": "json/mtv6.json",
-        "decrypt": False
-    }
+    {"name": "one", "url": "https://9877.kstore.space/one.json", "local": "json/one.json", "decrypt": True},
+    {"name": "yoursmile66", "url": "https://github.com/yoursmile66/TVBox/raw/main/XC.json", "local": "json/yoursmile66.json", "decrypt": True},
+    {"name": "mtv6", "url": "https://d.kstore.dev/download/2843/mtv6.txt", "local": "json/mtv6.json", "decrypt": False}
 ]
 
 STATE_FILE = "task/next_run.txt"
 current_time = int(time.time())
 
-# ============================================================
-# 读取 next_run.txt（包含：下一次运行时间 + 文件大小记录 + XC 执行日期）
-# ============================================================
+# 读取 next_run.txt
 lines = []
 if os.path.exists(STATE_FILE):
     with open(STATE_FILE, "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
 
-# 确保至少三行（第3行用于 xc_last_date）
 while len(lines) < 3:
     lines.append("")
 
-# 第 1 行：下一次运行时间戳
+# 下一次运行时间戳
 try:
     target_time = int(lines[0].strip()) if lines[0].strip() else 0
 except:
     target_time = 0
 
-# 第 2 行：文件大小记录 size_map
+# 文件大小记录
 size_map = {}
 if lines[1].strip():
     for p in lines[1].split("\t"):
@@ -83,17 +63,13 @@ if lines[1].strip():
             name, size = p.split(":", 1)
             size_map[name] = size
 
-# ============================================================
-# 判断是否首次运行（首次运行必须执行所有任务）
-# ============================================================
+# 判断首次运行
 is_first_run = (not os.path.exists(STATE_FILE))
 for t in targets:
     if not os.path.exists(t["local"]):
         is_first_run = True
 
-# ============================================================
-# 打印当前时间和下一次运行时间（用于调试）
-# ============================================================
+# 当前时间
 utc_now = datetime.datetime.utcnow()
 bj_now = utc_now + datetime.timedelta(hours=8)
 
@@ -109,24 +85,19 @@ print("==============================================")
 print(f"是否进入执行阶段: {'是' if (is_first_run or current_time >= target_time) else '否'}")
 print("==============================================")
 
-# ============================================================
-# 时间未到：one / mtv6 不执行，但 XC 仍然要判断
-# XC = 每天一次 + 文件大小变化才执行
-# ============================================================
+# 时间未到 → one / mtv6 不执行，但 XC 仍然要判断
 if not is_first_run and current_time < target_time:
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
         for t in targets:
             name = t["name"]
 
             if name == "yoursmile66":
-                # 读取 XC 上次执行日期
                 xc_last_date = ""
                 if lines[2].startswith("xc_last_date="):
                     xc_last_date = lines[2].split("=", 1)[1].strip()
 
                 today = bj_now.strftime("%Y-%m-%d")
 
-                # HEAD 请求获取远程文件大小
                 remote_size = ""
                 try:
                     req = urllib.request.Request(t["url"], headers={
@@ -142,7 +113,6 @@ if not is_first_run and current_time < target_time:
                 local_size = size_map.get("yoursmile66", "")
                 size_changed = (remote_size and remote_size != local_size)
 
-                # XC 的最终判断：今天没执行过 + 文件大小变化
                 need = (today != xc_last_date) and size_changed
 
                 if need:
@@ -151,28 +121,20 @@ if not is_first_run and current_time < target_time:
                 f.write(f"should_decrypt_yoursmile66={'true' if need else 'false'}\n")
 
             else:
-                # 时间未到 → one / mtv6 不执行
                 if t["decrypt"]:
                     f.write(f"should_decrypt_{name}=false\n")
                 else:
                     f.write(f"should_download_{name}=false\n")
 
-    # 写回 next_run.txt（包含 XC 更新）
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
     sys.exit(0)
 
-# ============================================================
-# 时间已到：对所有任务执行 HEAD 请求，判断是否需要处理
-# ============================================================
+# 时间已到 → 对所有任务执行 HEAD 请求
 print(">> 时间已到/首次运行，开始伪装 TVBox HEAD 请求...")
 
-headers = {
-    "User-Agent": "okhttp/3.12.0",
-    "Accept": "*/*",
-    "Connection": "Keep-Alive"
-}
+headers = {"User-Agent": "okhttp/3.12.0", "Accept": "*/*", "Connection": "Keep-Alive"}
 
 results = {}
 for t in targets:
@@ -180,7 +142,6 @@ for t in targets:
     local_size = size_map.get(name, "")
     remote_size = ""
 
-    # HEAD 请求获取远程文件大小
     try:
         req = urllib.request.Request(t["url"], headers=headers, method="HEAD")
         with urllib.request.urlopen(req, timeout=12) as resp:
@@ -188,7 +149,6 @@ for t in targets:
     except Exception as e:
         print(f"[{name}] HEAD 请求失败: {e}")
 
-    # XC 独立逻辑：每天一次 + 文件大小变化
     if name == "yoursmile66":
         xc_last_date = ""
         if lines[2].startswith("xc_last_date="):
@@ -203,20 +163,12 @@ for t in targets:
             lines[2] = f"xc_last_date={today}"
 
     else:
-        # one / mtv6 原逻辑：首次运行 或 文件大小变化
         need = is_first_run or (remote_size and remote_size != local_size)
 
-    results[name] = {
-        "need": need,
-        "size": remote_size if remote_size else local_size,
-        "decrypt": t["decrypt"],
-        "url": t["url"],
-        "local": t["local"]
-    }
+    results[name] = {"need": need, "size": remote_size if remote_size else local_size,
+                     "decrypt": t["decrypt"], "url": t["url"], "local": t["local"]}
 
-# ============================================================
-# 更新 next_run.txt（下一次运行时间 + 文件大小记录）
-# ============================================================
+# 更新 next_run.txt
 random_delay = random.randint(24 * 3600, 72 * 3600)
 next_target_time = current_time + random_delay
 size_line = "\t".join([f"{name}:{results[name]['size']}" for name in results])
@@ -227,9 +179,7 @@ lines[1] = size_line
 with open(STATE_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(lines) + "\n")
 
-# ============================================================
-# 输出结果给后续步骤（解密 / 下载）
-# ============================================================
+# 输出结果给后续步骤
 with open(os.environ["GITHUB_OUTPUT"], "a") as f:
     for t in targets:
         name = t["name"]
