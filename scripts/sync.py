@@ -138,21 +138,26 @@ def load_tasks():
     if not os.path.exists("json"):
         os.makedirs("json", exist_ok=True)
 
-    # 遍历 json 目录，包括 one.json, mtv6.json, yoursmile66.json 等
-    # 如果不在 task.json 中，自动补全为远程 Raw 链接任务
+    # 遍历 json 目录，自动适配无 .json 后缀的 name 格式
     for fn in os.listdir("json"):
         if fn.lower().endswith(".json"):
-            found = next((t for t in tasks if t.get("name", "").strip().lower() == fn.strip().lower()), None)
+            # 剥离 .json 扩展名，例如 "yoursmile66.json" -> "yoursmile66"
+            base_name = os.path.splitext(fn)[0]
+            
+            # 优先匹配去除后缀的纯 name，同时也兼容过渡期还没改掉后缀的配置
+            found = next((t for t in tasks if t.get("name", "").strip().lower() in [base_name.lower(), fn.lower()]), None)
             raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
 
             if found:
+                # 统一修正配置中的 name，强制剔除可能残存的 .json
+                found["name"] = base_name
                 if not found.get("url"):
                     found["url"] = raw_url
             else:
                 tasks.append({
-                    "name": fn,
+                    "name": base_name,
                     "url": raw_url,
-                    "md5": None,  # 初始为空，由拉取远程后记录
+                    "md5": None,
                     "last_modified": None,
                     "status": "local",
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
@@ -167,10 +172,16 @@ def main():
     tasks = load_tasks()
 
     for t in tasks:
-        name = t.get("name")
-        url = t.get("url")
-        filepath = os.path.join("json", name)
+        # 获取纯别名，防止用户配置里误带了 .json 扩展名
+        raw_name = t.get("name", "")
+        name = os.path.splitext(raw_name)[0]
+        t["name"] = name  # 确保 task.json 里保存的始终是不带 .json 的干净名称
 
+        # 真正落盘与引用的文件名，统一自动拼上 .json
+        filename = f"{name}.json"
+        filepath = os.path.join("json", filename)
+
+        url = t.get("url")
         t["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
         if not url:
@@ -193,7 +204,7 @@ def main():
         # 2. 计算【远程源文本 MD5】
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
-        # 3. 对比远程 MD5：如果远程 MD5 没变，且本地文件存在，直接跳过后面的解密/清理/写盘！
+        # 3. 对比远程 MD5：如果远程 MD5 没变，且本地文件存在，直接跳过
         if remote_md5 == t.get("md5") and os.path.exists(filepath):
             continue
 
@@ -224,7 +235,7 @@ def main():
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_relative_paths(final_str, best_mirror)
 
-        # 5. 写入本地 json 目录
+        # 5. 写入本地 json 目录（保存为 filename = "xxx.json"）
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
 
