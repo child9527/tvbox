@@ -60,14 +60,19 @@ jobs:
           if git diff --staged --quiet; then
             echo "没有识别到文件变更"
           else
-            git commit -m "build: 重新清洗并更新 leevi 镜像配置 [skip ci]"
+            git commit -m "build: 重新清洗并更新 leevi 镜像配置 [skip ci]" || true
           fi
 
-          # 配置 SSH 密钥并推送至 Gitee
+          # 配置 SSH 密钥
           mkdir -p ~/.ssh
           echo "$GITEE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
 
-          git remote add gitee git@gitee.com:child9527/tvbox.git || git remote set-url gitee git@gitee.com:child9527/tvbox.git
+          # SSH 配置
+          ssh-keyscan -t ed25519,rsa gitee.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+
+          # 修正仓库地址为 mybox.git
+          git remote add gitee git@gitee.com:child9527/mybox.git || git remote set-url gitee git@gitee.com:child9527/mybox.git
           git push -f gitee main
