@@ -57,19 +57,42 @@ def pick_best_mirror():
 # 辅助处理逻辑
 # ============================================================
 def replace_relative_paths(content, best_mirror):
-    """将 json 文件中的 ./ 相对路径替换为最快镜像 + GitHub Raw 路径"""
-    pattern = r'(\"|\')\.\/([^\"\']+)\1'
-    def replace_fn(match):
+    """
+    1. 清理别人硬编码的第三方加速前缀（例如 https://web.ksx.qzz.io/https://raw.github... -> https://raw.github...）
+    2. 将 ./ 相对路径替换为 最快镜像 + GitHub Raw 路径
+    3. 将所有裸露的 raw.githubusercontent.com 替换为你 mirror.txt 里测出的最快镜像
+    """
+    # 步骤 A: 剥离嵌套的前置第三方代理前缀
+    nested_pattern = r'https?://[^/"\'\s]+/(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
+    content = re.sub(nested_pattern, r'\1', content)
+
+    # 步骤 B: 将 ./ 相对路径替换为当前仓库的 raw 路径 + 最快镜像
+    rel_pattern = r'(\"|\')\.\/([^\"\']+)\1'
+    def replace_rel(match):
         quote = match.group(1)
         rel_path = match.group(2)
         raw_github_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/{rel_path}"
         full_url = f"{best_mirror}{raw_github_url}"
         return f"{quote}{full_url}{quote}"
-    return re.sub(pattern, replace_fn, content)
+    content = re.sub(rel_pattern, replace_rel, content)
+
+    # 步骤 C: 统一将所有直连 raw.githubusercontent.com 替换为你测出的 best_mirror
+    raw_pattern = r'https://raw\.githubusercontent\.com/'
+    content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
+
+    # 步骤 D: 修正可能因反复替换导致的镜像双重拼接
+    double_mirror_pattern = re.escape(best_mirror) + r'+'
+    content = re.sub(double_mirror_pattern, best_mirror, content)
+
+    return content
 
 def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
+    
+    # 清理 URL 中可能嵌套的前置第三方代理
+    url = re.sub(r'^https?://[^/"\'\s]+/(https?://)', r'\1', url)
+
     pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
     m = re.search(pat, url)
     if not m:
@@ -138,18 +161,13 @@ def load_tasks():
     if not os.path.exists("json"):
         os.makedirs("json", exist_ok=True)
 
-    # 遍历 json 目录，自动适配无 .json 后缀的 name 格式
     for fn in os.listdir("json"):
         if fn.lower().endswith(".json"):
-            # 剥离 .json 扩展名，例如 "yoursmile66.json" -> "yoursmile66"
             base_name = os.path.splitext(fn)[0]
-            
-            # 优先匹配去除后缀的纯 name，同时也兼容过渡期还没改掉后缀的配置
             found = next((t for t in tasks if t.get("name", "").strip().lower() in [base_name.lower(), fn.lower()]), None)
             raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
 
             if found:
-                # 统一修正配置中的 name，强制剔除可能残存的 .json
                 found["name"] = base_name
                 if not found.get("url"):
                     found["url"] = raw_url
@@ -169,15 +187,15 @@ def load_tasks():
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
+    print(f"当前最快镜像为：{best_mirror}")
+
     tasks = load_tasks()
 
     for t in tasks:
-        # 获取纯别名，防止用户配置里误带了 .json 扩展名
         raw_name = t.get("name", "")
         name = os.path.splitext(raw_name)[0]
-        t["name"] = name  # 确保 task.json 里保存的始终是不带 .json 的干净名称
+        t["name"] = name
 
-        # 真正落盘与引用的文件名，统一自动拼上 .json
         filename = f"{name}.json"
         filepath = os.path.join("json", filename)
 
@@ -204,23 +222,20 @@ def main():
         # 2. 计算【远程源文本 MD5】
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
-        # 3. 对比远程 MD5：如果远程 MD5 没变，且本地文件存在，直接跳过
+        # 3. 对比远程 MD5
         if remote_md5 == t.get("md5") and os.path.exists(filepath):
             continue
 
-        # 4. 远程 MD5 改变（或本地文件缺失），执行完整处理流程
+        # 4. 执行解密、清理与镜像剥离/重组
         t["md5"] = remote_md5
         t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
         content = raw_content
-        # 解密
         if is_encrypted(content):
             content = decrypt(content)
 
-        # 清理注释
         cleaned = clean_comments(content)
         
-        # 校验 JSON
         obj = None
         try:
             obj = commentjson.loads(cleaned)
@@ -231,15 +246,13 @@ def main():
                 t["status"] = "invalid_json"
                 continue
 
-        # 替换镜像相对路径并格式化
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_relative_paths(final_str, best_mirror)
 
-        # 5. 写入本地 json 目录（保存为 filename = "xxx.json"）
+        # 5. 保存文件
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
 
-    # 4. 统一写入更新后的 task.json
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
