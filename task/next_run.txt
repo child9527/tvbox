@@ -1,6 +1,7 @@
 1789515029
 one:65692	yoursmile66:78825	mtv6:99220
+
 ===================================================
-第6行是tvbox和leevi仓库的TVBOX_TOKEN
+第7行是tvbox和leevi仓库的TVBOX_TOKEN
 ===================================================
 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
