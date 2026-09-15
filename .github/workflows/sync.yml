@@ -11,24 +11,24 @@ on:
 
 jobs:
   sync:
-    name: 设置任务
+    name: 设置与同步任务
     runs-on: ubuntu-latest
 
     steps:
       - name: 拉取 GitHub 仓库代码
         uses: actions/checkout@v4
 
-      - name: 安装python和依赖
+      - name: 安装 Python 及依赖环境
         run: |
           python -m pip install --upgrade pip
           pip install requests commentjson pycryptodome
 
-      - name: Step 1 - 获取完整文件清单
+      - name: 步骤 1 - 执行同步脚本获取文件清单
         id: sync_json
         run: |
           python scripts/sync.py
 
-      - name: Step 2 - 差异检查 (GitHub修改 + Gitee缺失)
+      - name: 步骤 2 - 检查文件差异并更新 GitHub 状态
         id: diff_check
         env:
           GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
@@ -39,7 +39,7 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
-          # 1. 暂存所有 json 变动以及 task/task.json 变动 (提交到 GitHub)
+          # 1. 暂存所有 json 变动以及 task/task.json 变动 (仅用于 GitHub 仓库本身记录状态)
           git add json/*.json task/task.json
 
           # 检查 json/*.json 是否有更新
@@ -51,7 +51,7 @@ jobs:
           done
 
           echo "🌐 从 Gitee API 获取 json 目录文件列表..."
-          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name')
+          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name 2>/dev/null || empty')
 
           echo "📁 Gitee 现有文件:"
           echo "$gitee_json_list"
@@ -68,7 +68,7 @@ jobs:
             fi
           done
 
-          # 2. 提交并推送到 GitHub 仓库 (保证 task.json 保存在 GitHub)
+          # 2. 提交并推送到 GitHub 仓库 (强制附带 [skip ci] 阻断死循环)
           has_git_changes=false
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
@@ -90,7 +90,7 @@ jobs:
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
 
-      - name: Step 3 - 加密
+      - name: 步骤 3 - 执行 JSON 批量加密
         id: encrypt_step
         if: steps.diff_check.outputs.has_changes == 'true'
         run: |
@@ -111,7 +111,7 @@ jobs:
           echo "has_encrypted=true" >> $GITHUB_OUTPUT
           echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
 
-      - name: Step 4 - 配置SSH传输
+      - name: 步骤 4 - 配置 Gitee SSH 密钥传输认证
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
@@ -126,7 +126,7 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: Step 5 - 推送到Gitee
+      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         run: |
           git clone git@gitee.com:child9527/mybox.git gitee_temp
@@ -147,7 +147,7 @@ jobs:
             fi
           done
 
-          # 2. 只暂存 json/*.json（task/task.json 不送去 Gitee）
+          # 2. 仅暂存 json/*.json，决不将 task/task.json 提交给 Gitee
           git add json/*.json
 
           # 3. 检查 Gitee 工作区是否有变更并推送
