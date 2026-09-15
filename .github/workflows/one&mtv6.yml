@@ -140,8 +140,31 @@ jobs:
 
               need = None
               if t["name"] == "yoursmile66":
-                  # ⭐ 永远执行，不受随机定时器影响
-                  need = True
+                 # ⭐ 确保 next_run.txt 至少有三行（你已经手动留了第3行）
+              while len(lines) < 3:
+                  lines.append("")
+
+                # ⭐ 读取 xc_last_date（第3行）
+              xc_last_date = ""
+              if lines[2].startswith("xc_last_date="):
+                  xc_last_date = lines[2].split("=", 1)[1].strip()
+
+                # ⭐ 今天的日期（北京时间）
+              bj_now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+              today = bj_now.strftime("%Y-%m-%d")
+
+                # ⭐ 文件大小是否变化
+              local_size = size_map.get("yoursmile66", "")
+              remote_size = remote_size.strip() if remote_size else ""
+              size_changed = (remote_size and remote_size != local_size)
+
+                # ⭐ 最终判断：今天没执行过 + 文件大小变化
+              need = (today != xc_last_date) and size_changed
+
+                # ⭐ 如果执行了，更新 xc_last_date（只写第3行）
+              if need:
+                  lines[2] = f"xc_last_date={today}"
+
               else:
                   need = is_first_run or (remote_size and remote_size != local_size)
 
