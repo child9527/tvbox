@@ -66,13 +66,16 @@ jobs:
             fi
           done
 
-          # 2. 核心修正：判断全局暂存区（含 task/task.json 和 json 目录）是否有变动
+          # 2. 核心修正：添加 git pull --rebase 避免推送冲突
           has_git_changes=false
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "更新 task.json 及 json 文件于 ${NOW} [skip ci]"
-            git push
+            
+            # 拉取远程最新变更并变基，防止 push 被拒绝
+            git pull --rebase origin main
+            git push origin main
           fi
 
           # 如果既没有 git 变更（GitHub端），且 Gitee 也不缺文件，才真正的退出
@@ -103,7 +106,6 @@ jobs:
             fi
           done
 
-          # 修正：即使 changed_files 为空（如仅 task.json 变动），只要有加密或者要同步 task.json，就继续推进 Step 5
           echo "has_encrypted=true" >> $GITHUB_OUTPUT
           echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
 
@@ -151,10 +153,13 @@ jobs:
           # 3. 暂存 json 目录下所有的 json 以及 task/task.json
           git add json/*.json task/task.json
 
-          # 4. 检查 Gitee 工作区是否有任何变更（去掉了仅限定 json 目录的判定）
+          # 4. 检查 Gitee 工作区是否有任何变更
           if [ -n "$(git status --porcelain)" ]; then
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "同步加密 JSON 及 task.json (${NOW}) [skip ci]"
+            
+            # Gitee 侧同样拉取 rebase 保证推送通畅
+            git pull --rebase origin master
             git push origin master
           else
             echo "🎉 Gitee 侧无任何变动，跳过推送"
