@@ -7,7 +7,7 @@ import commentjson
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 RAW_PREFIX = "https://raw.githubusercontent.com/"
-TASK_FILE = os.path.join("task", "task.json")  # ✅ 路径改为 task/task.json
+TASK_FILE = os.path.join("task", "task.json")
 
 # ============================================================
 # 镜像测速
@@ -118,33 +118,35 @@ def load_tasks():
         with open(TASK_FILE, "r", encoding="utf-8") as f:
             tasks = json.load(f)
 
-    # 打印已有 task.json 名称集合
     existing_names = {t["name"].strip().lower() for t in tasks}
     print("📂 已有 task.json 名称集合:")
     for n in existing_names:
         print(" -", n)
 
-    # 打印当前 json 目录文件列表
     print("📂 当前 json 目录文件:")
     for fn in os.listdir("json"):
         print(" -", fn)
 
-    # 强制更新/补充逻辑
     for fn in os.listdir("json"):
         if fn.endswith(".json"):
             filepath = os.path.join("json", fn)
+            print(f"➡️ 正在处理文件: {fn}")
             try:
                 with open(filepath, "rb") as f:
-                    md5_val = hashlib.md5(f.read()).hexdigest()
+                    data = f.read()
+                    md5_val = hashlib.md5(data).hexdigest()
+                print(f"   ✅ 成功读取 {fn}, MD5={md5_val}")
             except Exception as e:
-                print(f"⚠️ 文件 {fn} 无法读取: {e}")
+                print(f"   ❌ 读取失败 {fn}: {e}")
                 md5_val = None
 
             found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
             if found:
+                print(f"   🔄 更新已有条目: {fn}")
                 found["url"] = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
                 found["md5"] = md5_val
             else:
+                print(f"   ➕ 补充新条目: {fn}")
                 tasks.append({
                     "name": fn,
                     "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
@@ -184,10 +186,10 @@ def main():
                 t["status"] = f"http{r.status_code}"
                 continue
             content = r.content.decode("utf-8", errors="ignore").strip()
-            print("✅ 拉取成功")
+            print(f"✅ 拉取成功: {name}")
             t["status"] = "ok"
         except Exception as e:
-            print(f"❌ 拉取异常: {e}")
+            print(f"❌ 拉取异常: {name}, {e}")
             t["status"] = "error"
             continue
 
@@ -204,11 +206,13 @@ def main():
             cleaned = clean_comments(content)
             try:
                 obj = commentjson.loads(cleaned)
-            except:
+                print(f"   ✅ JSON 解析成功: {name}")
+            except Exception as e1:
                 try:
                     obj = json.loads(cleaned)
-                except:
-                    print(f"❌ 非标准 JSON: {name}")
+                    print(f"   ✅ 标准 JSON 解析成功: {name}")
+                except Exception as e2:
+                    print(f"   ❌ JSON 解析失败: {name}, {e1}, {e2}")
                     t["status"] = "invalid_json"
                     continue
 
