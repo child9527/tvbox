@@ -1,0 +1,130 @@
+[
+  {
+    "name": "0707.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/0707.json",
+    "md5": "68ade1f8fdc8e47b01cbefbb000eea40",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "0825.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/0825.json",
+    "md5": "bc59cbf446a14362d64b7166a1fea610",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "0826.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/0826.json",
+    "md5": "7a4591966c4ab63b77052e350ce06a58",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "0827.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/0827.json",
+    "md5": "475c3eb4f1df192b604bb7484e813de0",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "367.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/367.json",
+    "md5": "d9fc6851389fc21d636429848bea1566",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "9918.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/9918.json",
+    "md5": "d7205d6f8c89e24df313d378e33a9f70",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "99188.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/99188.json",
+    "md5": "a918c7f67be4f0e08d5be79a351fa1e3",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "dianshi.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/dianshi.json",
+    "md5": "2a5285785f087874abf8b1e93eac5f87",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "fty.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/fty.json",
+    "md5": "2c5ad7e09413f4dda9c98ae17529cb22",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "js.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/js.json",
+    "md5": "f036a5e903f843ab6b8d03a008668361",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "jsm.json",
+    "url": "https://raw.githubusercontent.com/qist/tvbox/master/jsm.json",
+    "md5": "d26f8155a473f539740f5f0042fbff61",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "X.json",
+    "url": "https://raw.githubusercontent.com/alantang1977/X/main/X.json",
+    "md5": "96bbd60469b1601bf29bb24cabc330ed",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "pj.json",
+    "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json",
+    "md5": "af41c918a3c81c7594673ade603b8831",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "api.json",
+    "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json",
+    "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "mtv6.json",
+    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/mtv6.json",
+    "md5": "d0d712ff65179360283d118b33251580",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  },
+  {
+    "name": "one.json",
+    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/one.json",
+    "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
+    "last_modified": null,
+    "status": "ok",
+    "timestamp": "2026-09-15T11:17:21.032634"
+  }
+]
