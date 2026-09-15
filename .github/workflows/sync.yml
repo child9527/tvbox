@@ -129,7 +129,8 @@ jobs:
       - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         run: |
-          git clone git@gitee.com:child9527/mybox.git gitee_temp
+          # 💡 使用 --depth 1 浅克隆，仅拉取最新一次提交，极大提升下载速度
+          git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
           cd gitee_temp
 
           git config user.name "github-actions[bot]"
@@ -155,7 +156,7 @@ jobs:
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "同步加密 JSON (${NOW}) [skip ci]"
             
-            git pull --rebase origin master
+            # 浅克隆仓库推送时，直接 push 即可
             git push origin master
           else
             echo "🎉 Gitee 侧无任何变动，跳过推送"
