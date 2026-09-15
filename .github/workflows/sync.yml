@@ -21,12 +21,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests commentjson pycryptodome
 
-      - name: Step 1 - Sync JSON
+      - name: Step 1 - 获取完整文件清单
         id: sync_json
         run: |
           python scripts/sync.py
           
-      - name: Step 2 - Diff check (GitHub changes + Gitee missing check)
+      - name: Step 2 - 差异检查 (GitHub修改 + Gitee缺失)
         id: diff_check
         env:
           GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
@@ -78,7 +78,7 @@ jobs:
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
 
-      - name: Step 3 - Encrypt
+      - name: Step 3 - 加密
         id: encrypt_step
         if: steps.diff_check.outputs.has_changes == 'true'
         run: |
@@ -102,7 +102,7 @@ jobs:
           echo "has_encrypted=true" >> $GITHUB_OUTPUT
           echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
 
-      - name: Step 4 - Setup SSH
+      - name: Step 4 - 配置SSH传输
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
@@ -117,7 +117,7 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: Step 5 - Push to Gitee
+      - name: Step 5 - 推送到Gitee
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         run: |
           git clone git@gitee.com:child9527/mybox.git gitee_temp
