@@ -11,6 +11,7 @@ on:
 
 jobs:
   sync:
+    name: 设置任务
     runs-on: ubuntu-latest
 
     steps:
