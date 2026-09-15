@@ -116,9 +116,15 @@ def load_tasks():
     if os.path.exists("task.json"):
         with open("task.json", "r", encoding="utf-8") as f:
             tasks = json.load(f)
-    existing_names = {t["name"] for t in tasks}
+
+    # 打印当前 json 目录文件列表
+    print("📂 当前 json 目录文件:")
     for fn in os.listdir("json"):
-        if fn.endswith(".json") and fn not in existing_names:
+        print(" -", fn)
+
+    existing_names = {t["name"].strip().lower() for t in tasks}
+    for fn in os.listdir("json"):
+        if fn.endswith(".json") and fn.strip().lower() not in existing_names:
             filepath = os.path.join("json", fn)
             if os.path.exists(filepath):
                 with open(filepath, "rb") as f:
