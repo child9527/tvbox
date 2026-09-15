@@ -1,0 +1,84 @@
+name: 导出URL信息到JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Export URLs
+        run: |
+          mkdir -p task
+
+          python - << 'EOF'
+          import os, urllib.request, json, datetime, hashlib
+
+          txt_file = "task/json.txt"
+          output_file = "task/url_info.json"
+
+          headers = {"User-Agent": "okhttp/3.12.0", "Accept": "*/*", "Connection": "Keep-Alive"}
+
+          results = []
+          now = datetime.datetime.utcnow().isoformat()
+
+          def convert_github_url(url: str) -> str:
+              # 将 github.com/.../blob/master/... 转换成 raw.githubusercontent.com/.../master/...
+              if "github.com" in url and "/blob/" in url:
+                  parts = url.split("/")
+                  # https://github.com/{user}/{repo}/blob/{branch}/{path}
+                  user, repo, branch = parts[3], parts[4], parts[6]
+                  path = "/".join(parts[7:])
+                  return f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}"
+              return url
+
+          if os.path.exists(txt_file):
+              with open(txt_file, "r", encoding="utf-8", errors="ignore") as f:
+                  urls = [line.strip() for line in f if line.strip()]
+
+              for url in urls:
+                  raw_url = convert_github_url(url)
+                  entry = {
+                      "name": raw_url.split("?")[0].rstrip("/").split("/")[-1],
+                      "url": raw_url,
+                      "md5": None,
+                      "last_modified": None,  # 占位，后续由另一个工作流更新
+                      "status": "failed",
+                      "timestamp": now
+                  }
+
+                  try:
+                      # GET 请求获取内容并计算 md5
+                      req = urllib.request.Request(raw_url, headers=headers)
+                      with urllib.request.urlopen(req, timeout=20) as resp:
+                          data = resp.read()
+                          entry["md5"] = hashlib.md5(data).hexdigest()
+                          entry["status"] = "ok"
+
+                  except Exception as e:
+                      entry["status"] = f"error: {e}"
+
+                  results.append(entry)
+
+          with open(output_file, "w", encoding="utf-8") as f:
+              json.dump(results, f, ensure_ascii=False, indent=2)
+
+          print(f"已导出 {len(results)} 条记录到 {output_file}")
+          EOF
+
+      - name: Commit JSON
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add task/url_info.json || echo "No files"
+          git commit -m "Export URL info" || echo "No changes"
+          git push
