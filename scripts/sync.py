@@ -122,29 +122,38 @@ def load_tasks():
             print(f"❌ 读取 task.json 失败: {e}")
             tasks = []
 
-    if not os.path.exists("json"):
-        os.makedirs("json")
+    json_dir = os.path.join(os.getcwd(), "json")
+    print(f"🔍 正在扫描目录: {json_dir}")
 
-    for fn in os.listdir("json"):
-        if fn.endswith(".json"):
-            filepath = os.path.join("json", fn)
-            print(f"➡️ 正在处理本地文件: {fn}")
+    if not os.path.exists(json_dir):
+        print("⚠️ json 目录不存在！")
+        return tasks
+
+    files = os.listdir(json_dir)
+    print(f"📁 json 目录下找到的所有文件: {files}")
+
+    for fn in files:
+        if fn.lower().endswith(".json"):
+            filepath = os.path.join(json_dir, fn)
+            print(f"➡️ 正在处理文件: {fn}")
+            
             md5_val = None
             try:
                 with open(filepath, "rb") as f:
                     data = f.read()
                     md5_val = hashlib.md5(data).hexdigest()
-                print(f"   ✅ 成功读取 {fn}, MD5={md5_val}")
+                print(f"   ✅ MD5: {md5_val}")
             except Exception as e:
-                print(f"   ❌ 读取失败 {fn}: {e}")
+                print(f"   ❌ 读取 {fn} 计算 MD5 失败: {e}")
 
+            # 匹配逻辑
             found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
             if found:
-                # 如果发现已存在的条目是指向本地repo的，更新MD5
+                print(f"   ℹ️ 匹配到已存在条目: {found['name']}")
                 if "child9527/tvbox" in found.get("url", ""):
                     found["md5"] = md5_val
             else:
-                print(f"   ➕ 补充新条目: {fn}")
+                print(f"   ➕ 准备新增条目: {fn}")
                 tasks.append({
                     "name": fn,
                     "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
@@ -153,6 +162,7 @@ def load_tasks():
                     "status": "ok",
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
                 })
+
     return tasks
 
 # ============================================================
