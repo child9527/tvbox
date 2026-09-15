@@ -58,11 +58,11 @@ def pick_best_mirror():
 # ============================================================
 def replace_relative_paths(content, best_mirror):
     """
-    1. 清理别人硬编码的第三方加速前缀（支持多层循环剥离，如 https://web.ksx.qzz.io/https://raw.github...）
+    1. 清理别人硬编码的第三方加密/代理前缀
     2. 将 ./ 相对路径替换为 最快镜像 + GitHub Raw 路径
-    3. 将所有裸露的 raw.githubusercontent.com 替换为你 mirror.txt 里测出的最快镜像
+    3. 将所有裸露的 raw.githubusercontent.com 替换为镜像
     """
-    # 步骤 A: 剥离嵌套的前置第三方代理前缀（打破域名斜杠限制，支持完整剥离）
+    # 步骤 A: 剥离嵌套的前置第三方代理前缀
     nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
     while re.search(nested_pattern, content):
         content = re.sub(nested_pattern, r'\1', content)
@@ -77,7 +77,7 @@ def replace_relative_paths(content, best_mirror):
         return f"{quote}{full_url}{quote}"
     content = re.sub(rel_pattern, replace_rel, content)
 
-    # 步骤 C: 统一将所有直连 raw.githubusercontent.com 替换为你测出的 best_mirror
+    # 步骤 C: 统一将所有直连 raw.githubusercontent.com 替换为 best_mirror
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
 
@@ -148,40 +148,59 @@ def decrypt(text):
                 except: pass
 
 # ============================================================
-# 2. 获取 & 补全任务清单
+# 2. 获取 & 严格同步任务清单
 # ============================================================
 def load_tasks():
-    tasks = []
+    old_tasks = []
     if os.path.exists(TASK_FILE):
         try:
             with open(TASK_FILE, "r", encoding="utf-8") as f:
-                tasks = json.load(f)
+                old_tasks = json.load(f)
         except:
-            tasks = []
+            old_tasks = []
 
-    if not os.path.exists("json"):
-        os.makedirs("json", exist_ok=True)
+    # 1. 扫描 json/ 目录下的所有 json 文件（取不含后缀的名字集合）
+    os.makedirs("json", exist_ok=True)
+    local_files = [f for f in os.listdir("json") if f.lower().endswith(".json")]
+    local_names_set = {os.path.splitext(f)[0].lower(): f for f in local_files}
 
-    for fn in os.listdir("json"):
-        if fn.lower().endswith(".json"):
-            base_name = os.path.splitext(fn)[0]
-            found = next((t for t in tasks if t.get("name", "").strip().lower() in [base_name.lower(), fn.lower()]), None)
-            raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
+    # 将旧任务转换为字典以便快速检索，同时去重
+    old_tasks_map = {}
+    for t in old_tasks:
+        name = os.path.splitext(t.get("name", ""))[0].strip()
+        if name:
+            t["name"] = name
+            old_tasks_map[name.lower()] = t
 
-            if found:
-                found["name"] = base_name
-                if not found.get("url"):
-                    found["url"] = raw_url
-            else:
-                tasks.append({
-                    "name": base_name,
-                    "url": raw_url,
-                    "md5": None,
-                    "last_modified": None,
-                    "status": "local",
-                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-                })
-    return tasks
+    synced_tasks = []
+
+    # 2. 以 local_names_set 为基准构建最新 tasks 列表：
+    # 如果 json/ 目录下有此文件：
+    #    - 若 task.json 里已有，保留旧配置；
+    #    - 若没有，自动新增配置；
+    # 如果 task.json 有但 json/ 目录下没有，则不加入 synced_tasks（相当于自动删除）。
+    for lower_name, filename in local_names_set.items():
+        base_name = os.path.splitext(filename)[0]
+        raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
+
+        if lower_name in old_tasks_map:
+            task = old_tasks_map[lower_name]
+            task["name"] = base_name  # 统一修正格式
+            if not task.get("url"):
+                task["url"] = raw_url
+            synced_tasks.append(task)
+        else:
+            # 自动添加缺失的字段
+            synced_tasks.append({
+                "name": base_name,
+                "url": raw_url,
+                "md5": None,
+                "last_modified": None,
+                "status": "local",
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+    return synced_tasks
 
 # ============================================================
 # 3. 主逻辑
@@ -193,15 +212,13 @@ def main():
     tasks = load_tasks()
 
     for t in tasks:
-        raw_name = t.get("name", "")
-        name = os.path.splitext(raw_name)[0]
-        t["name"] = name
-
+        name = t.get("name", "")
         filename = f"{name}.json"
         filepath = os.path.join("json", filename)
 
         url = t.get("url")
-        t["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        now_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        t["timestamp"] = now_time
 
         if not url:
             t["status"] = "missing_url"
@@ -229,7 +246,7 @@ def main():
 
         # 4. 执行解密、清理与镜像剥离/重组
         t["md5"] = remote_md5
-        t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        t["last_modified"] = now_time
 
         content = raw_content
         if is_encrypted(content):
@@ -254,6 +271,7 @@ def main():
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
 
+    # 写入最终同步后的任务列表
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
