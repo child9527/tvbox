@@ -1,8 +1,8 @@
 name: 解密one&yoursmile66并推送
 
 on:
-  schedule:
-    - cron: "0 16 * * *"
+  #schedule:
+  #  - cron: "0 16 * * *"
   workflow_dispatch:
 
 jobs:
