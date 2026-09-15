@@ -8,19 +8,19 @@ import commentjson
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 RAW_PREFIX = "https://raw.githubusercontent.com/"
 TASK_FILE = os.path.join("task", "task.json")
+MIRROR_FILE = os.path.join("scripts", "mirror.txt")
 
 # ============================================================
-# 镜像测速
+# 镜像测速与路径处理
 # ============================================================
 def load_mirrors():
-    path = os.path.join("scripts", "mirror.txt")
-    if not os.path.exists(path):
+    if not os.path.exists(MIRROR_FILE):
         return []
     mirrors = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(MIRROR_FILE, "r", encoding="utf-8") as f:
         for line in f:
             m = line.strip()
-            if m:
+            if m and not m.startswith("#"):
                 if not m.endswith("/"):
                     m += "/"
                 mirrors.append(m)
@@ -51,9 +51,18 @@ def pick_best_mirror():
                 results[m] = d
     if not results:
         return mirrors[0]
-    best = sorted(results, key=results.get)[0]
-    print(f"🚀 选择最快镜像: {best}")
-    return best
+    return sorted(results, key=results.get)[0]
+
+def replace_relative_paths(content, best_mirror):
+    """将 json 文件中的 ./ 相对路径替换为最快镜像 + GitHub Raw 路径"""
+    pattern = r'(\"|\')\.\/([^\"\']+)\1'
+    def replace_fn(match):
+        quote = match.group(1)
+        rel_path = match.group(2)
+        raw_github_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/{rel_path}"
+        full_url = f"{best_mirror}{raw_github_url}"
+        return f"{quote}{full_url}{quote}"
+    return re.sub(pattern, replace_fn, content)
 
 # ============================================================
 # URL 转换
@@ -104,10 +113,22 @@ def is_encrypted(text):
 def decrypt(text):
     tmp_in = "tmp_in.txt"
     tmp_out = "tmp_out.json"
-    with open(tmp_in, "w", encoding="utf-8") as f:
-        f.write(text)
-    subprocess.run(["python", "scripts/tvbox.py", tmp_in, tmp_out], check=True)
-    return open(tmp_out, "r", encoding="utf-8").read()
+    
+    # 动态获取 scripts/tvbox.py 的精准绝对路径
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    tvbox_script = os.path.join(script_dir, "tvbox.py")
+    
+    try:
+        with open(tmp_in, "w", encoding="utf-8") as f:
+            f.write(text)
+        subprocess.run(["python", tvbox_script, tmp_in, tmp_out], check=True)
+        res = open(tmp_out, "r", encoding="utf-8").read()
+        return res
+    finally:
+        for f in [tmp_in, tmp_out]:
+            if os.path.exists(f):
+                try: os.remove(f)
+                except: pass
 
 # ============================================================
 # 读取任务（task/task.json + json目录补充）
@@ -118,151 +139,106 @@ def load_tasks():
         try:
             with open(TASK_FILE, "r", encoding="utf-8") as f:
                 tasks = json.load(f)
-        except Exception as e:
-            print(f"❌ 读取 task.json 失败: {e}")
+        except:
             tasks = []
 
-    json_dir = os.path.join(os.getcwd(), "json")
-    print(f"🔍 正在扫描目录: {json_dir}")
+    if not os.path.exists("json"):
+        os.makedirs("json", exist_ok=True)
 
-    if not os.path.exists(json_dir):
-        print("⚠️ json 目录不存在！")
-        return tasks
-
-    files = os.listdir(json_dir)
-    print(f"📁 json 目录下找到的所有文件: {files}")
-
-    for fn in files:
+    for fn in os.listdir("json"):
         if fn.lower().endswith(".json"):
-            filepath = os.path.join(json_dir, fn)
-            print(f"➡️ 正在处理文件: {fn}")
-            
-            md5_val = None
+            filepath = os.path.join("json", fn)
             try:
                 with open(filepath, "rb") as f:
-                    data = f.read()
-                    md5_val = hashlib.md5(data).hexdigest()
-                print(f"   ✅ MD5: {md5_val}")
-            except Exception as e:
-                print(f"   ❌ 读取 {fn} 计算 MD5 失败: {e}")
+                    md5_val = hashlib.md5(f.read()).hexdigest()
+            except:
+                md5_val = None
 
-            # 匹配逻辑
-            found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
+            found = next((t for t in tasks if t.get("name", "").strip().lower() == fn.strip().lower()), None)
+            raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
+
             if found:
-                print(f"   ℹ️ 匹配到已存在条目: {found['name']}")
-                if "child9527/tvbox" in found.get("url", ""):
-                    found["md5"] = md5_val
+                if "child9527/tvbox" in found.get("url", "") or not found.get("url"):
+                    found["url"] = raw_url
+                found["md5"] = md5_val
             else:
-                print(f"   ➕ 准备新增条目: {fn}")
                 tasks.append({
                     "name": fn,
-                    "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
+                    "url": raw_url,
                     "md5": md5_val,
-                    "last_modified": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "status": "ok",
+                    "last_modified": None,
+                    "status": "local",
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
                 })
-
     return tasks
 
 # ============================================================
 # 主逻辑
 # ============================================================
 def main():
-    mirror = pick_best_mirror()
+    best_mirror = pick_best_mirror()
     tasks = load_tasks()
-    print(f"📦 总任务数: {len(tasks)}")
 
     for t in tasks:
-        name = t["name"]
+        name = t.get("name")
         url = t.get("url")
         filepath = os.path.join("json", name)
 
-        print(f"🔍 检查任务: {name}")
         t["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # 本地由 json 目录托管的文件，若远程拉取失败（例如首次未提交），优先读取本地文件
-        is_local_repo = "child9527/tvbox" in (url or "")
-
         if not url:
-            print(f"❌ 没有远程地址: {name}")
             t["status"] = "missing_url"
             continue
 
-        content = None
         is_gh, raw, _ = extract_raw(url)
         try:
             r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
-            if r.status_code == 200:
-                content = r.content.decode("utf-8", errors="ignore").strip()
-                print(f"✅ 拉取成功: {name}")
-                t["status"] = "ok"
-            else:
-                print(f"⚠️ 拉取返回状态码: HTTP {r.status_code}")
-                if not is_local_repo:
-                    t["status"] = f"http{r.status_code}"
-                    continue
-        except Exception as e:
-            print(f"⚠️ 拉取异常: {name}, {e}")
-            if not is_local_repo:
-                t["status"] = "error"
+            if r.status_code != 200:
+                t["status"] = f"http{r.status_code}"
                 continue
-
-        # 如果是本地 repo 文件且远程未拉到，则回退读取本地文件内容
-        if content is None and is_local_repo and os.path.exists(filepath):
-            try:
-                with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read().strip()
-                print(f"📦 使用本地已有文件内容: {name}")
-                t["status"] = "ok"
-            except Exception as e:
-                print(f"❌ 读取本地文件失败: {e}")
-                t["status"] = "read_error"
-                continue
-
-        if content is None:
+            content = r.content.decode("utf-8", errors="ignore").strip()
+            t["status"] = "ok"
+        except Exception:
+            t["status"] = "error"
             continue
 
         md5_val = hashlib.md5(content.encode("utf-8")).hexdigest()
-        if md5_val != t.get("md5"):
-            print(f"📌 文件有变化: {name}")
-            t["md5"] = md5_val
+        
+        # 解密
+        if is_encrypted(content):
+            content = decrypt(content)
+
+        cleaned = clean_comments(content)
+        
+        # JSON 校验与解析
+        obj = None
+        try:
+            obj = commentjson.loads(cleaned)
+        except:
+            try:
+                obj = json.loads(cleaned)
+            except:
+                t["status"] = "invalid_json"
+                continue
+
+        # 格式化并替换内部 ./ 镜像相对路径
+        final_str = json.dumps(obj, ensure_ascii=False, indent=2)
+        final_str = replace_relative_paths(final_str, best_mirror)
+
+        # 计算写盘前最终内容 MD5
+        new_md5 = hashlib.md5(final_str.encode("utf-8")).hexdigest()
+
+        if new_md5 != t.get("md5") or not os.path.exists(filepath):
+            t["md5"] = new_md5
             t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-            if is_encrypted(content):
-                print(f"🔓 自动解密: {name}")
-                try:
-                    content = decrypt(content)
-                except Exception as e:
-                    print(f"❌ 解密失败: {e}")
-
-            cleaned = clean_comments(content)
-            try:
-                obj = commentjson.loads(cleaned)
-                print(f"   ✅ JSON 解析成功: {name}")
-            except Exception as e1:
-                try:
-                    obj = json.loads(cleaned)
-                    print(f"   ✅ 标准 JSON 解析成功: {name}")
-                except Exception as e2:
-                    print(f"   ❌ JSON 解析失败: {name}, {e1}, {e2}")
-                    t["status"] = "invalid_json"
-                    continue
-
-            final = json.dumps(obj, ensure_ascii=False, indent=2)
             with open(filepath, "w", encoding="utf-8") as f:
-                f.write(final)
-            print(f"✅ 已保存更新: {name}")
-        else:
-            print(f"🎉 文件未变化: {name}")
+                f.write(final_str)
 
-    # 保证无论如何都能将追加后的 tasks 保存落盘
+    # 统一保存更新后的 task.json
+    os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
-
-    print("--------------------------------------------------")
-    print("📊 全部任务检查完成")
-    print("--------------------------------------------------")
 
 if __name__ == "__main__":
     main()
