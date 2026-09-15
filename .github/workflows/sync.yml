@@ -2,11 +2,11 @@ name: 批量同步、加密与双端推送
 
 on:
   schedule:
-    - cron: '0 17 * * *'   #北京时间凌晨1点运行
+    - cron: '0 17 * * *'   # 北京时间凌晨1点运行
   workflow_dispatch:
   push:
     paths:
-      - "task/json.txt"
+      - "task/task.json"
       - "json/**"
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install deps
+      - name: 安装python和依赖
         run: |
           python -m pip install --upgrade pip
           pip install requests commentjson pycryptodome
@@ -25,7 +25,7 @@ jobs:
         id: sync_json
         run: |
           python scripts/sync.py
-          
+
       - name: Step 2 - 差异检查 (GitHub修改 + Gitee缺失)
         id: diff_check
         env:
@@ -37,13 +37,14 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
+          # 1. 暂存所有 json 变动以及 task/task.json 变动
+          git add json/*.json task/task.json
+
+          # 检查 json/*.json 是否有更新
           for file in json/*.json; do
-            git add -f "$file"
             if [ -n "$(git status --porcelain "$file")" ]; then
-              echo "📌 本地变更: $file"
+              echo "📌 本地 json 变更: $file"
               changed_files+=("$file")
-            else
-              git restore --staged "$file"
             fi
           done
 
@@ -58,21 +59,27 @@ jobs:
             base="$(basename "$file")"
             if ! echo "$gitee_json_list" | grep -q "^$base$"; then
               echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
-              changed_files+=("$file")
+              # 只有当 changed_files 不包含该文件时才添加，避免重复
+              if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
+                changed_files+=("$file")
+              fi
             fi
           done
 
-          if [ ${#changed_files[@]} -eq 0 ]; then
+          # 2. 核心修正：判断全局暂存区（含 task/task.json 和 json 目录）是否有变动
+          has_git_changes=false
+          if [ -n "$(git status --porcelain)" ]; then
+            has_git_changes=true
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "更新 task.json 及 json 文件于 ${NOW} [skip ci]"
+            git push
+          fi
+
+          # 如果既没有 git 变更（GitHub端），且 Gitee 也不缺文件，才真正的退出
+          if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ]; then
             echo "🎉 无需处理：本地无变化且 Gitee 无缺失"
             echo "has_changes=false" >> $GITHUB_OUTPUT
             exit 0
-          fi
-
-          # GitHub 只在本地有变化时 commit（不会因为 Gitee 缺失而 commit）
-          if [ -n "$(git status --porcelain json)" ]; then
-            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "更新于 ${NOW} [skip ci]"
-            git push
           fi
 
           echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -86,19 +93,17 @@ jobs:
           processed=()
 
           for f in $CHANGED; do
-            base="${f%.*}"
-            bin="${base}.bin"
-            python scripts/tvbox.py "$f" "$bin" enc || true
-            if [ -f "$bin" ]; then
-              processed+=("$f")
+            if [ -f "$f" ]; then
+              base="${f%.*}"
+              bin="${base}.bin"
+              python scripts/tvbox.py "$f" "$bin" enc || true
+              if [ -f "$bin" ]; then
+                processed+=("$f")
+              fi
             fi
           done
 
-          if [ ${#processed[@]} -eq 0 ]; then
-            echo "has_encrypted=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
+          # 修正：即使 changed_files 为空（如仅 task.json 变动），只要有加密或者要同步 task.json，就继续推进 Step 5
           echo "has_encrypted=true" >> $GITHUB_OUTPUT
           echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
 
@@ -126,20 +131,31 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          mkdir -p json
+          # 确保 Gitee 临时目录下存在 json 和 task 文件夹
+          mkdir -p json task
 
+          # 1. 移动/覆盖加密后的 JSON 文件
           for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
             base="$(basename "$f" .json)"
-            cp "../json/${base}.bin" "json/${base}.json"
-            rm -f "../json/${base}.bin"
+            if [ -f "../json/${base}.bin" ]; then
+              cp "../json/${base}.bin" "json/${base}.json"
+              rm -f "../json/${base}.bin"
+            fi
           done
 
-          git add json/*.json
-
-          if [ -n "$(git status --porcelain json)" ]; then
-            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "同步加密 JSON (${NOW}) [skip ci]"
-            git push origin master
+          # 2. 复制更新后的 task/task.json 到 Gitee 目录
+          if [ -f "../task/task.json" ]; then
+            cp "../task/task.json" "task/task.json"
           fi
 
+          # 3. 暂存 json 目录下所有的 json 以及 task/task.json
+          git add json/*.json task/task.json
 
+          # 4. 检查 Gitee 工作区是否有任何变更（去掉了仅限定 json 目录的判定）
+          if [ -n "$(git status --porcelain)" ]; then
+            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
+            git commit -m "同步加密 JSON 及 task.json (${NOW}) [skip ci]"
+            git push origin master
+          else
+            echo "🎉 Gitee 侧无任何变动，跳过推送"
+          fi
