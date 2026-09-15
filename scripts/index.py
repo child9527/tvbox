@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from datetime import datetime, timezone, timedelta
 import requests
 
 OUTPUT = "index.html"
@@ -35,7 +36,8 @@ def fetch_gitee_json_files():
 
 
 def generate_html():
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bj_tz = timezone(timedelta(hours=8))
+    now = datetime.now(bj_tz).strftime("%Y-%m-%d %H:%M:%S")
     json_files = fetch_gitee_json_files()
 
     html = f"""<!DOCTYPE html>
