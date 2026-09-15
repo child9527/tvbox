@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 拉取 GitHub 仓库代码
+        uses: actions/checkout@v4
 
       - name: 安装python和依赖
         run: |
@@ -37,7 +38,7 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
-          # 1. 暂存所有 json 变动以及 task/task.json 变动
+          # 1. 暂存所有 json 变动以及 task/task.json 变动 (提交到 GitHub)
           git add json/*.json task/task.json
 
           # 检查 json/*.json 是否有更新
@@ -66,7 +67,7 @@ jobs:
             fi
           done
 
-          # 2. 核心修正：添加 git pull --rebase 避免推送冲突
+          # 2. 提交并推送到 GitHub 仓库 (保证 task.json 保存在 GitHub)
           has_git_changes=false
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
@@ -133,8 +134,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 确保 Gitee 临时目录下存在 json 和 task 文件夹
-          mkdir -p json task
+          # 确保 Gitee 临时目录下存在 json 文件夹
+          mkdir -p json
 
           # 1. 移动/覆盖加密后的 JSON 文件
           for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
@@ -145,20 +146,14 @@ jobs:
             fi
           done
 
-          # 2. 复制更新后的 task/task.json 到 Gitee 目录
-          if [ -f "../task/task.json" ]; then
-            cp "../task/task.json" "task/task.json"
-          fi
+          # 2. 只暂存 json/*.json（task/task.json 不送去 Gitee）
+          git add json/*.json
 
-          # 3. 暂存 json 目录下所有的 json 以及 task/task.json
-          git add json/*.json task/task.json
-
-          # 4. 检查 Gitee 工作区是否有任何变更
+          # 3. 检查 Gitee 工作区是否有变更并推送
           if [ -n "$(git status --porcelain)" ]; then
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "同步加密 JSON 及 task.json (${NOW}) [skip ci]"
+            git commit -m "同步加密 JSON (${NOW}) [skip ci]"
             
-            # Gitee 侧同样拉取 rebase 保证推送通畅
             git pull --rebase origin master
             git push origin master
           else
