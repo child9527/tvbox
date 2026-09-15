@@ -1,0 +1,77 @@
+name: Force Re-sync & Push to Gitee
+
+on:
+  workflow_dispatch: # 仅支持在 GitHub Actions 页面手动点击触发
+
+jobs:
+  force-sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests commentjson
+
+      - name: 1. 强制清空 task.json 中的 MD5 记录
+        run: |
+          python -c "
+          import json, os
+          task_file = 'task/task.json'
+          if os.path.exists(task_file):
+              with open(task_file, 'r', encoding='utf-8') as f:
+                  data = json.load(f)
+              for item in data:
+                  item['md5'] = ''  # 强制清空 MD5，迫使 sync 重新处理所有 JSON
+              with open(task_file, 'w', encoding='utf-8') as f:
+                  json.dump(data, f, ensure_ascii=False, indent=2)
+              print('Successfully reset all task MD5 values.')
+          "
+
+      - name: 2. 运行 sync.py 重新清洗镜像
+        run: |
+          python scripts/sync.py
+
+      - name: 3. 运行加密/处理脚本 (生成给 TVBox 的密文或最终文件)
+        run: |
+          # 如果你有全量加密脚本（如 tvbox.py 或转换脚本），在这里调用
+          # 例如：python scripts/encrypt_all.py 或你现有的打包脚本
+          # 如果你的 sync.py 本身就已经处理好本地 json，则可跳过此步
+          python scripts/tvbox.py || true
+
+      - name: 4. 强制提交并推送变更到 Gitee
+        env:
+          GITEE_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          # 配置 Git 身份
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 强制暂存所有 json 和 task 变更
+          git add json/ task/
+
+          # 检查是否有变更，若没有变动也允许强制提交（通过 empty 提交或添加 timestamp）
+          if git diff --staged --quiet; then
+            echo "没有识别到文件差异，创建空提交以触发同步..."
+            git commit --allow-empty -m "build: 强制刷新全量文件镜像配置 [skip ci]"
+          else
+            git commit -m "build: 重置 MD5 强制清洗全量 JSON 镜像 [skip ci]"
+          fi
+
+          # 设置 Gitee SSH 密钥并强推
+          mkdir -p ~/.ssh
+          echo "$GITEE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+
+          # 替换为你的 Gitee 仓库 SSH 地址
+          git remote add gitee git@gitee.com:child9527/tvbox.git || git remote set-url gitee git@gitee.com:child9527/tvbox.git
+          git push -f gitee main
