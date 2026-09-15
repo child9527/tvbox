@@ -73,7 +73,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "更新 task.json 及 json 文件于 ${NOW} [skip ci]"
+            git commit -m "更新于 ${NOW} [skip ci]"
             
             # 拉取远程最新变更并变基，防止 push 被拒绝
             git pull --rebase origin main
