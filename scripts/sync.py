@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, re, json, time, subprocess, requests
+import os, re, json, time, subprocess, requests, hashlib
 from concurrent.futures import ThreadPoolExecutor
 import commentjson
 
@@ -9,28 +9,22 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 RAW_PREFIX = "https://raw.githubusercontent.com/"
 
 # ============================================================
-# 读取镜像列表（自动补 /）
+# 镜像测速
 # ============================================================
 def load_mirrors():
-    mirrors = []
     path = os.path.join("scripts", "mirror.txt")
     if not os.path.exists(path):
-        return mirrors
-
+        return []
+    mirrors = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             m = line.strip()
-            if not m:
-                continue
-            if not m.endswith("/"):
-                m += "/"
-            mirrors.append(m)
+            if m:
+                if not m.endswith("/"):
+                    m += "/"
+                mirrors.append(m)
     return mirrors
 
-
-# ============================================================
-# 镜像测速（用于替换 JSON 内 URL）
-# ============================================================
 def test_mirror(mirror):
     test_url = mirror + RAW_PREFIX + "alantang1977/X/main/X.json"
     try:
@@ -38,18 +32,15 @@ def test_mirror(mirror):
         r = requests.get(test_url, headers=HEADERS, timeout=4)
         text = r.content.decode("utf-8", errors="ignore").lstrip()
         if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
-            delay = time.time() - start
-            return mirror, delay
+            return mirror, time.time() - start
     except:
         pass
     return mirror, None
-
 
 def pick_best_mirror():
     mirrors = load_mirrors()
     if not mirrors:
         return "https://gh-proxy.com/"
-
     results = {}
     with ThreadPoolExecutor(max_workers=len(mirrors)) as ex:
         futures = [ex.submit(test_mirror, m) for m in mirrors]
@@ -57,98 +48,32 @@ def pick_best_mirror():
             m, d = f.result()
             if d is not None:
                 results[m] = d
-
     if not results:
         return mirrors[0]
-
     best = sorted(results, key=results.get)[0]
-    print(f"🚀 最优镜像: {best}")
+    print(f"🚀 选择最快镜像: {best}")
     return best
 
-
 # ============================================================
-# GitHub RAW 提取
+# URL 转换
 # ============================================================
 def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
-
-    extra = ""
-    clean = url
-    if ";" in url:
-        clean, extra = url.split(";", 1)
-        extra = ";" + extra
-
     pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
-    m = re.search(pat, clean)
+    m = re.search(pat, url)
     if not m:
-        return False, url, extra
-
+        return False, url, ""
     raw = m.group(0)
     if not raw.startswith("http"):
         raw = "https://" + raw
-
     raw = re.sub(
         r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)',
         r'https://raw.githubusercontent.com/\1/\2/\3/\4',
         raw
     )
     raw = raw.replace("/refs/heads/", "/")
-    return True, raw, extra
-
-
-# ============================================================
-# base_url 修复
-# ============================================================
-def get_base_url(url):
-    if not isinstance(url, str) or not url.strip():
-        return ""
-    is_gh, raw, _ = extract_raw(url)
-    target = raw if is_gh else url
-    if "/" in target:
-        return target.rsplit("/", 1)[0] + "/"
-    return target
-
-
-# ============================================================
-# URL 替换（使用 pick_best_mirror）
-# ============================================================
-def process_url(url, base_url, mirror):
-    if not isinstance(url, str):
-        return url
-
-    # ./ 相对路径
-    if "./" in url:
-        extra = ""
-        clean = url
-        if ";" in url:
-            clean, extra = url.split(";", 1)
-            extra = ";" + extra
-
-        if clean.startswith("./"):
-            clean = base_url + clean[2:]
-        else:
-            clean = re.sub(r'\./', base_url, clean)
-
-        url = clean + extra
-
-    # GitHub RAW → 替换为镜像前缀
-    is_gh, raw, extra = extract_raw(url)
-    if is_gh:
-        return f"{mirror}{raw}{extra}"
-
-    return url
-
-
-def traverse(data, base_url, mirror):
-    if isinstance(data, dict):
-        return {k: traverse(v, base_url, mirror) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [traverse(v, base_url, mirror) for v in data]
-    elif isinstance(data, str):
-        return process_url(data, base_url, mirror)
-    return data
-
+    return True, raw, ""
 
 # ============================================================
 # 注释清理
@@ -166,16 +91,14 @@ def clean_comments(text):
     t = re.sub(r",\s*([\}\]])", r"\1", t)
     return t
 
-
 # ============================================================
-# 加密检测
+# 加密检测与解密
 # ============================================================
 def is_encrypted(text):
     text = text.strip()
     if all(c in "0123456789abcdefABCDEF" for c in text):
         return ("2423" in text and "2324" in text)
     return False
-
 
 def decrypt(text):
     tmp_in = "tmp_in.txt"
@@ -185,106 +108,102 @@ def decrypt(text):
     subprocess.run(["python", "scripts/tvbox.py", tmp_in, tmp_out], check=True)
     return open(tmp_out, "r", encoding="utf-8").read()
 
+# ============================================================
+# 读取任务（task.json + json目录补充）
+# ============================================================
+def load_tasks():
+    tasks = []
+    if os.path.exists("task.json"):
+        with open("task.json", "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+    existing_names = {t["name"] for t in tasks}
+    for fn in os.listdir("json"):
+        if fn.endswith(".json") and fn not in existing_names:
+            filepath = os.path.join("json", fn)
+            if os.path.exists(filepath):
+                with open(filepath, "rb") as f:
+                    md5_val = hashlib.md5(f.read()).hexdigest()
+            else:
+                md5_val = None
+            tasks.append({
+                "name": fn,
+                "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
+                "md5": md5_val,
+                "last_modified": None,
+                "status": "local",
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+    return tasks
 
 # ============================================================
-# 主逻辑（同步 JSON）
+# 主逻辑
 # ============================================================
 def main():
-    mirror = pick_best_mirror()  # 仅用于替换 JSON 内 URL
-
-    # 读取任务
-    tasks = []
-    if os.path.exists("task/json.txt"):
-        for line in open("task/json.txt", "r", encoding="utf-8"):
-            m = re.search(r"https?://[^\s]+", line)
-            if m:
-                url = m.group(0)
-                name = url.split("?")[0].rstrip("/").split("/")[-1]
-                if not name.endswith(".json"):
-                    name += ".json"
-                tasks.append({"name": "json/" + name, "url": url})
-
-    # 本地文件也处理
-    for fn in os.listdir("json"):
-        if fn.endswith(".json"):
-            name = "json/" + fn
-            if not any(t["name"] == name for t in tasks):
-                tasks.append({"name": name, "url": None})
-
-    print(f"📦 总任务: {len(tasks)}")
-
-    success = []
+    mirror = pick_best_mirror()
+    tasks = load_tasks()
+    print(f"📦 总任务数: {len(tasks)}")
 
     for t in tasks:
         name = t["name"]
-        url = t["url"]
+        url = t.get("url")
+        filepath = os.path.join("json", name)
 
-        # 本地文件
-        if url is None:
-            print(f"📄 本地文件: {name}")
-            if not os.path.exists(name):
-                print(f"❌ 本地不存在: {name}")
-                continue
-            content = open(name, "r", encoding="utf-8", errors="ignore").read()
-            base = ""
+        print(f"🔍 检查任务: {name}")
+        t["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        else:
-            print(f"📥 拉取: {url}")
-            is_gh, raw, _ = extract_raw(url)
+        if not url:
+            print(f"❌ 没有远程地址: {name}")
+            t["status"] = "missing_url"
+            continue
 
-            # ⭐ 拉取源 JSON：不使用镜像，直接访问 RAW 或原始 URL
-            try:
-                if is_gh:
-                    r = requests.get(raw, headers=HEADERS, timeout=10)
-                else:
-                    r = requests.get(url, headers=HEADERS, timeout=10)
-
-                if r.status_code == 200:
-                    content = r.content.decode("utf-8", errors="ignore").strip()
-                    print("--> 成功（直连）")
-                else:
-                    content = None
-
-            except:
-                content = None
-
-            if not content:
-                print(f"❌ 拉取失败: {name}")
-                continue
-
-            base = get_base_url(url)
-
-        # 解密
-        if is_encrypted(content):
-            print(f"🔓 自动解密: {name}")
-            content = decrypt(content)
-
-        # 注释清理
-        cleaned = clean_comments(content)
-
-        # JSON 校验
+        is_gh, raw, _ = extract_raw(url)
         try:
-            obj = commentjson.loads(cleaned)
-        except:
-            try:
-                obj = json.loads(cleaned)
-            except:
-                print(f"❌ 非标准 JSON: {name}")
+            r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
+            if r.status_code != 200:
+                print(f"❌ 拉取失败: HTTP {r.status_code}")
+                t["status"] = f"http{r.status_code}"
                 continue
+            content = r.content.decode("utf-8", errors="ignore").strip()
+            print("✅ 拉取成功")
+            t["status"] = "ok"
+        except Exception as e:
+            print(f"❌ 拉取异常: {e}")
+            t["status"] = "error"
+            continue
 
-        # URL 替换（使用 pick_best_mirror）
-        obj2 = traverse(obj, base, mirror)
+        md5_val = hashlib.md5(content.encode("utf-8")).hexdigest()
+        if md5_val != t.get("md5"):
+            print(f"📌 文件有变化: {name}")
+            t["md5"] = md5_val
+            t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # 保存
-        final = json.dumps(obj2, ensure_ascii=False, indent=2)
-        open(name, "w", encoding="utf-8").write(final)
-        print(f"✅ 保存: {name}")
-        success.append(name)
+            if is_encrypted(content):
+                print(f"🔓 自动解密: {name}")
+                content = decrypt(content)
+
+            cleaned = clean_comments(content)
+            try:
+                obj = commentjson.loads(cleaned)
+            except:
+                try:
+                    obj = json.loads(cleaned)
+                except:
+                    print(f"❌ 非标准 JSON: {name}")
+                    t["status"] = "invalid_json"
+                    continue
+
+            final = json.dumps(obj, ensure_ascii=False, indent=2)
+            open(filepath, "w", encoding="utf-8").write(final)
+            print(f"✅ 已保存更新: {name}")
+        else:
+            print(f"🎉 文件未变化: {name}")
+
+    with open("task.json", "w", encoding="utf-8") as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
 
     print("--------------------------------------------------")
-    print(f"📊 完成: {len(success)} 个文件")
+    print("📊 全部任务检查完成")
     print("--------------------------------------------------")
-
 
 if __name__ == "__main__":
     main()
