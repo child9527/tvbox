@@ -115,22 +115,21 @@ def decrypt(text):
 def load_tasks():
     tasks = []
     if os.path.exists(TASK_FILE):
-        with open(TASK_FILE, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
+        try:
+            with open(TASK_FILE, "r", encoding="utf-8") as f:
+                tasks = json.load(f)
+        except Exception as e:
+            print(f"❌ 读取 task.json 失败: {e}")
+            tasks = []
 
-    existing_names = {t["name"].strip().lower() for t in tasks}
-    print("📂 已有 task.json 名称集合:")
-    for n in existing_names:
-        print(" -", n)
-
-    print("📂 当前 json 目录文件:")
-    for fn in os.listdir("json"):
-        print(" -", fn)
+    if not os.path.exists("json"):
+        os.makedirs("json")
 
     for fn in os.listdir("json"):
         if fn.endswith(".json"):
             filepath = os.path.join("json", fn)
-            print(f"➡️ 正在处理文件: {fn}")
+            print(f"➡️ 正在处理本地文件: {fn}")
+            md5_val = None
             try:
                 with open(filepath, "rb") as f:
                     data = f.read()
@@ -138,21 +137,20 @@ def load_tasks():
                 print(f"   ✅ 成功读取 {fn}, MD5={md5_val}")
             except Exception as e:
                 print(f"   ❌ 读取失败 {fn}: {e}")
-                md5_val = None
 
             found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
             if found:
-                print(f"   🔄 更新已有条目: {fn}")
-                found["url"] = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
-                found["md5"] = md5_val
+                # 如果发现已存在的条目是指向本地repo的，更新MD5
+                if "child9527/tvbox" in found.get("url", ""):
+                    found["md5"] = md5_val
             else:
                 print(f"   ➕ 补充新条目: {fn}")
                 tasks.append({
                     "name": fn,
                     "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
                     "md5": md5_val,
-                    "last_modified": None,
-                    "status": "local",
+                    "last_modified": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": "ok",
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
                 })
     return tasks
@@ -173,24 +171,46 @@ def main():
         print(f"🔍 检查任务: {name}")
         t["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
+        # 本地由 json 目录托管的文件，若远程拉取失败（例如首次未提交），优先读取本地文件
+        is_local_repo = "child9527/tvbox" in (url or "")
+
         if not url:
             print(f"❌ 没有远程地址: {name}")
             t["status"] = "missing_url"
             continue
 
+        content = None
         is_gh, raw, _ = extract_raw(url)
         try:
             r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
-            if r.status_code != 200:
-                print(f"❌ 拉取失败: HTTP {r.status_code}")
-                t["status"] = f"http{r.status_code}"
-                continue
-            content = r.content.decode("utf-8", errors="ignore").strip()
-            print(f"✅ 拉取成功: {name}")
-            t["status"] = "ok"
+            if r.status_code == 200:
+                content = r.content.decode("utf-8", errors="ignore").strip()
+                print(f"✅ 拉取成功: {name}")
+                t["status"] = "ok"
+            else:
+                print(f"⚠️ 拉取返回状态码: HTTP {r.status_code}")
+                if not is_local_repo:
+                    t["status"] = f"http{r.status_code}"
+                    continue
         except Exception as e:
-            print(f"❌ 拉取异常: {name}, {e}")
-            t["status"] = "error"
+            print(f"⚠️ 拉取异常: {name}, {e}")
+            if not is_local_repo:
+                t["status"] = "error"
+                continue
+
+        # 如果是本地 repo 文件且远程未拉到，则回退读取本地文件内容
+        if content is None and is_local_repo and os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read().strip()
+                print(f"📦 使用本地已有文件内容: {name}")
+                t["status"] = "ok"
+            except Exception as e:
+                print(f"❌ 读取本地文件失败: {e}")
+                t["status"] = "read_error"
+                continue
+
+        if content is None:
             continue
 
         md5_val = hashlib.md5(content.encode("utf-8")).hexdigest()
@@ -201,7 +221,10 @@ def main():
 
             if is_encrypted(content):
                 print(f"🔓 自动解密: {name}")
-                content = decrypt(content)
+                try:
+                    content = decrypt(content)
+                except Exception as e:
+                    print(f"❌ 解密失败: {e}")
 
             cleaned = clean_comments(content)
             try:
@@ -217,11 +240,13 @@ def main():
                     continue
 
             final = json.dumps(obj, ensure_ascii=False, indent=2)
-            open(filepath, "w", encoding="utf-8").write(final)
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(final)
             print(f"✅ 已保存更新: {name}")
         else:
             print(f"🎉 文件未变化: {name}")
 
+    # 保证无论如何都能将追加后的 tasks 保存落盘
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 
