@@ -11,7 +11,7 @@ TASK_FILE = os.path.join("task", "task.json")
 MIRROR_FILE = os.path.join("scripts", "mirror.txt")
 
 # ============================================================
-# 镜像测速与路径处理
+# 1. 镜像测速
 # ============================================================
 def load_mirrors():
     if not os.path.exists(MIRROR_FILE):
@@ -53,6 +53,9 @@ def pick_best_mirror():
         return mirrors[0]
     return sorted(results, key=results.get)[0]
 
+# ============================================================
+# 辅助处理逻辑
+# ============================================================
 def replace_relative_paths(content, best_mirror):
     """将 json 文件中的 ./ 相对路径替换为最快镜像 + GitHub Raw 路径"""
     pattern = r'(\"|\')\.\/([^\"\']+)\1'
@@ -64,9 +67,6 @@ def replace_relative_paths(content, best_mirror):
         return f"{quote}{full_url}{quote}"
     return re.sub(pattern, replace_fn, content)
 
-# ============================================================
-# URL 转换
-# ============================================================
 def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
@@ -85,9 +85,6 @@ def extract_raw(url):
     raw = raw.replace("/refs/heads/", "/")
     return True, raw, ""
 
-# ============================================================
-# 注释清理
-# ============================================================
 def clean_comments(text):
     text = text.replace("\r", "")
     text = re.sub(r"/\*[\s\S]*?\*/", "", text)
@@ -101,9 +98,6 @@ def clean_comments(text):
     t = re.sub(r",\s*([\}\]])", r"\1", t)
     return t
 
-# ============================================================
-# 加密检测与解密
-# ============================================================
 def is_encrypted(text):
     text = text.strip()
     if all(c in "0123456789abcdefABCDEF" for c in text):
@@ -114,7 +108,6 @@ def decrypt(text):
     tmp_in = "tmp_in.txt"
     tmp_out = "tmp_out.json"
     
-    # 动态获取 scripts/tvbox.py 的精准绝对路径
     script_dir = os.path.dirname(os.path.abspath(__file__))
     tvbox_script = os.path.join(script_dir, "tvbox.py")
     
@@ -131,7 +124,7 @@ def decrypt(text):
                 except: pass
 
 # ============================================================
-# 读取任务（task/task.json + json目录补充）
+# 2. 获取 & 补全任务清单
 # ============================================================
 def load_tasks():
     tasks = []
@@ -145,27 +138,21 @@ def load_tasks():
     if not os.path.exists("json"):
         os.makedirs("json", exist_ok=True)
 
+    # 遍历 json 目录，包括 one.json, mtv6.json, yoursmile66.json 等
+    # 如果不在 task.json 中，自动补全为远程 Raw 链接任务
     for fn in os.listdir("json"):
         if fn.lower().endswith(".json"):
-            filepath = os.path.join("json", fn)
-            try:
-                with open(filepath, "rb") as f:
-                    md5_val = hashlib.md5(f.read()).hexdigest()
-            except:
-                md5_val = None
-
             found = next((t for t in tasks if t.get("name", "").strip().lower() == fn.strip().lower()), None)
             raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
 
             if found:
-                if "child9527/tvbox" in found.get("url", "") or not found.get("url"):
+                if not found.get("url"):
                     found["url"] = raw_url
-                found["md5"] = md5_val
             else:
                 tasks.append({
                     "name": fn,
                     "url": raw_url,
-                    "md5": md5_val,
+                    "md5": None,  # 初始为空，由拉取远程后记录
                     "last_modified": None,
                     "status": "local",
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
@@ -173,7 +160,7 @@ def load_tasks():
     return tasks
 
 # ============================================================
-# 主逻辑
+# 3. 主逻辑
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -190,27 +177,39 @@ def main():
             t["status"] = "missing_url"
             continue
 
+        # 1. 拉取远程原始文本
         is_gh, raw, _ = extract_raw(url)
         try:
             r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
             if r.status_code != 200:
                 t["status"] = f"http{r.status_code}"
                 continue
-            content = r.content.decode("utf-8", errors="ignore").strip()
+            raw_content = r.content.decode("utf-8", errors="ignore").strip()
             t["status"] = "ok"
         except Exception:
             t["status"] = "error"
             continue
 
-        md5_val = hashlib.md5(content.encode("utf-8")).hexdigest()
-        
+        # 2. 计算【远程源文本 MD5】
+        remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+
+        # 3. 对比远程 MD5：如果远程 MD5 没变，且本地文件存在，直接跳过后面的解密/清理/写盘！
+        if remote_md5 == t.get("md5") and os.path.exists(filepath):
+            continue
+
+        # 4. 远程 MD5 改变（或本地文件缺失），执行完整处理流程
+        t["md5"] = remote_md5
+        t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        content = raw_content
         # 解密
         if is_encrypted(content):
             content = decrypt(content)
 
+        # 清理注释
         cleaned = clean_comments(content)
         
-        # JSON 校验与解析
+        # 校验 JSON
         obj = None
         try:
             obj = commentjson.loads(cleaned)
@@ -221,21 +220,15 @@ def main():
                 t["status"] = "invalid_json"
                 continue
 
-        # 格式化并替换内部 ./ 镜像相对路径
+        # 替换镜像相对路径并格式化
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_relative_paths(final_str, best_mirror)
 
-        # 计算写盘前最终内容 MD5
-        new_md5 = hashlib.md5(final_str.encode("utf-8")).hexdigest()
+        # 5. 写入本地 json 目录
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(final_str)
 
-        if new_md5 != t.get("md5") or not os.path.exists(filepath):
-            t["md5"] = new_md5
-            t["last_modified"] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(final_str)
-
-    # 统一保存更新后的 task.json
+    # 4. 统一写入更新后的 task.json
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
