@@ -51,7 +51,7 @@ jobs:
           done
 
           echo "🌐 从 Gitee API 获取 json 目录文件列表..."
-          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name 2>/dev/null || empty')
+          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/dev/null || true)
 
           echo "📁 Gitee 现有文件:"
           echo "$gitee_json_list"
