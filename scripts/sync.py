@@ -7,6 +7,7 @@ import commentjson
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 RAW_PREFIX = "https://raw.githubusercontent.com/"
+TASK_FILE = os.path.join("task", "task.json")  # ✅ 路径改为 task/task.json
 
 # ============================================================
 # 镜像测速
@@ -109,12 +110,12 @@ def decrypt(text):
     return open(tmp_out, "r", encoding="utf-8").read()
 
 # ============================================================
-# 读取任务（task.json + json目录补充）
+# 读取任务（task/task.json + json目录补充）
 # ============================================================
 def load_tasks():
     tasks = []
-    if os.path.exists("task.json"):
-        with open("task.json", "r", encoding="utf-8") as f:
+    if os.path.exists(TASK_FILE):
+        with open(TASK_FILE, "r", encoding="utf-8") as f:
             tasks = json.load(f)
 
     # 打印已有 task.json 名称集合
@@ -132,19 +133,18 @@ def load_tasks():
     for fn in os.listdir("json"):
         if fn.endswith(".json"):
             filepath = os.path.join("json", fn)
-            if os.path.exists(filepath):
+            try:
                 with open(filepath, "rb") as f:
                     md5_val = hashlib.md5(f.read()).hexdigest()
-            else:
+            except Exception as e:
+                print(f"⚠️ 文件 {fn} 无法读取: {e}")
                 md5_val = None
 
             found = next((t for t in tasks if t["name"].strip().lower() == fn.strip().lower()), None)
             if found:
-                # 更新已有条目
                 found["url"] = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}"
                 found["md5"] = md5_val
             else:
-                # 补充新条目
                 tasks.append({
                     "name": fn,
                     "url": f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{fn}",
@@ -218,7 +218,7 @@ def main():
         else:
             print(f"🎉 文件未变化: {name}")
 
-    with open("task.json", "w", encoding="utf-8") as f:
+    with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 
     print("--------------------------------------------------")
