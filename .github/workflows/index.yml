@@ -1,4 +1,4 @@
-name: 自动生成首页
+name: 生成首页index.html
 
 on:
   push:
