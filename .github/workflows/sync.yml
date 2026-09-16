@@ -1,154 +1,307 @@
-name: 批量同步、加密与双端推送
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-on:
-  schedule:
-    - cron: '0 17 * * *'   # 北京时间凌晨1点运行
-  workflow_dispatch:
-  push:
-    paths:
-      - "task/task.json"
-      - "json/**"
+import os, re, json, time, subprocess, requests, hashlib
+from concurrent.futures import ThreadPoolExecutor
+import commentjson
 
-jobs:
-  sync:
-    name: 设置与同步任务
-    runs-on: ubuntu-latest
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+TASK_FILE = os.path.join("task", "task.json")
+MIRROR_FILE = os.path.join("scripts", "mirror.txt")
 
-    steps:
-      - name: 拉取 GitHub 仓库代码
-        uses: actions/checkout@v4
+# ============================================================
+# 1. 镜像测速
+# ============================================================
+def load_mirrors():
+    if not os.path.exists(MIRROR_FILE):
+        return []
+    mirrors = []
+    with open(MIRROR_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            m = line.strip()
+            if m and not m.startswith("#"):
+                if not m.endswith("/"):
+                    m += "/"
+                mirrors.append(m)
+    return mirrors
 
-      - name: 安装 Python 及依赖环境
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests commentjson pycryptodome
+def test_mirror(mirror):
+    test_url = mirror + "https://raw.githubusercontent.com/alantang1977/X/main/X.json"
+    try:
+        start = time.time()
+        r = requests.get(test_url, headers=HEADERS, timeout=4)
+        text = r.content.decode("utf-8", errors="ignore").lstrip()
+        if r.status_code == 200 and (text.startswith("{") or text.startswith("[") or text.startswith("//")):
+            return mirror, time.time() - start
+    except:
+        pass
+    return mirror, None
 
-      - name: 步骤 1 - 执行同步脚本获取文件清单
-        id: sync_json
-        run: |
-          python scripts/sync.py
+def pick_best_mirror():
+    mirrors = load_mirrors()
+    if not mirrors:
+        return "https://gh-proxy.com/"
+    results = {}
+    with ThreadPoolExecutor(max_workers=len(mirrors)) as ex:
+        futures = [ex.submit(test_mirror, m) for m in mirrors]
+        for f in futures:
+            m, d = f.result()
+            if d is not None:
+                results[m] = d
+    if not results:
+        return mirrors[0]
+    return sorted(results, key=results.get)[0]
 
-      - name: 步骤 2 - 检查文件差异并更新 GitHub 状态
-        id: diff_check
-        env:
-          GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+# ============================================================
+# 2. 路径处理逻辑（强制替换镜像版）
+# ============================================================
+def parse_github_raw(url):
+    m = re.match(
+        r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
+        url
+    )
+    if not m:
+        return None
+    owner, repo, branch, path = m.groups()
+    base_dir = os.path.dirname(path)
+    return owner, repo, branch, base_dir
 
-          changed_files=()
+def replace_dot_slash(task_url, best_mirror, text):
+    info = parse_github_raw(task_url)
 
-          echo "🔍 检查 GitHub 本地是否有变化..."
-          git add json/*.json task/task.json
+    if info:
+        owner, repo, branch, base_dir = info
+        dir_part = f"{base_dir}/" if base_dir else ""
+        prefix = f'{best_mirror}https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{dir_part}'
+    else:
+        prefix = task_url.rsplit('/', 1)[0] + "/"
 
-          for file in json/*.json; do
-            if [ -n "$(git status --porcelain "$file")" ]; then
-              echo "📌 本地 json 变更: $file"
-              changed_files+=("$file")
-            fi
-          done
+    prefix = re.sub(r'(?<!:)/{2,}', '/', prefix)
 
-          echo "🌐 从 Gitee API 获取 json 目录文件列表..."
-          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/dev/null || true)
+    out = []
+    i = 0
+    n = len(text)
 
-          echo "📁 Gitee 现有文件:"
-          echo "$gitee_json_list"
+    while i < n:
+        if text[i] == '"' and i+2 < n and text[i+1] == '.' and text[i+2] == '/':
+            out.append('"')
+            start = i + 3
+            j = start
 
-          echo "🔎 检查 Gitee 是否缺少文件..."
-          for file in json/*.json; do
-            base="$(basename "$file")"
-            if ! echo "$gitee_json_list" | grep -q "^$base$"; then
-              echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
-              if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
-                changed_files+=("$file")
-              fi
-            fi
-          done
+            while j < n and text[j] not in [';', '"']:
+                j += 1
 
-          has_git_changes=false
-          if [ -n "$(git status --porcelain)" ]; then
-            has_git_changes=true
-            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "更新于 ${NOW} [skip ci]"
-            git pull --rebase origin main
-            git push origin main
-          fi
+            url_part = text[start:j]
+            end_char = text[j]
 
-          if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ]; then
-            echo "🎉 无需处理：本地无变化且 Gitee 无缺失"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+            url_part = url_part.lstrip('/')
 
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+            new_url = prefix + url_part
+            out.append(new_url)
+            out.append(end_char)
 
-      - name: 步骤 3 - 执行 JSON 批量加密（只加密 md5_changed=true 的）
-        id: encrypt_step
-        if: steps.diff_check.outputs.has_changes == 'true'
-        run: |
-          CHANGED="${{ steps.diff_check.outputs.changed_files }}"
-          processed=()
+            i = j + 1
+        else:
+            out.append(text[i])
+            i += 1
 
-          # 读取 md5_changed 标记
-          md5_changed_list=$(jq -r '.[] | select(.md5_changed==true) | .name' task/task.json)
+    return "".join(out)
 
-          for f in $CHANGED; do
-            base="$(basename "$f" .json)"
+def replace_relative_paths(content, best_mirror):
+    # 匹配任意已有的 http(s) 代理前缀 + raw.githubusercontent.com，统一替换为当前 best_mirror
+    pattern = r'(?:https?://[^"\'\s]+/)*(https://raw\.githubusercontent\.com/)'
+    content = re.sub(pattern, r'%s\1' % best_mirror, content)
+    return content
 
-            # 只有 md5_changed=true 的才加密
-            if echo "$md5_changed_list" | grep -q "^$base$"; then
-              bin="${base}.bin"
-              python scripts/tvbox.py "$f" "$bin" enc || true
-              if [ -f "$bin" ]; then
-                processed+=("$f")
-              fi
-            fi
-          done
+# ============================================================
+# JSON 清理与解密
+# ============================================================
+def extract_raw(url):
+    if not isinstance(url, str):
+        return False, url, ""
+    
+    url = re.sub(r'^https?://[^"\'\s]+/+(https?://)', r'\1', url)
 
-          echo "has_encrypted=true" >> $GITHUB_OUTPUT
-          echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
+    pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
+    m = re.search(pat, url)
+    if not m:
+        return False, url, ""
+    raw = m.group(0)
+    if not raw.startswith("http"):
+        raw = "https://" + raw
+    raw = re.sub(
+        r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)',
+        r'https://raw.githubusercontent.com/\1/\2/\3/\4',
+        raw
+    )
+    raw = raw.replace("/refs/heads/", "/")
+    return True, raw, ""
 
-      - name: 步骤 4 - 配置 Gitee SSH 密钥传输认证
-        if: steps.encrypt_step.outputs.has_encrypted == 'true'
-        env:
-          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "Host gitee.com
-              HostName gitee.com
-              User git
-              IdentityFile ~/.ssh/id_rsa
-              StrictHostKeyChecking no" >> ~/.ssh/config
+def clean_comments(text):
+    text = text.replace("\r", "")
+    text = re.sub(r"/\*[\s\S]*?\*/", "", text)
+    lines = []
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("//") or s.startswith("#"):
+            continue
+        lines.append(line)
+    t = "\n".join(lines)
+    t = re.sub(r",\s*([\}\]])", r"\1", t)
+    return t
 
-      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库（只推送 md5_changed=true 的）
-        if: steps.encrypt_step.outputs.has_encrypted == 'true'
-        run: |
-          git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
-          cd gitee_temp
+def is_encrypted(text):
+    text = text.strip()
+    if all(c in "0123456789abcdefABCDEF" for c in text):
+        return ("2423" in text and "2324" in text)
+    return False
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+def decrypt(text):
+    tmp_in = "tmp_in.txt"
+    tmp_out = "tmp_out.json"
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    tvbox_script = os.path.join(script_dir, "tvbox.py")
+    
+    try:
+        with open(tmp_in, "w", encoding="utf-8") as f:
+            f.write(text)
+        subprocess.run(["python", tvbox_script, tmp_in, tmp_out], check=True)
+        res = open(tmp_out, "r", encoding="utf-8").read()
+        return res
+    finally:
+        for f in [tmp_in, tmp_out]:
+            if os.path.exists(f):
+                try: os.remove(f)
+                except: pass
 
-          mkdir -p json
+# ============================================================
+# 加载任务
+# ============================================================
+def load_tasks():
+    old_tasks = []
+    if os.path.exists(TASK_FILE):
+        try:
+            with open(TASK_FILE, "r", encoding="utf-8") as f:
+                old_tasks = json.load(f)
+        except:
+            old_tasks = []
 
-          for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
-            base="$(basename "$f" .json)"
-            if [ -f "../json/${base}.bin" ]; then
-              cp "../json/${base}.bin" "json/${base}.json"
-              rm -f "../json/${base}.bin"
-            fi
-          done
+    os.makedirs("json", exist_ok=True)
+    local_files = [f for f in os.listdir("json") if f.lower().endswith(".json")]
+    local_names_set = {os.path.splitext(f)[0].lower(): f for f in local_files}
 
-          git add json/*.json
+    old_tasks_map = {}
+    for t in old_tasks:
+        name = os.path.splitext(t.get("name", ""))[0].strip()
+        if name:
+            t["name"] = name
+            old_tasks_map[name.lower()] = t
 
-          if [ -n "$(git status --porcelain)" ]; then
-            NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
-            git commit -m "同步加密 JSON (${NOW}) [skip ci]"
-            git push origin master
-          else
-            echo "🎉 Gitee 侧无任何变动，跳过推送"
-          fi
+    synced_tasks = []
+
+    for lower_name, filename in local_names_set.items():
+        base_name = os.path.splitext(filename)[0]
+
+        raw_url = old_tasks_map.get(lower_name, {}).get(
+            "url",
+            f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
+        )
+
+        if lower_name in old_tasks_map:
+            task = old_tasks_map[lower_name]
+            task["name"] = base_name
+            if not task.get("url"):
+                task["url"] = raw_url
+            synced_tasks.append(task)
+        else:
+            synced_tasks.append({
+                "name": base_name,
+                "url": raw_url,
+                "md5": None,
+                "last_modified": None,
+                "status": "local",
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+    return synced_tasks
+
+# ============================================================
+# 主逻辑
+# ============================================================
+def main():
+    best_mirror = pick_best_mirror()
+    print(f"当前最快镜像为：{best_mirror}")
+
+    tasks = load_tasks()
+
+    for t in tasks:
+        name = t.get("name", "")
+        filename = f"{name}.json"
+        filepath = os.path.join("json", filename)
+
+        url = t.get("url")
+        now_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        t["timestamp"] = now_time
+
+        if not url:
+            t["status"] = "missing_url"
+            continue
+
+        # ① 下载远程 JSON
+        is_gh, raw, _ = extract_raw(url)
+        try:
+            r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
+            if r.status_code != 200:
+                t["status"] = f"http{r.status_code}"
+                continue
+            raw_content = r.content.decode("utf-8", errors="ignore").strip()
+            t["status"] = "ok"
+        except Exception:
+            t["status"] = "error"
+            continue
+
+        # ② 判断是否加密 → 解密/清洗
+        content = raw_content
+        if is_encrypted(content):
+            content = decrypt(content)
+
+        cleaned = clean_comments(content)
+
+        try:
+            obj = commentjson.loads(cleaned)
+        except:
+            try:
+                obj = json.loads(cleaned)
+            except:
+                t["status"] = "invalid_json"
+                continue
+
+        # ③ 存入本地（先通过 replace_dot_slash 处理相对路径，再通过 replace_relative_paths 统一把所有 GitHub 镜像更新为你的最优镜像）
+        final_str = json.dumps(obj, ensure_ascii=False, indent=2)
+        final_str = replace_dot_slash(t["url"], best_mirror, final_str)
+        final_str = replace_relative_paths(final_str, best_mirror)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(final_str)
+
+        # ④ 对比 MD5
+        remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+        md5_changed = (remote_md5 != t.get("md5"))
+
+        # md5 未变 → 完成工作
+        if not md5_changed:
+            t["md5_changed"] = False
+            continue
+
+        # md5 变了 → 记录新 MD5 并标记 md5_changed
+        t["md5_changed"] = True
+        t["md5"] = remote_md5
+        t["last_modified"] = now_time
+
+    os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
+    with open(TASK_FILE, "w", encoding="utf-8") as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
+
+if __name__ == "__main__":
+    main()
