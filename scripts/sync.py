@@ -67,7 +67,7 @@ def parse_github_raw(url):
     return owner, repo, branch, base_dir
 
 # ============================================================
-# 纯扫描 `"./"` → 遇到 ; 或 " 截止
+# 纯扫描 `"./"` → 遇到 ; 或 " 截止（纯净版）
 # ============================================================
 def replace_dot_slash(task_url, best_mirror, text):
     info = parse_github_raw(task_url)
@@ -94,7 +94,7 @@ def replace_dot_slash(task_url, best_mirror, text):
             while j < n and text[j] not in [';', '"']:
                 j += 1
 
-            url_part = text[start:j]
+            url_part = text[start:j]   # 不再 lstrip("/")
             end_char = text[j]
 
             new_url = prefix + url_part
@@ -109,27 +109,12 @@ def replace_dot_slash(task_url, best_mirror, text):
     return "".join(out)
 
 # ============================================================
-# 修复重复镜像
+# 纯净版：只做 raw 替换，不做任何污染修复
 # ============================================================
 def replace_relative_paths(content, best_mirror):
-    """
-    清理嵌套代理 + 替换裸 raw.githubusercontent.com + 修正重复镜像
-    """
-
-    # 修复瑕疵：避免吞掉 https:// 导致变成 gh-proxy.com/raw.githubusercontent.com/...
-    nested_pattern = r'(https?://[^"\'\s]+/)+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
-    content = re.sub(nested_pattern, r'\2', content)
-
-    # 替换裸 raw.githubusercontent.com
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
-
-    # 修正重复镜像
-    double_mirror_pattern = re.escape(best_mirror) + r'https://'
-    content = re.sub(double_mirror_pattern, best_mirror, content)
-
     return content
-
 
 # ============================================================
 # JSON 清理与解密
@@ -245,7 +230,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 主逻辑（按你的新规则）
+# 主逻辑（纯净版）
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -280,7 +265,6 @@ def main():
 
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
-        # 新逻辑：永远重写 JSON，但记录 md5 是否变化
         t["md5_changed"] = (remote_md5 != t.get("md5"))
         t["md5"] = remote_md5
         t["last_modified"] = now_time
