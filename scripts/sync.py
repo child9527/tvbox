@@ -112,17 +112,24 @@ def replace_dot_slash(task_url, best_mirror, text):
 # 修复重复镜像
 # ============================================================
 def replace_relative_paths(content, best_mirror):
-    nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
-    while re.search(nested_pattern, content):
-        content = re.sub(nested_pattern, r'\1', content)
+    """
+    清理嵌套代理 + 替换裸 raw.githubusercontent.com + 修正重复镜像
+    """
 
+    # 修复瑕疵：避免吞掉 https:// 导致变成 gh-proxy.com/raw.githubusercontent.com/...
+    nested_pattern = r'(https?://[^"\'\s]+/)+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
+    content = re.sub(nested_pattern, r'\2', content)
+
+    # 替换裸 raw.githubusercontent.com
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
 
+    # 修正重复镜像
     double_mirror_pattern = re.escape(best_mirror) + r'https://'
     content = re.sub(double_mirror_pattern, best_mirror, content)
 
     return content
+
 
 # ============================================================
 # JSON 清理与解密
