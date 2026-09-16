@@ -39,10 +39,8 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
-          # 1. 暂存所有 json 变动以及 task/task.json 变动 (仅用于 GitHub 仓库本身记录状态)
           git add json/*.json task/task.json
 
-          # 检查 json/*.json 是否有更新
           for file in json/*.json; do
             if [ -n "$(git status --porcelain "$file")" ]; then
               echo "📌 本地 json 变更: $file"
@@ -61,26 +59,21 @@ jobs:
             base="$(basename "$file")"
             if ! echo "$gitee_json_list" | grep -q "^$base$"; then
               echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
-              # 只有当 changed_files 不包含该文件时才添加，避免重复
               if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
                 changed_files+=("$file")
               fi
             fi
           done
 
-          # 2. 提交并推送到 GitHub 仓库 (强制附带 [skip ci] 阻断死循环)
           has_git_changes=false
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "更新于 ${NOW} [skip ci]"
-            
-            # 拉取远程最新变更并变基，防止 push 被拒绝
             git pull --rebase origin main
             git push origin main
           fi
 
-          # 如果既没有 git 变更（GitHub端），且 Gitee 也不缺文件，才真正的退出
           if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ]; then
             echo "🎉 无需处理：本地无变化且 Gitee 无缺失"
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -90,16 +83,21 @@ jobs:
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
 
-      - name: 步骤 3 - 执行 JSON 批量加密
+      - name: 步骤 3 - 执行 JSON 批量加密（只加密 md5_changed=true 的）
         id: encrypt_step
         if: steps.diff_check.outputs.has_changes == 'true'
         run: |
           CHANGED="${{ steps.diff_check.outputs.changed_files }}"
           processed=()
 
+          # 读取 md5_changed 标记
+          md5_changed_list=$(jq -r '.[] | select(.md5_changed==true) | .name' task/task.json)
+
           for f in $CHANGED; do
-            if [ -f "$f" ]; then
-              base="${f%.*}"
+            base="$(basename "$f" .json)"
+
+            # 只有 md5_changed=true 的才加密
+            if echo "$md5_changed_list" | grep -q "^$base$"; then
               bin="${base}.bin"
               python scripts/tvbox.py "$f" "$bin" enc || true
               if [ -f "$bin" ]; then
@@ -126,20 +124,17 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库
+      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库（只推送 md5_changed=true 的）
         if: steps.encrypt_step.outputs.has_encrypted == 'true'
         run: |
-          # 💡 使用 --depth 1 浅克隆，仅拉取最新一次提交，极大提升下载速度
           git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
           cd gitee_temp
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 确保 Gitee 临时目录下存在 json 文件夹
           mkdir -p json
 
-          # 1. 移动/覆盖加密后的 JSON 文件
           for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
             base="$(basename "$f" .json)"
             if [ -f "../json/${base}.bin" ]; then
@@ -148,15 +143,11 @@ jobs:
             fi
           done
 
-          # 2. 仅暂存 json/*.json，决不将 task/task.json 提交给 Gitee
           git add json/*.json
 
-          # 3. 检查 Gitee 工作区是否有变更并推送
           if [ -n "$(git status --porcelain)" ]; then
             NOW=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M')
             git commit -m "同步加密 JSON (${NOW}) [skip ci]"
-            
-            # 浅克隆仓库推送时，直接 push 即可
             git push origin master
           else
             echo "🎉 Gitee 侧无任何变动，跳过推送"
