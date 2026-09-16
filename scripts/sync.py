@@ -53,7 +53,7 @@ def pick_best_mirror():
     return sorted(results, key=results.get)[0]
 
 # ============================================================
-# 2. 路径处理逻辑
+# 2. 路径处理逻辑（纯净版）
 # ============================================================
 def parse_github_raw(url):
     m = re.match(
@@ -66,9 +66,6 @@ def parse_github_raw(url):
     base_dir = os.path.dirname(path)
     return owner, repo, branch, base_dir
 
-# ============================================================
-# 纯扫描 `"./"` → 遇到 ; 或 " 截止（纯净版）
-# ============================================================
 def replace_dot_slash(task_url, best_mirror, text):
     info = parse_github_raw(task_url)
 
@@ -94,7 +91,7 @@ def replace_dot_slash(task_url, best_mirror, text):
             while j < n and text[j] not in [';', '"']:
                 j += 1
 
-            url_part = text[start:j]   # 不再 lstrip("/")
+            url_part = text[start:j]
             end_char = text[j]
 
             new_url = prefix + url_part
@@ -108,9 +105,6 @@ def replace_dot_slash(task_url, best_mirror, text):
 
     return "".join(out)
 
-# ============================================================
-# 纯净版：只做 raw 替换，不做任何污染修复
-# ============================================================
 def replace_relative_paths(content, best_mirror):
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
@@ -230,7 +224,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 主逻辑（纯净版）
+# 主逻辑（完全按你心里的流程）
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -251,6 +245,7 @@ def main():
             t["status"] = "missing_url"
             continue
 
+        # ① 下载远程 JSON
         is_gh, raw, _ = extract_raw(url)
         try:
             r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
@@ -263,18 +258,13 @@ def main():
             t["status"] = "error"
             continue
 
-        remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
-
-        t["md5_changed"] = (remote_md5 != t.get("md5"))
-        t["md5"] = remote_md5
-        t["last_modified"] = now_time
-
+        # ② 判断是否加密 → 解密或清洗
         content = raw_content
         if is_encrypted(content):
             content = decrypt(content)
 
         cleaned = clean_comments(content)
-        
+
         try:
             obj = commentjson.loads(cleaned)
         except:
@@ -284,13 +274,29 @@ def main():
                 t["status"] = "invalid_json"
                 continue
 
+        # ③ 写入本地（保持本地永远是最新明文）
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
-
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
         final_str = replace_relative_paths(final_str, best_mirror)
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
+
+        # ④ 计算远程 md5（对 raw_content）
+        remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+
+        # ⑤ 对比 md5
+        md5_changed = (remote_md5 != t.get("md5"))
+        t["md5_changed"] = md5_changed
+        t["md5"] = remote_md5
+        t["last_modified"] = now_time
+
+        # md5 未变 → 完成工作（不加密、不推送）
+        if not md5_changed:
+            continue
+
+        # md5 变了 → 加密并推送 gitee（由 yml 执行）
+        # sync.py 不负责推送，只负责标记 md5_changed
 
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
