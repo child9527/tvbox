@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//jar/fan.txt;md5;dab654f794a271c3d7a33d18acfbfa95",
+  "spider": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//jar/fan.txt;md5;dab654f794a271c3d7a33d18acfbfa95",
   "wallpaper": "https://饭的动态壁纸.xxooo.cf/",
   "sites": [
     {
@@ -379,8 +379,8 @@
       "key": "虎牙js",
       "name": "🐯虎牙┃直播",
       "type": 3,
-      "api": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
-      "ext": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/虎牙.js",
+      "api": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
+      "ext": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/虎牙.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -395,8 +395,8 @@
       "key": "斗鱼js",
       "name": "🐟斗鱼┃直播",
       "type": 3,
-      "api": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
-      "ext": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/斗鱼直播.js",
+      "api": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
+      "ext": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/斗鱼直播.js",
       "style": {
         "type": "rect",
         "ratio": 1.755
@@ -523,8 +523,8 @@
       "key": "dr_兔小贝",
       "name": "📚儿童┃启蒙",
       "type": 3,
-      "api": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
-      "ext": "https://gh-proxy.com/raw.githubusercontent.com/qist/tvbox/master//FTY/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
+      "api": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/drpy2.min.js",
+      "ext": "https://ghfast.top/raw.githubusercontent.com/qist/tvbox/master//FTY/%E5%85%94%E5%B0%8F%E8%B4%9D.js",
       "style": {
         "type": "rect",
         "ratio": 1.597
@@ -643,7 +643,7 @@
     {
       "name": "Kimentanm",
       "type": 0,
-      "url": "https://gh-proxy.com/raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
+      "url": "https://ghfast.top/raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
       "playerType": 2
     },
     {
