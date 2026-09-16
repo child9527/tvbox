@@ -69,50 +69,68 @@ def parse_github_raw(url):
     base_dir = os.path.dirname(path)
     return owner, repo, branch, base_dir
 
+
+# ============================================================
+# ★★★ 你要求的方案 A：纯字符串扫描 `"./"` → 遇到 ; 或 " 截止 ★★★
+# ============================================================
 def replace_dot_slash(task_url, best_mirror, text):
     """
-    精准替换 JSON 中的 "./xxx" 或 "./xxx;md5;xxxx"
-    基于 task.json 的 url 动态解析路径
+    按用户规则：
+    - 必须匹配 `"./`
+    - 从 `"./` 开始扫描
+    - 遇到 ; 或 " 就截止
+    - URL 替换为 task.json 的真实仓库路径
     """
 
-    if '"./' not in text:
-        return text
-
+    # 解析 task.json 的 url
     info = parse_github_raw(task_url)
 
-    # GitHub Raw 情况
     if info:
         owner, repo, branch, base_dir = info
         prefix = (
             f'{best_mirror}https://raw.githubusercontent.com/'
             f'{owner}/{repo}/{branch}/{base_dir}/'
         )
+    else:
+        prefix = task_url.rsplit('/', 1)[0] + "/"
 
-        def repl(m):
-            inner = m.group(1)
+    out = []
+    i = 0
+    n = len(text)
 
-            # 有 ; → URL 到第一个 ; 为止
-            if ";" in inner:
-                url_part, rest = inner.split(";", 1)
-                return f'"{prefix}{url_part};{rest}"'
-            else:
-                return f'"{prefix}{inner}"'
+    while i < n:
+        # 必须匹配 `"./`
+        if text[i:i+3] == '"./':
+            out.append('"')  # 保留开头的引号
 
-        return re.sub(r'"\.\/([^"]+)"', repl, text)
+            start = i + 3  # 跳过 "./"
+            j = start
 
-    # 非 GitHub 情况
-    base_url = task_url.rsplit('/', 1)[0] + "/"
+            # 扫描直到 ; 或 "
+            while j < n and text[j] not in [';', '"']:
+                j += 1
 
-    def repl2(m):
-        inner = m.group(1)
-        if ";" in inner:
-            url_part, rest = inner.split(";", 1)
-            return f'"{base_url}{url_part};{rest}"'
+            url_part = text[start:j]  # 纯路径部分
+            end_char = text[j]        # ; 或 "
+
+            # 替换路径
+            new_url = prefix + url_part
+            out.append(new_url)
+
+            # 把结束符号也加回去
+            out.append(end_char)
+
+            i = j + 1
         else:
-            return f'"{base_url}{inner}"'
+            out.append(text[i])
+            i += 1
 
-    return re.sub(r'"\.\/([^"]+)"', repl2, text)
+    return "".join(out)
 
+
+# ============================================================
+# 3. 修复重复镜像
+# ============================================================
 def replace_relative_paths(content, best_mirror):
     """
     清理嵌套代理 + 替换裸 raw.githubusercontent.com + 修正重复镜像
@@ -133,8 +151,9 @@ def replace_relative_paths(content, best_mirror):
 
     return content
 
+
 # ============================================================
-# 3. JSON 清理与解密
+# 4. JSON 清理与解密
 # ============================================================
 def extract_raw(url):
     if not isinstance(url, str):
@@ -196,7 +215,7 @@ def decrypt(text):
                 except: pass
 
 # ============================================================
-# 4. 加载任务
+# 5. 加载任务
 # ============================================================
 def load_tasks():
     old_tasks = []
@@ -247,7 +266,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 5. 主逻辑
+# 6. 主逻辑
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -305,7 +324,7 @@ def main():
 
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
 
-        # 正确顺序：先处理 "./"，再处理 raw
+        # ★★★ 正确顺序：先处理 `"./"`，再修复重复镜像 ★★★
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
         final_str = replace_relative_paths(final_str, best_mirror)
 
