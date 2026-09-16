@@ -1,0 +1,75 @@
+name: 临时还原 JSON
+
+on:
+  workflow_dispatch:   # 手动运行一次
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    name: 自动还原 JSON（按你的两条规则）
+
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python 环境
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: 执行还原逻辑
+        run: |
+          echo "开始还原 JSON 文件..."
+
+          # 遍历 json 目录
+          for file in json/*.json; do
+            echo "处理: $file"
+
+            # 读取原内容
+            content=$(cat "$file")
+
+            original="$content"
+
+            #
+            # 规则 1：把所有 https://ghfast.top 改为 https:/
+            #
+            content=$(echo "$content" | sed 's#https://ghfast.top#https:/#g')
+
+            #
+            # 规则 2（最终版）：
+            # 只要这一行有 https://，就查找 https:// 之后是否还有 //
+            # 如果有，将 https://xxx//yyy 替换为 ./yyy
+            # 前后内容都保留
+            #
+            new_content=""
+            while IFS= read -r line; do
+              if echo "$line" | grep -q "https://"; then
+                # 找到第一个 https:// 的位置
+                pos=$(echo "$line" | awk '{print index($0,"https://")}')
+                if [ "$pos" -gt 0 ]; then
+                  tail="${line:$((pos-1))}"
+
+                  # 查找 https://xxx//yyy
+                  if echo "$tail" | grep -q "//"; then
+                    # 提取 yyy
+                    yyy=$(echo "$tail" | sed -n 's#https://[^"]*//\([^"]*\)#\1#p')
+                    # 构造新 tail
+                    new_tail="./$yyy"
+                    # 拼接前半部分 + new_tail
+                    line="${line:0:$((pos-1))}$new_tail"
+                  fi
+                fi
+              fi
+              new_content="${new_content}${line}\n"
+            done <<< "$content"
+
+            # 写回文件（仅当内容有变化）
+            if [ "$new_content" != "$original" ]; then
+              printf "%b" "$new_content" > "$file"
+              echo "✔ 已还原: $file"
+            else
+              echo "— 无需还原: $file"
+            fi
+
+          done
+
+          echo "🎉 JSON 还原完成"
