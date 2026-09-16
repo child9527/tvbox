@@ -71,9 +71,10 @@ def parse_github_raw(url):
 
 def replace_dot_slash(task_url, best_mirror, text):
     """
-    精准替换 JSON 中的 "./xxx"
+    精准替换 JSON 中的 "./xxx" 或 "./xxx;md5;xxxx"
     基于 task.json 的 url 动态解析路径
     """
+
     if '"./' not in text:
         return text
 
@@ -86,11 +87,31 @@ def replace_dot_slash(task_url, best_mirror, text):
             f'{best_mirror}https://raw.githubusercontent.com/'
             f'{owner}/{repo}/{branch}/{base_dir}/'
         )
-        return text.replace('"./', f'"{prefix}')
+
+        def repl(m):
+            inner = m.group(1)
+
+            # 有 ; → URL 到第一个 ; 为止
+            if ";" in inner:
+                url_part, rest = inner.split(";", 1)
+                return f'"{prefix}{url_part};{rest}"'
+            else:
+                return f'"{prefix}{inner}"'
+
+        return re.sub(r'"\.\/([^"]+)"', repl, text)
 
     # 非 GitHub 情况
     base_url = task_url.rsplit('/', 1)[0] + "/"
-    return text.replace('"./', f'"{base_url}')
+
+    def repl2(m):
+        inner = m.group(1)
+        if ";" in inner:
+            url_part, rest = inner.split(";", 1)
+            return f'"{base_url}{url_part};{rest}"'
+        else:
+            return f'"{base_url}{inner}"'
+
+    return re.sub(r'"\.\/([^"]+)"', repl2, text)
 
 def replace_relative_paths(content, best_mirror):
     """
@@ -202,7 +223,6 @@ def load_tasks():
     for lower_name, filename in local_names_set.items():
         base_name = os.path.splitext(filename)[0]
 
-        # 不再写死 child9527，保持用户自己 task.json 的 url
         raw_url = old_tasks_map.get(lower_name, {}).get(
             "url",
             f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
