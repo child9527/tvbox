@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 import commentjson
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
-RAW_PREFIX = "https://raw.githubusercontent.com/"
 TASK_FILE = os.path.join("task", "task.json")
 MIRROR_FILE = os.path.join("scripts", "mirror.txt")
 
@@ -27,7 +26,7 @@ def load_mirrors():
     return mirrors
 
 def test_mirror(mirror):
-    test_url = mirror + RAW_PREFIX + "alantang1977/X/main/X.json"
+    test_url = mirror + "https://raw.githubusercontent.com/alantang1977/X/main/X.json"
     try:
         start = time.time()
         r = requests.get(test_url, headers=HEADERS, timeout=4)
@@ -54,56 +53,68 @@ def pick_best_mirror():
     return sorted(results, key=results.get)[0]
 
 # ============================================================
-# 辅助处理逻辑
+# 2. 路径处理逻辑
 # ============================================================
+def parse_github_raw(url):
+    """
+    从 task.json 的 url 中解析 owner/repo/branch/目录
+    """
+    m = re.match(
+        r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
+        url
+    )
+    if not m:
+        return None
+    owner, repo, branch, path = m.groups()
+    base_dir = os.path.dirname(path)
+    return owner, repo, branch, base_dir
+
+def replace_dot_slash(task_url, best_mirror, text):
+    """
+    精准替换 JSON 中的 "./xxx"
+    基于 task.json 的 url 动态解析路径
+    """
+    if '"./' not in text:
+        return text
+
+    info = parse_github_raw(task_url)
+
+    # GitHub Raw 情况
+    if info:
+        owner, repo, branch, base_dir = info
+        prefix = (
+            f'{best_mirror}https://raw.githubusercontent.com/'
+            f'{owner}/{repo}/{branch}/{base_dir}/'
+        )
+        return text.replace('"./', f'"{prefix}')
+
+    # 非 GitHub 情况
+    base_url = task_url.rsplit('/', 1)[0] + "/"
+    return text.replace('"./', f'"{base_url}')
+
 def replace_relative_paths(content, best_mirror):
+    """
+    清理嵌套代理 + 替换裸 raw.githubusercontent.com + 修正重复镜像
+    """
+
+    # 剥离嵌套代理
     nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
     while re.search(nested_pattern, content):
         content = re.sub(nested_pattern, r'\1', content)
 
-    rel_pattern = r'(\"|\')\.\/([^\"\']+)\1'
-    def replace_rel(match):
-        quote = match.group(1)
-        rel_path = match.group(2)
-        raw_github_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/{rel_path}"
-        full_url = f"{best_mirror}{raw_github_url}"
-        return f"{quote}{full_url}{quote}"
-    content = re.sub(rel_pattern, replace_rel, content)
-
+    # 替换裸 raw.githubusercontent.com
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
 
-    double_mirror_pattern = re.escape(best_mirror) + r'+'
+    # 修正重复镜像
+    double_mirror_pattern = re.escape(best_mirror) + r'https://'
     content = re.sub(double_mirror_pattern, best_mirror, content)
 
     return content
 
 # ============================================================
-# 新增逻辑：严格替换 JSON 中的 "./"
+# 3. JSON 清理与解密
 # ============================================================
-def replace_dot_slash(task_url, best_mirror, text):
-    if '"./' not in text:
-        return text
-
-    m = re.match(
-        r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
-        task_url
-    )
-
-    if m:
-        owner, repo, branch, path = m.groups()
-        base_dir = os.path.dirname(path)
-
-        prefix = (
-            f'{best_mirror}https://raw.githubusercontent.com/'
-            f'{owner}/{repo}/{branch}/{base_dir}/'
-        )
-
-        return text.replace('"./', f'"{prefix}')
-
-    base_url = task_url.rsplit('/', 1)[0] + "/"
-    return text.replace('"./', f'"{base_url}')
-
 def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
@@ -164,7 +175,7 @@ def decrypt(text):
                 except: pass
 
 # ============================================================
-# 2. 获取 & 严格同步任务清单
+# 4. 加载任务
 # ============================================================
 def load_tasks():
     old_tasks = []
@@ -190,7 +201,12 @@ def load_tasks():
 
     for lower_name, filename in local_names_set.items():
         base_name = os.path.splitext(filename)[0]
-        raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
+
+        # 不再写死 child9527，保持用户自己 task.json 的 url
+        raw_url = old_tasks_map.get(lower_name, {}).get(
+            "url",
+            f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
+        )
 
         if lower_name in old_tasks_map:
             task = old_tasks_map[lower_name]
@@ -211,7 +227,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 3. 主逻辑
+# 5. 主逻辑
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -258,7 +274,6 @@ def main():
 
         cleaned = clean_comments(content)
         
-        obj = None
         try:
             obj = commentjson.loads(cleaned)
         except:
@@ -269,8 +284,10 @@ def main():
                 continue
 
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
-        final_str = replace_relative_paths(final_str, best_mirror)
+
+        # 正确顺序：先处理 "./"，再处理 raw
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
+        final_str = replace_relative_paths(final_str, best_mirror)
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
