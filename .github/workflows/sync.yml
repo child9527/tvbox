@@ -2,82 +2,171 @@ name: 批量同步、加密与双端推送
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 17 * * *'   # 北京时间每天凌晨 01:00 运行
   workflow_dispatch:
+  push:
+    paths:
+      - "task/task.json"
+      - "json/**"
 
-# 全局设置环境变量，强制所有 Step 使用北京时间
+# 全局环境变量：强制所有 Step 及 Python 脚本环境统一使用北京时间
 env:
   TZ: Asia/Shanghai
 
 jobs:
-  sync_and_push:
+  sync:
+    name: 设置与同步任务
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 检出 GitHub 仓库
-      - name: Checkout GitHub repository
+      - name: 拉取 GitHub 仓库代码
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 2. 配置 Python 环境
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      # 3. 安装依赖
-      - name: Install dependencies
+      - name: 安装 Python 及依赖环境
         run: |
           python -m pip install --upgrade pip
-          pip install requests commentjson
+          pip install requests commentjson pycryptodome
 
-      # 4. 执行同步脚本（解密、清洗、写本地、比较MD5、更新task.json）
-      - name: Run sync script
+      - name: 步骤 1 - 执行同步脚本获取文件清单
+        id: sync_json
         run: |
           python scripts/sync.py
 
-      # 5. 检查本地是否有变动
-      - name: Check for changes
-        id: git-check
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # 6. 如果有变动：提交并推送变动回 GitHub 本地仓库
-      - name: Commit and push to GitHub
-        if: steps.git-check.outputs.changed == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          git add json/ task/task.json
-          
-          # 获取北京时间作为 Commit Message
-          COMMIT_TIME=$(date +'%Y-%m-%d %H:%M:%S')
-          git commit -m "Auto sync: update json and tasks [$COMMIT_TIME]"
-          git push
-
-      # 7. 加密并推送到 Gitee（完结步骤）
-      # 注：建议在 GitHub Repo Settings -> Secrets and variables -> Actions 中配置 GITEE_SSH_KEY
-      - name: Encrypt and Push to Gitee
-        if: steps.git-check.outputs.changed == 'true'
+      - name: 步骤 2 - 检查文件差异并更新 GitHub 状态
+        id: diff_check
         env:
-          GITEE_SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+          GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
         run: |
-          # 运行你的加密脚本（针对 md5_changed == True 的文件加密）
-          # python scripts/encrypt.py
-          
-          # 配置 Gitee 远程仓库推送
-          if [ -n "$GITEE_SSH_KEY" ]; then
-            mkdir -p ~/.ssh
-            echo "$GITEE_SSH_KEY" > ~/.ssh/id_ed25519
-            chmod 600 ~/.ssh/id_ed25519
-            ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          changed_files=()
+
+          echo "🔍 检查 GitHub 本地是否有变化..."
+          # 1. 暂存所有 json 变动以及 task/task.json 变动
+          git add json/*.json task/task.json
+
+          # 检查 json/*.json 是否有更新
+          for file in json/*.json; do
+            if [ -n "$(git status --porcelain "$file")" ]; then
+              echo "📌 本地 json 变更: $file"
+              changed_files+=("$file")
+            fi
+          done
+
+          echo "🌐 从 Gitee API 获取 json 目录文件列表..."
+          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/dev/null || true)
+
+          echo "📁 Gitee 现有文件:"
+          echo "$gitee_json_list"
+
+          echo "🔎 检查 Gitee 是否缺少文件..."
+          for file in json/*.json; do
+            base="$(basename "$file")"
+            if ! echo "$gitee_json_list" | grep -q "^$base$"; then
+              echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
+              if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
+                changed_files+=("$file")
+              fi
+            fi
+          done
+
+          # 2. 提交并推送到 GitHub 仓库
+          has_git_changes=false
+          if [ -n "$(git status --porcelain)" ]; then
+            has_git_changes=true
+            
+            # 💡 优化：直接提取 task.json 里的时间戳，保证 Commit 历史与 task.json 完全对齐
+            SYNC_TIME=$(jq -r '.[0].timestamp // empty' task/task.json 2>/dev/null || date +'%Y-%m-%d %H:%M:%S')
+            
+            git commit -m "更新于 ${SYNC_TIME} [skip ci]"
+            
+            # 拉取远程最新变更并变基，防止 push 被拒绝
+            git pull --rebase origin main
+            git push origin main
           fi
-          
-          # 强制/同步推送到 Gitee 仓库
-          # git push git@gitee.com:child9527/your_repo.m4a main --force
+
+          # 如果既没有 git 变更（GitHub端），且 Gitee 也不缺文件，则退出
+          if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ]; then
+            echo "🎉 无需处理：本地无变化且 Gitee 无缺失"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+
+      - name: 步骤 3 - 执行 JSON 批量加密
+        id: encrypt_step
+        if: steps.diff_check.outputs.has_changes == 'true'
+        run: |
+          CHANGED="${{ steps.diff_check.outputs.changed_files }}"
+          processed=()
+
+          for f in $CHANGED; do
+            if [ -f "$f" ]; then
+              base="${f%.*}"
+              bin="${base}.bin"
+              python scripts/tvbox.py "$f" "$bin" enc || true
+              if [ -f "$bin" ]; then
+                processed+=("$f")
+              fi
+            fi
+          done
+
+          if [ ${#processed[@]} -gt 0 ]; then
+            echo "has_encrypted=true" >> $GITHUB_OUTPUT
+            echo "encrypted_files=${processed[*]}" >> $GITHUB_OUTPUT
+          else
+            echo "has_encrypted=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 步骤 4 - 配置 Gitee SSH 密钥传输认证
+        if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库
+        if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
+        run: |
+          # 使用 --depth 1 浅克隆加速
+          git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p json
+
+          # 1. 移动/覆盖加密后的文件
+          for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
+            base="$(basename "$f" .json)"
+            if [ -f "../json/${base}.bin" ]; then
+              cp "../json/${base}.bin" "json/${base}.json"
+              rm -f "../json/${base}.bin"
+            fi
+          done
+
+          # 2. 仅暂存 json/*.json，决不将 task/task.json 提交给 Gitee
+          git add json/*.json
+
+          # 3. 检查 Gitee 工作区是否有变更并推送
+          if [ -n "$(git status --porcelain)" ]; then
+            SYNC_TIME=$(jq -r '.[0].timestamp // empty' ../task/task.json 2>/dev/null || date +'%Y-%m-%d %H:%M:%S')
+            git commit -m "同步加密 JSON (${SYNC_TIME}) [skip ci]"
+            
+            git push origin master
+            echo "✅ 成功推送到 Gitee！"
+          else
+            echo "🎉 Gitee 侧无任何变动，跳过推送"
+          fi
