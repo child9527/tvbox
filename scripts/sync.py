@@ -53,7 +53,7 @@ def pick_best_mirror():
     return sorted(results, key=results.get)[0]
 
 # ============================================================
-# 2. 路径处理逻辑（纯净版）
+# 2. 路径处理逻辑（强制替换镜像版）
 # ============================================================
 def parse_github_raw(url):
     m = re.match(
@@ -71,12 +71,12 @@ def replace_dot_slash(task_url, best_mirror, text):
 
     if info:
         owner, repo, branch, base_dir = info
-        prefix = (
-            f'{best_mirror}https://raw.githubusercontent.com/'
-            f'{owner}/{repo}/{branch}/{base_dir}/'
-        )
+        dir_part = f"{base_dir}/" if base_dir else ""
+        prefix = f'{best_mirror}https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{dir_part}'
     else:
         prefix = task_url.rsplit('/', 1)[0] + "/"
+
+    prefix = re.sub(r'(?<!:)/{2,}', '/', prefix)
 
     out = []
     i = 0
@@ -94,6 +94,8 @@ def replace_dot_slash(task_url, best_mirror, text):
             url_part = text[start:j]
             end_char = text[j]
 
+            url_part = url_part.lstrip('/')
+
             new_url = prefix + url_part
             out.append(new_url)
             out.append(end_char)
@@ -106,8 +108,9 @@ def replace_dot_slash(task_url, best_mirror, text):
     return "".join(out)
 
 def replace_relative_paths(content, best_mirror):
-    raw_pattern = r'https://raw\.githubusercontent\.com/'
-    content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
+    # 匹配任意已有的 http(s) 代理前缀 + raw.githubusercontent.com，统一替换为当前 best_mirror
+    pattern = r'(?:https?://[^"\'\s]+/)*(https://raw\.githubusercontent\.com/)'
+    content = re.sub(pattern, r'%s\1' % best_mirror, content)
     return content
 
 # ============================================================
@@ -224,7 +227,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 主逻辑（完全按你心里的流程）
+# 主逻辑
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -258,7 +261,7 @@ def main():
             t["status"] = "error"
             continue
 
-        # ② 判断是否加密 → 解密或清洗
+        # ② 判断是否加密 → 解密/清洗
         content = raw_content
         if is_encrypted(content):
             content = decrypt(content)
@@ -274,7 +277,7 @@ def main():
                 t["status"] = "invalid_json"
                 continue
 
-        # ③ 写入本地（保持本地永远是最新明文）
+        # ③ 存入本地（先通过 replace_dot_slash 处理相对路径，再通过 replace_relative_paths 统一把所有 GitHub 镜像更新为你的最优镜像）
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
         final_str = replace_relative_paths(final_str, best_mirror)
@@ -282,21 +285,19 @@ def main():
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
 
-        # ④ 计算远程 md5（对 raw_content）
+        # ④ 对比 MD5
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
-
-        # ⑤ 对比 md5
         md5_changed = (remote_md5 != t.get("md5"))
-        t["md5_changed"] = md5_changed
-        t["md5"] = remote_md5
-        t["last_modified"] = now_time
 
-        # md5 未变 → 完成工作（不加密、不推送）
+        # md5 未变 → 完成工作
         if not md5_changed:
+            t["md5_changed"] = False
             continue
 
-        # md5 变了 → 加密并推送 gitee（由 yml 执行）
-        # sync.py 不负责推送，只负责标记 md5_changed
+        # md5 变了 → 记录新 MD5 并标记 md5_changed
+        t["md5_changed"] = True
+        t["md5"] = remote_md5
+        t["last_modified"] = now_time
 
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
