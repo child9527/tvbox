@@ -56,9 +56,6 @@ def pick_best_mirror():
 # 2. 路径处理逻辑
 # ============================================================
 def parse_github_raw(url):
-    """
-    从 task.json 的 url 中解析 owner/repo/branch/目录
-    """
     m = re.match(
         r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
         url
@@ -69,20 +66,10 @@ def parse_github_raw(url):
     base_dir = os.path.dirname(path)
     return owner, repo, branch, base_dir
 
-
 # ============================================================
-# ★★★ 你要求的方案 A：纯字符串扫描 `"./"` → 遇到 ; 或 " 截止 ★★★
+# 纯扫描 `"./"` → 遇到 ; 或 " 截止
 # ============================================================
 def replace_dot_slash(task_url, best_mirror, text):
-    """
-    按用户规则：
-    - 必须匹配 `"./`
-    - 从 `"./` 开始扫描
-    - 遇到 ; 或 " 就截止
-    - URL 替换为 task.json 的真实仓库路径
-    """
-
-    # 解析 task.json 的 url
     info = parse_github_raw(task_url)
 
     if info:
@@ -99,25 +86,19 @@ def replace_dot_slash(task_url, best_mirror, text):
     n = len(text)
 
     while i < n:
-        # 必须匹配 `"./`
-        if text[i:i+3] == '"./':
-            out.append('"')  # 保留开头的引号
-
-            start = i + 3  # 跳过 "./"
+        if text[i] == '"' and i+2 < n and text[i+1] == '.' and text[i+2] == '/':
+            out.append('"')
+            start = i + 3
             j = start
 
-            # 扫描直到 ; 或 "
             while j < n and text[j] not in [';', '"']:
                 j += 1
 
-            url_part = text[start:j]  # 纯路径部分
-            end_char = text[j]        # ; 或 "
+            url_part = text[start:j]
+            end_char = text[j]
 
-            # 替换路径
             new_url = prefix + url_part
             out.append(new_url)
-
-            # 把结束符号也加回去
             out.append(end_char)
 
             i = j + 1
@@ -127,33 +108,24 @@ def replace_dot_slash(task_url, best_mirror, text):
 
     return "".join(out)
 
-
 # ============================================================
-# 3. 修复重复镜像
+# 修复重复镜像
 # ============================================================
 def replace_relative_paths(content, best_mirror):
-    """
-    清理嵌套代理 + 替换裸 raw.githubusercontent.com + 修正重复镜像
-    """
-
-    # 剥离嵌套代理
     nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
     while re.search(nested_pattern, content):
         content = re.sub(nested_pattern, r'\1', content)
 
-    # 替换裸 raw.githubusercontent.com
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
 
-    # 修正重复镜像
     double_mirror_pattern = re.escape(best_mirror) + r'https://'
     content = re.sub(double_mirror_pattern, best_mirror, content)
 
     return content
 
-
 # ============================================================
-# 4. JSON 清理与解密
+# JSON 清理与解密
 # ============================================================
 def extract_raw(url):
     if not isinstance(url, str):
@@ -215,7 +187,7 @@ def decrypt(text):
                 except: pass
 
 # ============================================================
-# 5. 加载任务
+# 加载任务
 # ============================================================
 def load_tasks():
     old_tasks = []
@@ -266,7 +238,7 @@ def load_tasks():
     return synced_tasks
 
 # ============================================================
-# 6. 主逻辑
+# 主逻辑（按你的新规则）
 # ============================================================
 def main():
     best_mirror = pick_best_mirror()
@@ -301,9 +273,8 @@ def main():
 
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
-        if remote_md5 == t.get("md5") and os.path.exists(filepath):
-            continue
-
+        # 新逻辑：永远重写 JSON，但记录 md5 是否变化
+        t["md5_changed"] = (remote_md5 != t.get("md5"))
         t["md5"] = remote_md5
         t["last_modified"] = now_time
 
@@ -324,7 +295,6 @@ def main():
 
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
 
-        # ★★★ 正确顺序：先处理 `"./"`，再修复重复镜像 ★★★
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
         final_str = replace_relative_paths(final_str, best_mirror)
 
