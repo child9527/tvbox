@@ -57,17 +57,10 @@ def pick_best_mirror():
 # 辅助处理逻辑
 # ============================================================
 def replace_relative_paths(content, best_mirror):
-    """
-    1. 清理别人硬编码的第三方加密/代理前缀
-    2. 将 ./ 相对路径替换为 最快镜像 + GitHub Raw 路径
-    3. 将所有裸露的 raw.githubusercontent.com 替换为镜像
-    """
-    # 步骤 A: 剥离嵌套的前置第三方代理前缀
     nested_pattern = r'https?://[^"\'\s]+/+(https?://(?:raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+)'
     while re.search(nested_pattern, content):
         content = re.sub(nested_pattern, r'\1', content)
 
-    # 步骤 B: 将 ./ 相对路径替换为当前仓库的 raw 路径 + 最快镜像
     rel_pattern = r'(\"|\')\.\/([^\"\']+)\1'
     def replace_rel(match):
         quote = match.group(1)
@@ -77,21 +70,44 @@ def replace_relative_paths(content, best_mirror):
         return f"{quote}{full_url}{quote}"
     content = re.sub(rel_pattern, replace_rel, content)
 
-    # 步骤 C: 统一将所有直连 raw.githubusercontent.com 替换为 best_mirror
     raw_pattern = r'https://raw\.githubusercontent\.com/'
     content = re.sub(raw_pattern, best_mirror + "https://raw.githubusercontent.com/", content)
 
-    # 步骤 D: 修正可能因反复替换导致的镜像双重拼接
     double_mirror_pattern = re.escape(best_mirror) + r'+'
     content = re.sub(double_mirror_pattern, best_mirror, content)
 
     return content
 
+# ============================================================
+# 新增逻辑：严格替换 JSON 中的 "./"
+# ============================================================
+def replace_dot_slash(task_url, best_mirror, text):
+    if '"./' not in text:
+        return text
+
+    m = re.match(
+        r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
+        task_url
+    )
+
+    if m:
+        owner, repo, branch, path = m.groups()
+        base_dir = os.path.dirname(path)
+
+        prefix = (
+            f'{best_mirror}https://raw.githubusercontent.com/'
+            f'{owner}/{repo}/{branch}/{base_dir}/'
+        )
+
+        return text.replace('"./', f'"{prefix}')
+
+    base_url = task_url.rsplit('/', 1)[0] + "/"
+    return text.replace('"./', f'"{base_url}')
+
 def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
     
-    # 清理 URL 中可能嵌套的前置第三方代理
     url = re.sub(r'^https?://[^"\'\s]+/+(https?://)', r'\1', url)
 
     pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
@@ -159,12 +175,10 @@ def load_tasks():
         except:
             old_tasks = []
 
-    # 1. 扫描 json/ 目录下的所有 json 文件（取不含后缀的名字集合）
     os.makedirs("json", exist_ok=True)
     local_files = [f for f in os.listdir("json") if f.lower().endswith(".json")]
     local_names_set = {os.path.splitext(f)[0].lower(): f for f in local_files}
 
-    # 将旧任务转换为字典以便快速检索，同时去重
     old_tasks_map = {}
     for t in old_tasks:
         name = os.path.splitext(t.get("name", ""))[0].strip()
@@ -174,23 +188,17 @@ def load_tasks():
 
     synced_tasks = []
 
-    # 2. 以 local_names_set 为基准构建最新 tasks 列表：
-    # 如果 json/ 目录下有此文件：
-    #    - 若 task.json 里已有，保留旧配置；
-    #    - 若没有，自动新增配置；
-    # 如果 task.json 有但 json/ 目录下没有，则不加入 synced_tasks（相当于自动删除）。
     for lower_name, filename in local_names_set.items():
         base_name = os.path.splitext(filename)[0]
         raw_url = f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
 
         if lower_name in old_tasks_map:
             task = old_tasks_map[lower_name]
-            task["name"] = base_name  # 统一修正格式
+            task["name"] = base_name
             if not task.get("url"):
                 task["url"] = raw_url
             synced_tasks.append(task)
         else:
-            # 自动添加缺失的字段
             synced_tasks.append({
                 "name": base_name,
                 "url": raw_url,
@@ -224,7 +232,6 @@ def main():
             t["status"] = "missing_url"
             continue
 
-        # 1. 拉取远程原始文本
         is_gh, raw, _ = extract_raw(url)
         try:
             r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
@@ -237,15 +244,11 @@ def main():
             t["status"] = "error"
             continue
 
-        # 2. 计算【远程源文本 MD5】
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
-        # 3. 对比远程 MD5
         if remote_md5 == t.get("md5") and os.path.exists(filepath):
-            # 即使文件内容没有变化，也保持 timestamp 更新为本次检查时间
             continue
 
-        # 4. 执行解密、清理与镜像剥离/重组
         t["md5"] = remote_md5
         t["last_modified"] = now_time
 
@@ -267,12 +270,11 @@ def main():
 
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_relative_paths(final_str, best_mirror)
+        final_str = replace_dot_slash(t["url"], best_mirror, final_str)
 
-        # 5. 保存文件
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(final_str)
 
-    # 写入最终同步后的任务列表
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
