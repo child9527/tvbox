@@ -185,7 +185,7 @@
       "key": "优酷",
       "name": "优酷{战争}",
       "type": 3,
-      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/fskl1/H/refs/heads/lib/drpy2.min.js",
+      "api": "https://wget.la/https://raw.githubusercontent.com/fskl1/H/refs/heads/lib/drpy2.min.js",
       "ext": "https://fastlink.cokey.xyz/f/9Y0jHb/%E4%BC%98%E9%85%B7.js"
     },
     {
@@ -953,7 +953,7 @@
       "key": "New6v",
       "name": "🧲New6V｜磁力",
       "type": 3,
-      "jar": "https://gh-proxy.com/https://raw.githubusercontent.com/IY-CPU/IY/main/spider.jar",
+      "jar": "https://ghfast.top/https://raw.githubusercontent.com/IY-CPU/IY/main/spider.jar",
       "api": "csp_New6v",
       "searchable": 1,
       "quickSearch": 1,
@@ -1973,7 +1973,7 @@
       "key": "XBPQ_41888",
       "name": "非常好(XBPQ)",
       "type": 3,
-      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/AbaloneHunter/Film-TV/refs/heads/main/jar/%E5%86%85%E7%BD%AELzgo.jar",
+      "api": "https://ghfast.top/https://raw.githubusercontent.com/AbaloneHunter/Film-TV/refs/heads/main/jar/%E5%86%85%E7%BD%AELzgo.jar",
       "ext": {
         "分类": "电影$1#电视剧$2#综艺$3#动漫$4",
         "分类url": "https://www.tomato-china.net/vodshow/{cateId}-{area}-{by}-{class}-{lang}----{catePg}---{year}.html"
