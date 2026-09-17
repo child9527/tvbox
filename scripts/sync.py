@@ -108,7 +108,6 @@ def replace_dot_slash(task_url, best_mirror, text):
     return "".join(out)
 
 def replace_relative_paths(content, best_mirror):
-    # 匹配任意已有的 http(s) 代理前缀 + raw.githubusercontent.com，统一替换为当前 best_mirror
     pattern = r'(?:https?://[^"\'\s]+/)*(https://raw\.githubusercontent\.com/)'
     content = re.sub(pattern, r'%s\1' % best_mirror, content)
     return content
@@ -224,7 +223,7 @@ def load_tasks():
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
             })
 
-    return synced_tasks
+    return synced_tasks, old_tasks_map
 
 # ============================================================
 # 主逻辑
@@ -233,7 +232,7 @@ def main():
     best_mirror = pick_best_mirror()
     print(f"当前最快镜像为：{best_mirror}")
 
-    tasks = load_tasks()
+    tasks, old_tasks_map = load_tasks()
 
     for t in tasks:
         name = t.get("name", "")
@@ -277,7 +276,7 @@ def main():
                 t["status"] = "invalid_json"
                 continue
 
-        # ③ 存入本地（先通过 replace_dot_slash 处理相对路径，再通过 replace_relative_paths 统一把所有 GitHub 镜像更新为你的最优镜像）
+        # ③ 存入本地
         final_str = json.dumps(obj, ensure_ascii=False, indent=2)
         final_str = replace_dot_slash(t["url"], best_mirror, final_str)
         final_str = replace_relative_paths(final_str, best_mirror)
@@ -289,12 +288,10 @@ def main():
         remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
         md5_changed = (remote_md5 != t.get("md5"))
 
-        # md5 未变 → 完成工作
         if not md5_changed:
             t["md5_changed"] = False
             continue
 
-        # md5 变了 → 记录新 MD5 并标记 md5_changed
         t["md5_changed"] = True
         t["md5"] = remote_md5
         t["last_modified"] = now_time
@@ -302,6 +299,21 @@ def main():
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
+
+    # ⑤ 检查被删除的文件，并传递给 GitHub Actions Output
+    old_task_names = set(old_tasks_map.keys())
+    current_task_names = {t["name"].lower() for t in tasks}
+    deleted_names = old_task_names - current_task_names
+
+    deleted_files = [f"{old_tasks_map[name]['name']}.json" for name in deleted_names if name in old_tasks_map]
+
+    if deleted_files:
+        print(f"🗑️ 检测到已被删除的文件: {', '.join(deleted_files)}")
+
+    github_output = os.getenv("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as gh_out:
+            gh_out.write(f"deleted_files={' '.join(deleted_files)}\n")
 
 if __name__ == "__main__":
     main()
