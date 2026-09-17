@@ -36,6 +36,7 @@ jobs:
         id: diff_check
         env:
           GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
+          DELETED_FILES: "${{ steps.sync_json.outputs.deleted_files }}"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -43,8 +44,18 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
+          
+          # 如果有被删除的文件，在 Git 中记录删除状态
+          if [ -n "$DELETED_FILES" ]; then
+            for df in $DELETED_FILES; do
+              if [ -f "json/$df" ]; then
+                git rm -f "json/$df" || true
+              fi
+            done
+          fi
+
           # 1. 暂存所有 json 变动以及 task/task.json 变动
-          git add json/*.json task/task.json
+          git add -A json/ task/task.json
 
           # 检查 json/*.json 是否有更新
           for file in json/*.json; do
@@ -55,7 +66,7 @@ jobs:
           done
 
           echo "🌐 从 Gitee API 获取 json 目录文件列表..."
-          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/dev/null || true)
+          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/devnull || true)
 
           echo "📁 Gitee 现有文件:"
           echo "$gitee_json_list"
@@ -76,8 +87,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
             
-            # 💡 优化：直接提取 task.json 里的时间戳，保证 Commit 历史与 task.json 完全对齐
-            SYNC_TIME=$(jq -r '.[0].timestamp // empty' task/task.json 2>/dev/null || date +'%Y-%m-%d %H:%M:%S')
+            SYNC_TIME=$(jq -r '.[0].timestamp // empty' task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
             
             git commit -m "更新于 ${SYNC_TIME} [skip ci]"
             
@@ -86,15 +96,16 @@ jobs:
             git push origin main
           fi
 
-          # 如果既没有 git 变更（GitHub端），且 Gitee 也不缺文件，则退出
-          if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ]; then
-            echo "🎉 无需处理：本地无变化且 Gitee 无缺失"
+          # 如果既没有 git 变更，且 Gitee 无缺失也不需要删除操作，则退出
+          if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ] && [ -z "$DELETED_FILES" ]; then
+            echo "🎉 无需处理：本地无变化、Gitee 无缺失且无删除项"
             echo "has_changes=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           echo "has_changes=true" >> $GITHUB_OUTPUT
           echo "changed_files=${changed_files[*]}" >> $GITHUB_OUTPUT
+          echo "deleted_files=$DELETED_FILES" >> $GITHUB_OUTPUT
 
       - name: 步骤 3 - 执行 JSON 批量加密
         id: encrypt_step
@@ -122,7 +133,7 @@ jobs:
           fi
 
       - name: 步骤 4 - 配置 Gitee SSH 密钥传输认证
-        if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
+        if: steps.diff_check.outputs.has_changes == 'true'
         env:
           SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
         run: |
@@ -136,8 +147,10 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: 步骤 5 - 部署加密 JSON 至 Gitee 仓库
-        if: steps.diff_check.outputs.has_changes == 'true' && steps.encrypt_step.outputs.has_encrypted == 'true'
+      - name: 步骤 5 - 部署加密/删除变更至 Gitee 仓库
+        if: steps.diff_check.outputs.has_changes == 'true'
+        env:
+          DELETED_FILES: "${{ steps.diff_check.outputs.deleted_files }}"
         run: |
           # 使用 --depth 1 浅克隆加速
           git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
@@ -148,7 +161,7 @@ jobs:
 
           mkdir -p json
 
-          # 1. 移动/覆盖加密后的文件
+          # 1. 处理新增/覆盖加密文件
           for f in ${{ steps.encrypt_step.outputs.encrypted_files }}; do
             base="$(basename "$f" .json)"
             if [ -f "../json/${base}.bin" ]; then
@@ -157,16 +170,26 @@ jobs:
             fi
           done
 
-          # 2. 仅暂存 json/*.json，决不将 task/task.json 提交给 Gitee
-          git add json/*.json
+          # 2. 处理需要从 Gitee 删掉的文件
+          if [ -n "$DELETED_FILES" ]; then
+            for df in $DELETED_FILES; do
+              if [ -f "json/$df" ]; then
+                echo "🗑️ 正在从 Gitee 删除: json/$df"
+                git rm -f "json/$df" || rm -f "json/$df"
+              fi
+            done
+          fi
 
-          # 3. 检查 Gitee 工作区是否有变更并推送
+          # 3. 暂存所有变更
+          git add -A json/
+
+          # 4. 检查 Gitee 工作区是否有变更并推送
           if [ -n "$(git status --porcelain)" ]; then
-            SYNC_TIME=$(jq -r '.[0].timestamp // empty' ../task/task.json 2>/dev/null || date +'%Y-%m-%d %H:%M:%S')
-            git commit -m "同步加密 JSON (${SYNC_TIME}) [skip ci]"
+            SYNC_TIME=$(jq -r '.[0].timestamp // empty' ../task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
+            git commit -m "同步加密 JSON 与删除变更 (${SYNC_TIME}) [skip ci]"
             
             git push origin master
-            echo "✅ 成功推送到 Gitee！"
+            echo "✅ 成功更新至 Gitee！"
           else
             echo "🎉 Gitee 侧无任何变动，跳过推送"
           fi
