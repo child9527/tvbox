@@ -8,7 +8,6 @@ on:
   workflow_run:
     workflows:
       - "批量同步、加密与双端推送"
-      - "强制解密并推送到Gitee"
     types:
       - completed
 
