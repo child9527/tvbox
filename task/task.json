@@ -29,10 +29,11 @@
   {
     "name": "xm",
     "url": "https://szyyds.cn/tv/x.json",
-    "md5": null,
-    "last_modified": null,
-    "status": "invalid_json",
-    "timestamp": "2026-09-18 03:56:24"
+    "md5": "514a185e322a6564ab72693eb3342077",
+    "last_modified": "2026-09-18 08:29:24",
+    "status": "ok",
+    "timestamp": "2026-09-18 08:29:24",
+    "md5_changed": true
   },
   {
     "name": "dianshi",
