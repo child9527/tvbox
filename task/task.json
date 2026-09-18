@@ -27,15 +27,6 @@
     "md5_changed": false
   },
   {
-    "name": "xm",
-    "url": "https://szyyds.cn/tv/x.json",
-    "md5": "514a185e322a6564ab72693eb3342077",
-    "last_modified": "2026-09-18 08:29:24",
-    "status": "ok",
-    "timestamp": "2026-09-18 08:29:24",
-    "md5_changed": true
-  },
-  {
     "name": "dianshi",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/dianshi.json",
     "md5": "bc0489fafc6895f1fd98260c608ef10b",
