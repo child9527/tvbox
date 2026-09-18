@@ -1,62 +1,190 @@
-name: 恢复 JSON 到昨天版本（一次性任务）
+name: 单独同步与部署 xm 任务
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 支持手动触发
+
+env:
+  TZ: Asia/Shanghai
 
 jobs:
-  restore:
+  sync_xm:
+    name: 单独处理 xm
     runs-on: ubuntu-latest
-    name: 恢复 json 目录到昨天的版本
 
     steps:
-      - name: 拉取仓库代码
+      - name: 拉取 GitHub 仓库代码
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # 必须完整历史才能找到昨天的提交
 
-      - name: 找到昨天的提交
-        id: find_yesterday
+      - name: 安装 Python 及依赖环境
         run: |
-          echo "当前时间：$(date)"
-          echo "查找昨天的提交..."
+          python -m pip install --upgrade pip
+          pip install requests commentjson pycryptodome
 
-          # 昨天的日期（格式：YYYY-MM-DD）
-          YESTERDAY=$(date -d "yesterday" +"%Y-%m-%d")
+      - name: 内联 Python - 单独拉取与解析 xm 任务（含调试日志）
+        run: |
+          python << 'EOF'
+          import os, json, time, requests, hashlib, commentjson
 
-          echo "昨天日期: $YESTERDAY"
+          HEADERS = {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8"
+          }
+          TASK_FILE = os.path.join("task", "task.json")
 
-          # 找到昨天的第一个提交（不管哪个，只要是昨天）
-          COMMIT=$(git log --since="$YESTERDAY 00:00" --until="$YESTERDAY 23:59" --pretty=format:"%H" | head -n 1)
+          if not os.path.exists(TASK_FILE):
+              print("❌ 未找到 task/task.json 文件")
+              exit(1)
 
-          if [ -z "$COMMIT" ]; then
-            echo "❌ 昨天没有任何提交，无法恢复"
-            exit 1
+          with open(TASK_FILE, "r", encoding="utf-8") as f:
+              tasks = json.load(f)
+
+          target_task = None
+          for t in tasks:
+              if t.get("name") == "xm":
+                  target_task = t
+                  break
+
+          if not target_task:
+              print("⚠️ task.json 中未找到 name 为 xm 的配置")
+              exit(1)
+
+          url = target_task.get("url")
+          if not url:
+              print("❌ xm 配置缺少 url")
+              exit(1)
+
+          print(f"🚀 开始单独处理 xm 任务，URL: {url}")
+          now_time = time.strftime("%Y-%m-%d %H:%M:%S")
+          target_task["timestamp"] = now_time
+
+          try:
+              r = requests.get(url, headers=HEADERS, timeout=15)
+              print(f"📡 HTTP 响应状态码: {r.status_code}")
+              print(f"📋 响应 Content-Type: {r.headers.get('Content-Type', '未知')}")
+              
+              if r.status_code != 200:
+                  print(f"❌ 请求失败，HTTP 状态码不是 200！")
+                  print(f"👉 返回前 500 字符:\n{r.text[:500]}\n")
+                  target_task["status"] = f"http{r.status_code}"
+                  with open(TASK_FILE, "w", encoding="utf-8") as f:
+                      json.dump(tasks, f, ensure_ascii=False, indent=2)
+                  exit(1)
+              raw_content = r.content.decode("utf-8", errors="ignore").strip()
+          except Exception as e:
+              print(f"❌ 网络请求异常: {e}")
+              target_task["status"] = "error"
+              with open(TASK_FILE, "w", encoding="utf-8") as f:
+                  json.dump(tasks, f, ensure_ascii=False, indent=2)
+              exit(1)
+
+          if raw_content.startswith("\ufeff"):
+              raw_content = raw_content[1:]
+
+          try:
+              obj = commentjson.loads(raw_content)
+          except Exception as e1:
+              try:
+                  obj = json.loads(raw_content)
+              except Exception as e2:
+                  print("=" * 60)
+                  print("❌ xm JSON 解析失败！调试排查信息如下：")
+                  print(f"👉 commentjson 报错: {e1}")
+                  print(f"👉 json.loads 报错: {e2}")
+                  print("👇 抓取到的完整/前 500 字符内容：")
+                  print(raw_content[:500])
+                  print("=" * 60)
+                  
+                  target_task["status"] = "invalid_json"
+                  with open(TASK_FILE, "w", encoding="utf-8") as f:
+                      json.dump(tasks, f, ensure_ascii=False, indent=2)
+                  exit(1)
+
+          os.makedirs("json", exist_ok=True)
+          filepath = os.path.join("json", "xm.json")
+          final_str = json.dumps(obj, ensure_ascii=False, indent=2)
+          
+          with open(filepath, "w", encoding="utf-8") as f:
+              f.write(final_str)
+
+          remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+          target_task["status"] = "ok"
+          if remote_md5 != target_task.get("md5"):
+              target_task["md5"] = remote_md5
+              target_task["last_modified"] = now_time
+              target_task["md5_changed"] = True
+          else:
+              target_task["md5_changed"] = False
+
+          with open(TASK_FILE, "w", encoding="utf-8") as f:
+              json.dump(tasks, f, ensure_ascii=False, indent=2)
+
+          print("✅ xm.json 同步成功并写入！")
+          EOF
+
+      - name: 调用 scripts/tvbox.py 加密 json/xm.json
+        id: encrypt_xm
+        run: |
+          if [ -f "json/xm.json" ]; then
+            python scripts/tvbox.py "json/xm.json" "json/xm.bin" enc || true
+            if [ -f "json/xm.bin" ]; then
+              echo "has_encrypted=true" >> $GITHUB_OUTPUT
+            fi
           fi
 
-          echo "找到昨天的提交：$COMMIT"
-          echo "commit_sha=$COMMIT" >> $GITHUB_OUTPUT
-
-      - name: 恢复 json 目录到昨天版本
-        run: |
-          COMMIT=${{ steps.find_yesterday.outputs.commit_sha }}
-
-          echo "从提交 $COMMIT 恢复 json 目录..."
-
-          # 从昨天的提交恢复 json 目录内容
-          git checkout "$COMMIT" -- json/
-
-          echo "恢复完成，准备提交"
-
-      - name: 提交并推送
+      - name: 提交变更并推送至 GitHub
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          git add json/xm.json task/task.json
+
           if [ -n "$(git status --porcelain)" ]; then
-            git add json/
-            git commit -m "恢复 json 目录到昨天版本 [skip ci]"
+            SYNC_TIME=$(jq -r '.[] | select(.name=="xm") | .timestamp // empty' task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
+            git commit -m "单独更新 xm (${SYNC_TIME}) [skip ci]"
+            git pull --rebase origin main
             git push origin main
-            echo "✔ 已推送到 GitHub"
           else
-            echo "— 没有任何变化，不需要提交"
+            echo "🎉 本地 GitHub 端无任何变动"
+          fi
+
+      - name: 配置 Gitee SSH 密钥
+        if: steps.encrypt_xm.outputs.has_encrypted == 'true'
+        env:
+          SSH_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host gitee.com
+              HostName gitee.com
+              User git
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: 部署加密后的 xm.json 至 Gitee
+        if: steps.encrypt_xm.outputs.has_encrypted == 'true'
+        run: |
+          git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
+          cd gitee_temp
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p json
+
+          if [ -f "../json/xm.bin" ]; then
+            cp "../json/xm.bin" "json/xm.json"
+            rm -f "../json/xm.bin"
+          fi
+
+          git add json/xm.json
+
+          if [ -n "$(git status --porcelain)" ]; then
+            SYNC_TIME=$(jq -r '.[] | select(.name=="xm") | .timestamp // empty' ../task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
+            git commit -m "单独同步加密 xm (${SYNC_TIME}) [skip ci]"
+            git push origin master
+            echo "✅ 成功推送到 Gitee！"
+          else
+            echo "🎉 Gitee 端无需更新"
           fi
