@@ -5,7 +5,10 @@ import os, re, json, time, subprocess, requests, hashlib
 from concurrent.futures import ThreadPoolExecutor
 import commentjson
 
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8"
+}
 TASK_FILE = os.path.join("task", "task.json")
 MIRROR_FILE = os.path.join("scripts", "mirror.txt")
 
@@ -119,15 +122,13 @@ def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
     
-    url = re.sub(r'^https?://[^"\'\s]+/+(https?://)', r'\1', url)
-
-    pat = r'(https?://)?(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
-    m = re.search(pat, url)
+    # 修复处的正则：必须以 http(s):// 开头，且严格匹配 github.com 或 raw.githubusercontent.com 域名
+    pat = r'^https?://(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
+    m = re.match(pat, url)
     if not m:
         return False, url, ""
+    
     raw = m.group(0)
-    if not raw.startswith("http"):
-        raw = "https://" + raw
     raw = re.sub(
         r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)',
         r'https://raw.githubusercontent.com/\1/\2/\3/\4',
@@ -249,16 +250,25 @@ def main():
 
         # ① 下载远程 JSON
         is_gh, raw, _ = extract_raw(url)
+        target_url = raw if is_gh else url
+        print(f"📥 正在拉取 [{name}]，目标地址: {target_url}")
+
         try:
-            r = requests.get(raw if is_gh else url, headers=HEADERS, timeout=10)
+            r = requests.get(target_url, headers=HEADERS, timeout=10)
             if r.status_code != 200:
+                print(f"❌ 请求失败，HTTP 状态码: {r.status_code}")
                 t["status"] = f"http{r.status_code}"
                 continue
             raw_content = r.content.decode("utf-8", errors="ignore").strip()
             t["status"] = "ok"
-        except Exception:
+        except Exception as e:
+            print(f"❌ 请求异常 [{name}]: {e}")
             t["status"] = "error"
             continue
+
+        # 去除 BOM 头
+        if raw_content.startswith("\ufeff"):
+            raw_content = raw_content[1:]
 
         # ② 判断是否加密 → 解密/清洗
         content = raw_content
@@ -269,10 +279,11 @@ def main():
 
         try:
             obj = commentjson.loads(cleaned)
-        except:
+        except Exception:
             try:
                 obj = json.loads(cleaned)
-            except:
+            except Exception as e:
+                print(f"❌ [{name}] JSON 解析失败！抓取到的响应前 300 字符为:\n{cleaned[:300]}")
                 t["status"] = "invalid_json"
                 continue
 
