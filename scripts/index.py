@@ -4,18 +4,27 @@
 import datetime
 from datetime import datetime, timezone, timedelta
 import requests
+import os   # ← 新增：用于读取环境变量
 
 OUTPUT = "index.html"
 
 # Gitee API：获取 json 目录下所有文件
 GITEE_API_URL = "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
 
-
 def fetch_gitee_json_files():
     """从 Gitee API 获取所有 *.json 文件名和下载链接"""
     print("正在从 Gitee API 获取 JSON 文件列表...")
 
-    resp = requests.get(GITEE_API_URL, headers={"User-Agent": "Mozilla/5.0"})
+    # ← 新增：从环境变量读取 Token
+    token = os.getenv("GITEE_TOKEN_FOR_INDEX")
+
+    # ← 新增：把 Token 加入请求头（不改你原来的 UA）
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Authorization": f"token {token}"
+    }
+
+    resp = requests.get(GITEE_API_URL, headers=headers)
     resp.raise_for_status()
 
     data = resp.json()
@@ -208,7 +217,6 @@ function copy(el) {{
         f.write(html)
 
     print(f"index.html 已生成 → {OUTPUT}")
-
 
 
 if __name__ == "__main__":
