@@ -5,7 +5,7 @@
     "md5": "450b1cc0733dbcbf39ecf2f7e8c18716",
     "last_modified": "2026-09-16 11:59:42",
     "status": "http404",
-    "timestamp": "2026-09-19 15:32:21",
+    "timestamp": "2026-09-19 16:36:15",
     "md5_changed": false
   },
   {
@@ -14,16 +14,7 @@
     "md5": "63e7daac2910d684eb14fa105a612e80",
     "last_modified": "2026-09-19 03:18:14",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:22",
-    "md5_changed": false
-  },
-  {
-    "name": "367",
-    "url": "https://raw.githubusercontent.com/qist/tvbox/master/367.json",
-    "md5": "5c9db42876585fe4b4b8ce6740bfa937",
-    "last_modified": "2026-09-16 11:59:43",
-    "status": "ok",
-    "timestamp": "2026-09-19 15:32:22",
+    "timestamp": "2026-09-19 16:36:16",
     "md5_changed": false
   },
   {
@@ -32,7 +23,7 @@
     "md5": "514a185e322a6564ab72693eb3342077",
     "last_modified": "2026-09-18 08:56:40",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:23",
+    "timestamp": "2026-09-19 16:36:16",
     "md5_changed": false
   },
   {
@@ -41,7 +32,7 @@
     "md5": "0b476e790f50d3b81bd4d7b2f1175e43",
     "last_modified": "2026-09-19 15:29:59",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:24",
+    "timestamp": "2026-09-19 16:36:18",
     "md5_changed": false
   },
   {
@@ -50,7 +41,7 @@
     "md5": "306b3dd1925556718acfb067e9271fe0",
     "last_modified": "2026-09-16 11:59:44",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:25",
+    "timestamp": "2026-09-19 16:36:18",
     "md5_changed": false
   },
   {
@@ -59,7 +50,7 @@
     "md5": "f5a74fa91724dc75fd946b323146dcf0",
     "last_modified": "2026-09-16 11:59:44",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:25",
+    "timestamp": "2026-09-19 16:36:18",
     "md5_changed": false
   },
   {
@@ -68,7 +59,7 @@
     "md5": "8ef7055fd2aa3258b012a48c2b1d017c",
     "last_modified": "2026-09-19 15:30:00",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:25",
+    "timestamp": "2026-09-19 16:36:19",
     "md5_changed": false
   },
   {
@@ -77,7 +68,7 @@
     "md5": "cb8f72cb361cbbbbc2f2bbce9062d32d",
     "last_modified": "2026-09-19 15:30:00",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:26",
+    "timestamp": "2026-09-19 16:36:19",
     "md5_changed": false
   },
   {
@@ -85,8 +76,8 @@
     "url": "https://yydsok.com/api/bendi/yydsapi/nf/api.json",
     "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
     "last_modified": "2026-09-16 11:59:45",
-    "status": "ok",
-    "timestamp": "2026-09-19 15:32:26",
+    "status": "error",
+    "timestamp": "2026-09-19 16:36:20",
     "md5_changed": false
   },
   {
@@ -95,7 +86,7 @@
     "md5": "44eb62ad84290e032284ed1a79815926",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:28",
+    "timestamp": "2026-09-19 16:36:36",
     "md5_changed": false
   },
   {
@@ -104,7 +95,7 @@
     "md5": "37baccc8097ddb7c01256a2e4fed386a",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:28",
+    "timestamp": "2026-09-19 16:36:36",
     "md5_changed": false
   },
   {
@@ -113,7 +104,7 @@
     "md5": "6ba9c81a00ac64e5fc5f654436c5a448",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:29",
+    "timestamp": "2026-09-19 16:36:36",
     "md5_changed": false
   },
   {
@@ -122,7 +113,7 @@
     "md5": "7a4591966c4ab63b77052e350ce06a58",
     "last_modified": "2026-09-16 11:59:48",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:30",
+    "timestamp": "2026-09-19 16:36:37",
     "md5_changed": false
   },
   {
@@ -131,7 +122,7 @@
     "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
     "last_modified": "2026-09-16 11:59:48",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:30",
+    "timestamp": "2026-09-19 16:36:37",
     "md5_changed": false
   },
   {
@@ -140,8 +131,8 @@
     "md5": "3d45ad6287f7863c9bab755fde430247",
     "last_modified": "2026-09-19 15:32:31",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:31",
-    "md5_changed": true
+    "timestamp": "2026-09-19 16:36:38",
+    "md5_changed": false
   },
   {
     "name": "leevi",
@@ -149,7 +140,7 @@
     "md5": "b606028c027b2daa688fd5fd7cf0aedd",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:31",
+    "timestamp": "2026-09-19 16:36:38",
     "md5_changed": false
   },
   {
@@ -158,7 +149,7 @@
     "md5": "1cef4778f2a198edaf450f24e3149dab",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:32",
+    "timestamp": "2026-09-19 16:36:39",
     "md5_changed": false
   },
   {
@@ -167,8 +158,8 @@
     "md5": "b1647fe5d779fdedc9b1f75b515a267f",
     "last_modified": "2026-09-19 15:32:32",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:32",
-    "md5_changed": true
+    "timestamp": "2026-09-19 16:36:39",
+    "md5_changed": false
   },
   {
     "name": "js",
@@ -176,7 +167,7 @@
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-09-19 15:32:33",
+    "timestamp": "2026-09-19 16:36:39",
     "md5_changed": false
   }
 ]
