@@ -136,7 +136,7 @@
   },
   {
     "name": "curated",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/curated.json",
+    "url": "https://github.com/jifeng250/tvbox-sources/raw/refs/heads/main/curated.json",
     "md5": null,
     "last_modified": null,
     "status": "invalid_json",
@@ -162,7 +162,7 @@
   },
   {
     "name": "curated_universal",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/curated_universal.json",
+    "url": "https://github.com/jifeng250/tvbox-sources/raw/refs/heads/main/curated_universal.json",
     "md5": null,
     "last_modified": null,
     "status": "invalid_json",
