@@ -19,6 +19,8 @@ jobs:
   build-index:
     name: 自动生成首页
     runs-on: ubuntu-latest
+    env:
+      GITEE_TOKEN_FOR_INDEX: ${{ secrets.GITEE_TOKEN_FOR_INDEX }}
     permissions:
       contents: write
 
