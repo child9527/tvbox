@@ -764,6 +764,23 @@
       }
     },
     {
+      "key": "歌",
+      "name": "0️⃣歌",
+      "type": 3,
+      "api": "csp_kongbai",
+      "searchable": 1,
+      "changeable": 0,
+      "ext": {
+        "commonConfig": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/peizhi.json",
+        "siteUrl": [
+          "https://woog.nxog.eu.org",
+          "https://ogkk.nxog.eu.org",
+          "https://woog.430520.xyz"
+        ],
+        "filter": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/wogg.json"
+      }
+    },
+    {
       "key": "多多",
       "name": "🌟多多",
       "type": 3,
