@@ -4,31 +4,43 @@
 import datetime
 from datetime import datetime, timezone, timedelta
 import requests
-import os   # ← 新增：用于读取环境变量
+import os
+import json
 
 OUTPUT = "index.html"
 
 # Gitee API：获取 json 目录下所有文件
 GITEE_API_URL = "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
+TEMP_FILE = "temp.json"   # ← 新增：临时文件
+
 
 def fetch_gitee_json_files():
     """从 Gitee API 获取所有 *.json 文件名和下载链接"""
     print("正在从 Gitee API 获取 JSON 文件列表...")
 
-    # ← 新增：从环境变量读取 Token
+    # ← 从环境变量读取 Token
     token = os.getenv("GITEE_TOKEN_FOR_INDEX")
 
-    # ← 新增：把 Token 加入请求头（不改你原来的 UA）
+    # ← 浏览器伪装 + Token（不改你原来的 UA）
     headers = {
         "User-Agent": "Mozilla/5.0",
-        "Authorization": f"token {token}"
+        "Authorization": f"token {token}",
+        "Accept": "application/json",
+        "Referer": "https://gitee.com/"
     }
 
+    # ← 新增：下载 API 内容到 temp.json
     resp = requests.get(GITEE_API_URL, headers=headers)
     resp.raise_for_status()
 
-    data = resp.json()
+    with open(TEMP_FILE, "w", encoding="utf-8") as f:
+        f.write(resp.text)
 
+    # ← 新增：从 temp.json 读取数据
+    with open(TEMP_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # ← 以下保持你的原始逻辑完全不变
     json_files = []
     for item in data:
         if item["name"].endswith(".json"):
