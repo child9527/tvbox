@@ -218,8 +218,8 @@ body {{
 <div class="section">
     <h2 class="section-title">TVBox 自动订阅中心</h2>
 
-    <!-- 1. 点播接口（JSON） -->
-    <div class="sub-title">🎬 点播接口 (JSON)</div>
+    <!-- 1. 点播接口 -->
+    <div class="sub-title">🎬 点播接口</div>
     <div class="compact-grid">
 """
 
@@ -237,8 +237,8 @@ body {{
     html += f"""
     </div>
 
-    <!-- 2. 直播接口（TXT） -->
-    <div class="sub-title">📺 直播接口 (TXT)</div>
+    <!-- 2. 直播接口 -->
+    <div class="sub-title">📺 直播接口</div>
     <div class="compact-grid">
 """
 
