@@ -28,22 +28,52 @@ jobs:
     steps:
       - name: 检出仓库
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 检查文件新增或删除状态
+        id: check_changes
+        run: |
+          # 如果是手动触发或工作流联动触发，直接运行
+          if [ "${{ github.event_name }}" != "push" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ 非 push 事件触发，正常执行后续步骤。"
+            exit 0
+          fi
+
+          # 检查 lives/ 目录下是否有新增(A)或删除(D)的文件
+          LIVES_CHANGES=$(git diff-tree --no-commit-id --name-status -r HEAD | grep -E '^[AD]\s+lives/' || true)
+          
+          # 检查 scripts/index.py 是否修改
+          SCRIPT_CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | grep '^scripts/index.py' || true)
+
+          if [ -n "$LIVES_CHANGES" ] || [ -n "$SCRIPT_CHANGED" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ 检测到 lives 目录下有新增/删除文件，或 index.py 被修改，继续执行。"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ lives 目录下仅为文件内容修改，跳过后续生成与提交步骤。"
+          fi
 
       - name: 安装Python
+        if: steps.check_changes.outputs.should_run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
       - name: 安装Python依赖
+        if: steps.check_changes.outputs.should_run == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml
 
       - name: 创建index.html
+        if: steps.check_changes.outputs.should_run == 'true'
         run: |
           python scripts/index.py
 
       - name: 提交index.html
+        if: steps.check_changes.outputs.should_run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
