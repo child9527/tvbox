@@ -1,4 +1,4 @@
-name: 单独同步与部署 xm 任务
+name: 临时任务（一次性）
 
 on:
   workflow_dispatch: # 支持手动触发
