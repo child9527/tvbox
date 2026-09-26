@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "scripts/index.py"
+      - "lives/**"
 
   workflow_run:
     workflows:
