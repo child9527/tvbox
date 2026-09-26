@@ -11,17 +11,16 @@ OUTPUT = "index.html"
 
 # Gitee API：获取 json 目录下所有文件
 GITEE_API_URL = "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
-TEMP_FILE = "temp.json"   # ← 新增：临时文件
+TEMP_FILE = "temp.json"
 
 
 def fetch_gitee_json_files():
     """从 Gitee API 获取所有 *.json 文件名和下载链接"""
     print("正在从 Gitee API 获取 JSON 文件列表...")
 
-    # ← 从环境变量读取 Token
+    # 从环境变量读取 Token
     token = os.getenv("GITEE_TOKEN_FOR_INDEX")
 
-    # ← 浏览器伪装 + Token（不改你原来的 UA）
     headers = {
         "User-Agent": "Mozilla/5.0",
         "Authorization": f"token {token}",
@@ -29,18 +28,15 @@ def fetch_gitee_json_files():
         "Referer": "https://gitee.com/"
     }
 
-    # ← 新增：下载 API 内容到 temp.json
     resp = requests.get(GITEE_API_URL, headers=headers)
     resp.raise_for_status()
 
     with open(TEMP_FILE, "w", encoding="utf-8") as f:
         f.write(resp.text)
 
-    # ← 新增：从 temp.json 读取数据
     with open(TEMP_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # ← 以下保持你的原始逻辑完全不变
     json_files = []
     for item in data:
         if item["name"].endswith(".json"):
@@ -56,10 +52,39 @@ def fetch_gitee_json_files():
     return json_files
 
 
+def fetch_local_lives_files():
+    """直接读取本地 lives 目录下的 *.txt 文件，生成 Raw 下载链接并加镜像前缀"""
+    print("正在扫描本地 lives 目录下的 TXT 文件...")
+    lives_dir = "lives"
+    
+    if not os.path.exists(lives_dir):
+        print("⚠️ 本地未找到 lives 目录")
+        return []
+
+    lives_files = []
+    # 遍历本地 lives 文件夹
+    for fname in os.listdir(lives_dir):
+        if fname.endswith(".txt"):
+            # 拼接标准的 Raw 下载链接，并附加镜像前缀
+            raw_url = f"https://github.com/child9527/tvbox/raw/refs/heads/main/lives/{fname}"
+            proxy_url = f"https://gh-proxy.com/{raw_url}"
+            
+            lives_files.append({
+                "name": fname,
+                "download_url": proxy_url
+            })
+
+    # 按文件名长度排序（去掉 .txt）
+    lives_files = sorted(lives_files, key=lambda x: len(x["name"].replace(".txt", "")))
+    print(f"发现 {len(lives_files)} 个本地 TXT 直播文件：", [f["name"] for f in lives_files])
+    return lives_files
+
+
 def generate_html():
     bj_tz = timezone(timedelta(hours=8))
     now = datetime.now(bj_tz).strftime("%Y-%m-%d %H:%M:%S")
     json_files = fetch_gitee_json_files()
+    lives_files = fetch_local_lives_files()
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -111,6 +136,14 @@ body {{
     color: #ffffff;
     font-size: 1.6rem;
     margin-bottom: 20px;
+}}
+
+.sub-title {{
+    color: #4aa3ff;
+    font-size: 1.2rem;
+    margin: 25px 0 15px 0;
+    border-left: 4px solid #4aa3ff;
+    padding-left: 10px;
 }}
 
 /* 卡片网格 */
@@ -185,12 +218,33 @@ body {{
 <div class="section">
     <h2 class="section-title">TVBox 自动订阅中心</h2>
 
+    <!-- 1. 点播接口（JSON） -->
+    <div class="sub-title">🎬 点播接口 (JSON)</div>
     <div class="compact-grid">
 """
 
     # 自动生成 Gitee JSON 文件列表
     for item in json_files:
         name = item["name"].replace(".json", "")
+        url = item["download_url"]
+        html += f"""
+        <div class="data-card">
+            <span class="data-label">{name}</span>
+            <span class="copy-pill" data-value="{url}" onclick="copy(this)">复制链接</span>
+        </div>
+"""
+
+    html += f"""
+    </div>
+
+    <!-- 2. 直播接口（TXT） -->
+    <div class="sub-title">📺 直播接口 (TXT)</div>
+    <div class="compact-grid">
+"""
+
+    # 自动生成本地 TXT 文件列表
+    for item in lives_files:
+        name = item["name"].replace(".txt", "")
         url = item["download_url"]
         html += f"""
         <div class="data-card">
