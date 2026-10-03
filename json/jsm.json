@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;abc13beac287a298e6b7ca91af7404cd",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;e30f824ced981f302a1bafe422249cee",
   "lives": [
     {
       "name": "migu",
@@ -2573,7 +2573,9 @@
         "vip.lz*",
         "hd.lz*",
         ".cdnlz",
-        ".cdnlz*"
+        ".cdnlz*",
+        "lzcdn*",
+        "v.lzcdn*"
       ],
       "regex": [
         "#EXTINF.*?\\s+[a-z0-9]{18}\\.ts",

@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;abc13beac287a298e6b7ca91af7404cd",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;e30f824ced981f302a1bafe422249cee",
   "lives": [
     {
       "name": "live",
@@ -22,7 +22,7 @@
       "type": 3,
       "api": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/lib/drpy2.min.js",
       "ext": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/js/drpy.js",
-      "searchable": 0,
+      "searchable": 1,
       "quickSearch": 0,
       "changeable": 0
     },
@@ -2557,7 +2557,9 @@
         "vip.lz*",
         "hd.lz*",
         ".cdnlz",
-        ".cdnlz*"
+        ".cdnlz*",
+        "lzcdn*",
+        "v.lzcdn*"
       ],
       "regex": [
         "#EXTINF.*?\\s+[a-z0-9]{18}\\.ts",
