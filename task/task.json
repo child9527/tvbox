@@ -126,6 +126,15 @@
     "md5_changed": false
   },
   {
+    "name": "newwex",
+    "url": "https://9280.kstore.vip/newwex.json",
+    "md5": "",
+    "last_modified": "",
+    "status": "",
+    "timestamp": "",
+    "md5_changed": 
+  },
+  {
     "name": "99188",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/99188.json",
     "md5": "1cef4778f2a198edaf450f24e3149dab",
