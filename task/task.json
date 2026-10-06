@@ -5,8 +5,8 @@
     "md5": "44e550f6c51e9dde2145f79bcf7fb79e",
     "last_modified": "2026-10-06 15:55:40",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:40",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:24",
+    "md5_changed": false
   },
   {
     "name": "pj",
@@ -14,8 +14,8 @@
     "md5": "89a6399a6a1704307266d564865b2f70",
     "last_modified": "2026-10-06 15:55:40",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:40",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:24",
+    "md5_changed": false
   },
   {
     "name": "curated",
@@ -23,8 +23,16 @@
     "md5": "ac988b590930a964cbd59b307841a1bb",
     "last_modified": "2026-10-06 15:55:41",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:41",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:24",
+    "md5_changed": false
+  },
+  {
+    "name": "newwex",
+    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/newwex.json",
+    "md5": null,
+    "last_modified": null,
+    "status": "invalid_json",
+    "timestamp": "2026-10-06 15:58:25"
   },
   {
     "name": "mtv6",
@@ -32,8 +40,8 @@
     "md5": "9915f9758b07eec8143dd793700cccc2",
     "last_modified": "2026-10-06 15:55:41",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:41",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:25",
+    "md5_changed": false
   },
   {
     "name": "xm",
@@ -41,8 +49,8 @@
     "md5": "6b81b29b8c8b9a2904b619242a28fe39",
     "last_modified": "2026-10-06 15:55:42",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:42",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:26",
+    "md5_changed": false
   },
   {
     "name": "api",
@@ -50,8 +58,8 @@
     "md5": "30cb0f384d339c85032b0feecc466d6e",
     "last_modified": "2026-10-06 15:55:42",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:42",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:26",
+    "md5_changed": false
   },
   {
     "name": "curated_universal",
@@ -59,8 +67,8 @@
     "md5": "590a0c36bd7e1a39920064dbda81b59a",
     "last_modified": "2026-10-06 15:55:43",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:43",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:26",
+    "md5_changed": false
   },
   {
     "name": "one",
@@ -68,8 +76,8 @@
     "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
     "last_modified": "2026-10-06 15:55:43",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:43",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:27",
+    "md5_changed": false
   },
   {
     "name": "X",
@@ -77,8 +85,8 @@
     "md5": "53268e3b14b38fd75c987419fa0c61e0",
     "last_modified": "2026-10-06 15:55:43",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:43",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:27",
+    "md5_changed": false
   },
   {
     "name": "js",
@@ -86,8 +94,8 @@
     "md5": "da9227850e88a7fe3885c19dbf440800",
     "last_modified": "2026-10-06 15:55:44",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:44",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:28",
+    "md5_changed": false
   },
   {
     "name": "yoursmile66",
@@ -95,8 +103,8 @@
     "md5": "b8653ae95c15c0ababd1d5ab8eb0e5ad",
     "last_modified": "2026-10-06 15:55:45",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:45",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:28",
+    "md5_changed": false
   },
   {
     "name": "leevi",
@@ -104,8 +112,8 @@
     "md5": "aede8042dfc1d0dbc90a005df307112e",
     "last_modified": "2026-10-06 15:55:45",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:45",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:29",
+    "md5_changed": false
   },
   {
     "name": "fty",
@@ -113,8 +121,8 @@
     "md5": "159e2324a64568c3b3610597fdba2cd5",
     "last_modified": "2026-10-06 15:55:45",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:45",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:29",
+    "md5_changed": false
   },
   {
     "name": "jsm",
@@ -122,8 +130,8 @@
     "md5": "935ceb3be559c84bbfc7e033e22a9df8",
     "last_modified": "2026-10-06 15:55:46",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:46",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:29",
+    "md5_changed": false
   },
   {
     "name": "99188",
@@ -131,7 +139,7 @@
     "md5": "594c1a1fcbfa6b89af76efb63f44a692",
     "last_modified": "2026-10-06 15:55:46",
     "status": "ok",
-    "timestamp": "2026-10-06 15:55:46",
-    "md5_changed": true
+    "timestamp": "2026-10-06 15:58:30",
+    "md5_changed": false
   }
 ]
