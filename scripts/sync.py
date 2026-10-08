@@ -179,13 +179,17 @@ def decrypt(text):
 # 加载任务
 # ============================================================
 def load_tasks():
-    old_tasks = []
-    if os.path.exists(TASK_FILE):
-        try:
-            with open(TASK_FILE, "r", encoding="utf-8") as f:
-                old_tasks = json.load(f)
-        except:
-            old_tasks = []
+    # 读取旧的 task.json，解析失败直接退出，避免覆盖 url
+    try:
+        with open(TASK_FILE, "r", encoding="utf-8") as f:
+            old_tasks = json.load(f)
+    except FileNotFoundError:
+        # 文件不存在，视为没有旧任务，继续
+        old_tasks = []
+    except Exception as e:
+        print(f"❌ task.json 解析失败: {e}")
+        print("❌ 为避免覆盖 url，本次直接退出")
+        raise SystemExit(1)
 
     os.makedirs("json", exist_ok=True)
     local_files = [f for f in os.listdir("json") if f.lower().endswith(".json")]
