@@ -2,20 +2,20 @@
   {
     "name": "dianshi",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/dianshi.json",
-    "md5": "3e7ea1280ab8fd71afe6298ee1c624f1",
-    "last_modified": "2026-10-08 23:33:51",
+    "md5": "1b0af81f275cf18fdf0af83bdca81943",
+    "last_modified": "2026-10-10 05:23:59",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:28",
-    "md5_changed": false
+    "timestamp": "2026-10-10 05:23:59",
+    "md5_changed": true
   },
   {
     "name": "pj",
     "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json",
-    "md5": "306b3dd1925556718acfb067e9271fe0",
-    "last_modified": "2026-09-16 11:59:44",
+    "md5": "1c836b0c4ee6c890df19d60441e5c2c6",
+    "last_modified": "2026-10-10 05:24:00",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:29",
-    "md5_changed": false
+    "timestamp": "2026-10-10 05:24:00",
+    "md5_changed": true
   },
   {
     "name": "curated",
@@ -23,7 +23,7 @@
     "md5": "3d45ad6287f7863c9bab755fde430247",
     "last_modified": "2026-09-19 15:32:31",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:29",
+    "timestamp": "2026-10-10 05:24:00",
     "md5_changed": false
   },
   {
@@ -32,7 +32,7 @@
     "md5": "5d83f352687423067e99f7979f235988",
     "last_modified": "2026-10-06 16:00:25",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:30",
+    "timestamp": "2026-10-10 05:24:04",
     "md5_changed": false
   },
   {
@@ -41,7 +41,7 @@
     "md5": "6ba9c81a00ac64e5fc5f654436c5a448",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:30",
+    "timestamp": "2026-10-10 05:24:05",
     "md5_changed": false
   },
   {
@@ -50,7 +50,7 @@
     "md5": "514a185e322a6564ab72693eb3342077",
     "last_modified": "2026-09-18 08:56:40",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:31",
+    "timestamp": "2026-10-10 05:24:05",
     "md5_changed": false
   },
   {
@@ -59,7 +59,7 @@
     "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
     "last_modified": "2026-09-16 11:59:45",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:32",
+    "timestamp": "2026-10-10 05:24:07",
     "md5_changed": false
   },
   {
@@ -68,7 +68,7 @@
     "md5": "b1647fe5d779fdedc9b1f75b515a267f",
     "last_modified": "2026-09-19 15:32:32",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:33",
+    "timestamp": "2026-10-10 05:24:09",
     "md5_changed": false
   },
   {
@@ -77,7 +77,7 @@
     "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
     "last_modified": "2026-09-16 11:59:48",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:34",
+    "timestamp": "2026-10-10 05:24:12",
     "md5_changed": false
   },
   {
@@ -86,7 +86,7 @@
     "md5": "450b1cc0733dbcbf39ecf2f7e8c18716",
     "last_modified": "2026-09-16 11:59:42",
     "status": "http404",
-    "timestamp": "2026-10-09 05:38:34",
+    "timestamp": "2026-10-10 05:24:12",
     "md5_changed": false
   },
   {
@@ -95,7 +95,7 @@
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:35",
+    "timestamp": "2026-10-10 05:24:12",
     "md5_changed": false
   },
   {
@@ -104,7 +104,7 @@
     "md5": "a16758e365f9f888a8b97642a23a1bb5",
     "last_modified": "2026-10-08 23:33:58",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:35",
+    "timestamp": "2026-10-10 05:24:13",
     "md5_changed": false
   },
   {
@@ -113,7 +113,7 @@
     "md5": "b606028c027b2daa688fd5fd7cf0aedd",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:35",
+    "timestamp": "2026-10-10 05:24:13",
     "md5_changed": false
   },
   {
@@ -122,17 +122,17 @@
     "md5": "b8ec93ed6c4ef361729e0bf732da4b75",
     "last_modified": "2026-10-08 23:33:59",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:36",
+    "timestamp": "2026-10-10 05:24:14",
     "md5_changed": false
   },
   {
     "name": "jsm",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/jsm.json",
-    "md5": "74e225b318f38d207d5bcf3adba3db01",
-    "last_modified": "2026-10-08 23:33:59",
+    "md5": "252580757cde67758a661eae2eb40aeb",
+    "last_modified": "2026-10-10 05:24:14",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:36",
-    "md5_changed": false
+    "timestamp": "2026-10-10 05:24:14",
+    "md5_changed": true
   },
   {
     "name": "99188",
@@ -140,7 +140,7 @@
     "md5": "1cef4778f2a198edaf450f24e3149dab",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-09 05:38:36",
+    "timestamp": "2026-10-10 05:24:15",
     "md5_changed": false
   }
 ]
