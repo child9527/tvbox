@@ -210,7 +210,7 @@ body {{
 <!-- 导航栏 -->
 <div class="navbar">
     <a href="https://child9527.github.io/">首页</a>
-    <a href="https://child9527.github.io/software/">Software 软件中心</a>
+    <a href="https://child9527.github.io/software/">软件中心</a>
     <a href="https://child9527.github.io/clash-latest/">科学订阅</a>
     <a href="https://child9527.github.io/about/">关于本站</a>
 </div>
