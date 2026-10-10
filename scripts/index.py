@@ -148,7 +148,7 @@ def main():
         "base.html.j2",
         sections=sections,
         now=now,
-        page_title="TVBox订阅中心",
+        page_title="TVBox订阅",
     )
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
