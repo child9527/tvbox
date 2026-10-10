@@ -4,7 +4,11 @@ on:
   push:
     paths:
       - "scripts/index.py"
+      - "scripts/sections.py"
+      - "scripts/renderer.py"
+      - "templates/**"
       - "lives/**"
+      - ".github/workflows/index.yml"
 
   workflow_run:
     workflows:
@@ -12,8 +16,6 @@ on:
     types:
       - completed
 
-  #schedule:
-  #  - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -43,16 +45,17 @@ jobs:
 
           # 检查 lives/ 目录下是否有新增(A)或删除(D)的文件
           LIVES_CHANGES=$(git diff-tree --no-commit-id --name-status -r HEAD | grep -E '^[AD]\s+lives/' || true)
-          
-          # 检查 scripts/index.py 是否修改
-          SCRIPT_CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | grep '^scripts/index.py' || true)
+
+          # 检查关键脚本或模板是否修改
+          SCRIPT_CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD \
+            | grep -E '^scripts/(index|sections|renderer)\.py$|^templates/|^\.github/workflows/index\.yml$' || true)
 
           if [ -n "$LIVES_CHANGES" ] || [ -n "$SCRIPT_CHANGED" ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "✅ 检测到 lives 目录下有新增/删除文件，或 index.py 被修改，继续执行。"
+            echo "✅ 检测到 lives 目录下有新增/删除文件，或关键脚本被修改，继续执行。"
           else
             echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ lives 目录下仅为文件内容修改，跳过后续生成与提交步骤。"
+            echo "ℹ️ 仅为文件内容修改，跳过后续生成与提交步骤。"
           fi
 
       - name: 安装Python
@@ -65,7 +68,7 @@ jobs:
         if: steps.check_changes.outputs.should_run == 'true'
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml
+          pip install -r requirements.txt
 
       - name: 创建index.html
         if: steps.check_changes.outputs.should_run == 'true'
