@@ -20,10 +20,15 @@ env:
 jobs:
   sync:
     name: 设置与同步任务
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
+      - name: 检查上游 check_task 是否成功
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' }}
+        run: |
+          echo "❌ 上游 check_task 失败，跳过 sync"
+          exit 1
+
       - name: 拉取 GitHub 仓库代码
         uses: actions/checkout@v4
 
