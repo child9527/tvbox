@@ -2,10 +2,8 @@ name: 删除所有Runs和Artifacts
 
 on:
   schedule:
-    # 每个月28号凌晨1点运行一次
+    # 每月29号运行一次（北京时间 29 号凌晨 1 点）
     - cron: '0 17 28 * *'
-    # 每半个月运行一次（每月 1 号和 15 号 00:00 UTC 执行）
-    #- cron: '0 0 1,15 * *'
   workflow_dispatch: # 保留手动触发按钮
 
 jobs:
@@ -19,15 +17,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "开始清空所有 Artifacts 产物..."
-          
-          # 获取所有 Artifacts 的 ID 并循环彻底删除
-          gh api -X GET repos/${{ github.repository }}/actions/artifacts --paginate --jq '.artifacts[].id' | while read -r artifact_id; do
+
+          # 先一次性收集全部 ID，避免边删边翻页导致漏删
+          gh api -X GET "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+            --paginate --jq '.artifacts[].id' > /tmp/artifacts.txt
+
+          while read -r artifact_id; do
             if [ -n "$artifact_id" ]; then
               echo "正在删除 Artifact ID: $artifact_id"
-              gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$artifact_id --silent || true
+              gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id" --silent \
+                || echo "?? 删除 Artifact 失败: $artifact_id"
             fi
-          done
-          
+          done < /tmp/artifacts.txt
+
           echo "所有 Artifacts 已清理完毕！"
 
       - name: Delete ALL Workflow Runs
@@ -35,13 +37,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "开始清空所有工作流运行日志..."
-          
-          # 获取所有运行日志的 ID 并循环删除
-          gh api -X GET repos/${{ github.repository }}/actions/runs --paginate --jq '.workflow_runs[].id' | while read -r run_id; do
-            if [ -n "$run_id" ]; then
+
+          # 先一次性收集全部 ID
+          gh api -X GET "repos/${{ github.repository }}/actions/runs?per_page=100" \
+            --paginate --jq '.workflow_runs[].id' > /tmp/runs.txt
+
+          while read -r run_id; do
+            # 跳过当前正在执行的这一次，避免自己删自己
+            if [ -n "$run_id" ] && [ "$run_id" != "${{ github.run_id }}" ]; then
               echo "正在删除日志 ID: $run_id"
-              gh api -X DELETE repos/${{ github.repository }}/actions/runs/$run_id --silent || true
+              gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$run_id" --silent \
+                || echo "?? 删除 Run 失败: $run_id"
+            else
+              echo "跳过当前运行: $run_id"
             fi
-          done
-          
+          done < /tmp/runs.txt
+
           echo "所有历史日志已清理完毕！"
