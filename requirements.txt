@@ -1,3 +1,7 @@
 pygithub
 requests
 jinja2
+commentjson
+beautifulsoup4
+lxml
+pycryptodome
