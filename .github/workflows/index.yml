@@ -7,8 +7,7 @@ on:
       - "scripts/sections.py"
       - "scripts/renderer.py"
       - "templates/**"
-      - "lives/**"
-      - ".github/workflows/index.yml"
+      - "lives/**"      
 
   workflow_run:
     workflows:
@@ -21,6 +20,7 @@ on:
 jobs:
   build-index:
     name: 自动生成首页
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     env:
       GITEE_TOKEN_FOR_INDEX: ${{ secrets.GITEE_TOKEN_FOR_INDEX }}
