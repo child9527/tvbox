@@ -1,0 +1,55 @@
+name: 识别task.json合法
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "task/task.json"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: 校验 task.json 语法
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: 校验 task.json 语法
+        run: |
+          python - << 'EOF'
+          import json
+          import sys
+
+          path = "task/task.json"
+
+          try:
+              with open(path, "r", encoding="utf-8-sig") as f:
+                  text = f.read()
+              json.loads(text)
+              print("✅ task.json 语法合法")
+          except json.JSONDecodeError as e:
+              print("❌ task.json 语法不合法")
+              print(f"   错误位置: 第 {e.lineno} 行, 第 {e.colno} 列")
+              print(f"   错误信息: {e.msg}")
+
+              # 打印出错行内容，方便定位
+              lines = e.doc.splitlines()
+              if 1 <= e.lineno <= len(lines):
+                  print(f"   出错行内容: {lines[e.lineno - 1]}")
+                  # 打印一个指针，指向出错列
+                  print(f"               {' ' * (e.colno - 1)}^")
+
+              sys.exit(1)
+          except FileNotFoundError:
+              print("❌ 找不到 task/task.json")
+              sys.exit(1)
+          EOF
