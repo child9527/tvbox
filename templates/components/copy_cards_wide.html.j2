@@ -1,0 +1,12 @@
+{% if section["items"] %}
+<div class="section-title">{{ section.title }}</div>
+{% for item in section["items"] %}
+    {% if item.content_literal %}
+    <script>const {{ item.js_var }} = {{ item.content_literal | safe }};</script>
+    {% endif %}
+    <div class="source-card wide-card">
+        <div class="source-name">{{ item.name }}</div>
+        <button class="copy-btn" onclick='copyVar(this, {{ item.js_var }})'>复制内容</button>
+    </div>
+{% endfor %}
+{% endif %}

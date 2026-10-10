@@ -1,0 +1,26 @@
+<div class="section-title">{{ section.title }}</div>
+
+<div class="filter-container">
+{% for t in section.types %}
+    <button class="filter-btn{% if loop.first %} active{% endif %}" onclick="filterType(this)">{{ t }}</button>
+{% endfor %}
+</div>
+
+<div id="software-list">
+{% for item in section["items"] %}
+<div class="card{% if item.type != section.first_type %} hidden{% endif %}" data-type="{{ item.type }}">
+    {% if item.icon %}<img class="icon" src="{{ item.icon }}">{% endif %}
+    <div>
+        <div class="name">{{ item.name }}</div>
+        <div class="version">版本号：{{ item.version }}</div>
+        <div class="size">文件大小：{{ item.file_size_text }}</div>
+        <div class="desc">{{ item.description }}</div>
+
+        <a class="btn" href="{{ item.url }}">原始下载</a>
+        {% for mirror_name, mirror_url in item.mirrors %}
+        <a class="btn" href="{{ mirror_url }}">{{ mirror_name }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+</div>

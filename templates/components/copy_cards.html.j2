@@ -1,0 +1,11 @@
+{% if section["items"] %}
+<div class="section-title">{{ section.title }}</div>
+<div class="compact-grid">
+{% for item in section["items"] %}
+    <div class="source-card">
+        <div class="source-name">{{ item.name }}</div>
+        <button class="copy-btn" onclick='copyUrl(this, {{ item.url_literal | safe }})'>复制链接</button>
+    </div>
+{% endfor %}
+</div>
+{% endif %}
