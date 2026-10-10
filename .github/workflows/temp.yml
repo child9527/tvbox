@@ -1,0 +1,37 @@
+name: 同步公共文件
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 克隆 software 仓库
+        run: |
+          git clone --depth 1 https://github.com/child9527/software.git /tmp/software
+
+      - name: 复制公共文件
+        run: |
+          mkdir -p scripts templates/components
+          cp /tmp/software/scripts/renderer.py scripts/
+          cp /tmp/software/scripts/sections.py scripts/
+          cp /tmp/software/templates/base.html.j2 templates/
+          cp /tmp/software/templates/components/*.j2 templates/components/
+
+      - name: 提交变更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scripts templates
+          if ! git diff --staged --quiet; then
+            git commit -m "自动同步 software 的公共文件"
+            git push
+          else
+            echo "无变化"
+          fi
