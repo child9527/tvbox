@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>TVBox 自动订阅中心 · Child9527</title>
+<title>Child9527</title>
 <style>
 body {
     margin: 0;
@@ -45,66 +45,165 @@ body {
 }
 
 .section-title {
-    color: #ffffff;
-    font-size: 1.6rem;
-    margin-bottom: 20px;
-}
-
-.sub-title {
     color: #4aa3ff;
-    font-size: 1.2rem;
-    margin: 25px 0 15px 0;
+    font-size: 1.3rem;
+    margin: 30px 0 15px 0;
     border-left: 4px solid #4aa3ff;
     padding-left: 10px;
 }
 
-/* 卡片网格 */
-.compact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
+/* 分类筛选按钮栏 */
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.data-card {
+.filter-btn {
     background: #2b2b2b;
+    color: #e0e0e0;
+    border: 1px solid #4aa3ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: rgba(74, 163, 255, 0.2);
+}
+
+.filter-btn.active {
+    background: #4aa3ff;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(74, 163, 255, 0.6);
+}
+
+/* 软件卡片 */
+.card {
+    background: #2b2b2b;
+    padding: 20px;
+    border-radius: 10px;
     border: 1px solid #4aa3ff;
     box-shadow: 0 0 12px rgba(74,163,255,0.4);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    transition: opacity 0.3s ease;
+}
+
+.card.hidden {
+    display: none !important;
+}
+
+.icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    margin-right: 15px;
+}
+
+.name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.version {
+    color: #b0b0b0;
+}
+
+.size {
+    color: #999999;
+}
+
+.desc {
+    margin: 8px 0;
+    color: #cccccc;
+}
+
+.btn {
+    display: inline-block;
+    margin: 5px 5px 0 0;
+    padding: 8px 12px;
+    background: #3a7bd5;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.btn:hover {
+    background: #2f6bb8;
+}
+
+/* 紧凑卡片网格 */
+.compact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.source-card {
+    background: #2b2b2b;
+    border: 1px solid #4aa3ff;
+    box-shadow: 0 0 8px rgba(74,163,255,0.3);
     border-radius: 10px;
     padding: 12px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
 }
 
-.data-label {
-    color: #e0e0e0;
+.source-name {
+    color: #ffffff;
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: bold;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.copy-pill {
-    font-size: 0.8rem;
-    color: #bbb;
+.copy-btn {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    background: #3a7bd5;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
-    background: #2b2b2b;
-    padding: 4px 10px;
-    border-radius: 12px;
-    border: 1px solid #4aa3ff;
-    transition: 0.2s;
+    transition: background 0.2s;
+    white-space: nowrap;
 }
 
-.copy-pill:hover {
-    background: #4aa3ff;
+.copy-btn:hover {
+    background: #2f6bb8;
+}
+
+/* 单独成行的卡片 */
+.wide-card {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Toast 提示浮窗 */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(74, 163, 255, 0.95);
     color: #000;
-}
-
-.copy-pill.copied {
-    background: rgba(46, 204, 113, 0.15);
-    color: #2ecc71;
-    border-color: #2ecc71;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    display: none;
+    z-index: 1000;
 }
 
 /* 底部 */
@@ -114,6 +213,7 @@ body {
     color: #888888;
     margin-top: 40px;
 }
+
 </style>
 </head>
 
@@ -123,134 +223,161 @@ body {
 <div class="navbar">
     <a href="https://child9527.github.io/">首页</a>
     <a href="https://child9527.github.io/software/">软件中心</a>
+    <a href="https://child9527.github.io/tvbox/">TVbox订阅</a>
     <a href="https://child9527.github.io/clash-latest/">科学订阅</a>
     <a href="https://child9527.github.io/about/">关于本站</a>
 </div>
 
 <!-- 内容区块 -->
 <div class="section">
-    <h2 class="section-title">TVBox 自动订阅中心</h2>
+<h2>TVBox订阅中心</h2>
 
-    <!-- 1. 点播接口 -->
-    <div class="sub-title">🎬 点播接口</div>
-    <div class="compact-grid">
-
-        <div class="data-card">
-            <span class="data-label">X</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/X.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">js</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/js.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">pj</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/pj.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">xm</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/xm.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">api</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/api.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">fty</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/fty.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">jsm</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/jsm.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">one</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/one.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">mtv6</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/mtv6.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">99188</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/99188.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">leevi</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/leevi.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">newwex</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/newwex.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">curated</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/curated.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">dianshi</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/dianshi.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">yoursmile66</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/yoursmile66.json" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">curated_universal</span>
-            <span class="copy-pill" data-value="https://gitee.com/child9527/mybox/raw/master/json/curated_universal.json" onclick="copy(this)">复制链接</span>
-        </div>
-
+<div class="section-title">🎬 点播接口</div>
+<div class="compact-grid">
+    <div class="source-card">
+        <div class="source-name">X</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/X.json")'>复制链接</button>
     </div>
-
-    <!-- 2. 直播接口 -->
-    <div class="sub-title">📺 直播接口</div>
-    <div class="compact-grid">
-
-        <div class="data-card">
-            <span class="data-label">Dlao</span>
-            <span class="copy-pill" data-value="https://gh-proxy.com/https://github.com/child9527/tvbox/raw/refs/heads/main/lives/Dlao.txt" onclick="copy(this)">复制链接</span>
-        </div>
-
-        <div class="data-card">
-            <span class="data-label">Adult</span>
-            <span class="copy-pill" data-value="https://gh-proxy.com/https://github.com/child9527/tvbox/raw/refs/heads/main/lives/Adult.txt" onclick="copy(this)">复制链接</span>
-        </div>
-
+    <div class="source-card">
+        <div class="source-name">js</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/js.json")'>复制链接</button>
     </div>
-
-    <div class="footer">
-        自动生成时间：2026-10-10 05:24:48
+    <div class="source-card">
+        <div class="source-name">pj</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/pj.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">xm</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/xm.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">api</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/api.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">fty</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/fty.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">jsm</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/jsm.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">one</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/one.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">mtv6</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/mtv6.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">99188</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/99188.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">leevi</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/leevi.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">newwex</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/newwex.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">curated</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/curated.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">dianshi</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/dianshi.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">yoursmile66</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/yoursmile66.json")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">curated_universal</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gitee.com/child9527/mybox/raw/master/json/curated_universal.json")'>复制链接</button>
+    </div>
+</div>
+<div class="section-title">📺 直播接口</div>
+<div class="compact-grid">
+    <div class="source-card">
+        <div class="source-name">Dlao</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gh-proxy.com/https://github.com/child9527/tvbox/raw/refs/heads/main/lives/Dlao.txt")'>复制链接</button>
+    </div>
+    <div class="source-card">
+        <div class="source-name">Adult</div>
+        <button class="copy-btn" onclick='copyUrl(this, "https://gh-proxy.com/https://github.com/child9527/tvbox/raw/refs/heads/main/lives/Adult.txt")'>复制链接</button>
     </div>
 </div>
 
+<div class="footer">
+    自动生成时间：2026-10-10 14:49:27
+</div>
+</div>
+
+<div id="toast" class="toast">链接已成功复制到剪贴板！</div>
+
 <script>
-function copy(el) {
-    const value = el.getAttribute("data-value");
-    navigator.clipboard.writeText(value).then(() => {
-        el.classList.add("copied");
-        el.innerText = "已复制";
-        setTimeout(() => {
-            el.classList.remove("copied");
-            el.innerText = "复制链接";
-        }, 1500);
+function filterType(btn) {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const selectedType = btn.innerText.trim();
+
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        const cardType = card.getAttribute('data-type');
+        if (cardType === selectedType) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
     });
 }
+
+function copyUrl(btn, url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast("已复制：" + url);
+        const originalText = btn.innerText;
+        btn.innerText = "已复制";
+        btn.style.background = "#28a745";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "#3a7bd5";
+        }, 2000);
+    }).catch(err => {
+        console.error("复制失败:", err);
+    });
+}
+
+function copyVar(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("已复制到剪贴板！");
+        const originalText = btn.innerText;
+        btn.innerText = "已复制";
+        btn.style.background = "#28a745";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "#3a7bd5";
+        }, 2000);
+    }).catch(err => {
+        console.error("复制失败:", err);
+        showToast("复制失败：" + err);
+    });
+}
+
+function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.style.display = "block";
+    setTimeout(() => {
+        toast.style.display = "none";
+    }, 2000);
+}
 </script>
+
 
 </body>
 </html>
