@@ -1,4 +1,4 @@
-name: 生成首页index.html
+name: 生成TVbox订阅页面
 
 on:
   push:
