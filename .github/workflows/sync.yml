@@ -6,8 +6,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "task/task.json"
       - "json/**"
+
+  workflow_run:
+    workflows: ["识别task.json合法"]
+    types:
+      - completed
 
 # 全局环境变量：强制所有 Step 及 Python 脚本环境统一使用北京时间
 env:
@@ -16,6 +20,7 @@ env:
 jobs:
   sync:
     name: 设置与同步任务
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
