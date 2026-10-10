@@ -231,7 +231,7 @@ body {
 
 <!-- 内容区块 -->
 <div class="section">
-<h2>{% block page_title %}软件中心{% endblock %}</h2>
+<h2>{{ page_title | default("Child9527") }}</h2>
 
 {% for section in sections %}
     {% if section.type == "software_list" %}
