@@ -1,5 +1,5 @@
 /* ============================================================
-   软件中心 / 科学订阅 / TVbox - 统一样式表
+   统一样式表
    ============================================================ */
 
 /* 基础重置与全局 */
@@ -152,7 +152,7 @@ body {
     background: #2f6bb8;
 }
 
-/* 紧凑卡片网格（音源等） */
+/* 紧凑卡片网格 */
 .compact-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -232,6 +232,87 @@ body {
     font-size: 0.9rem;
 }
 
+/* ========== 密码门 ========== */
+.auth-gate {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.auth-gate.hidden {
+    display: none;
+}
+
+.auth-box {
+    background: #2b2b2b;
+    border: 1px solid #4aa3ff;
+    box-shadow: 0 0 24px rgba(74, 163, 255, 0.45);
+    border-radius: 12px;
+    padding: 32px 28px;
+    width: 90%;
+    max-width: 360px;
+    text-align: center;
+}
+
+.auth-box h2 {
+    margin: 0 0 20px;
+    color: #ffffff;
+    font-size: 1.25rem;
+}
+
+.auth-box input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #4aa3ff;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    font-size: 1rem;
+    outline: none;
+    margin-bottom: 12px;
+}
+
+.auth-box input:focus {
+    box-shadow: 0 0 0 2px rgba(74, 163, 255, 0.4);
+}
+
+.auth-box button {
+    width: 100%;
+    padding: 12px;
+    background: #3a7bd5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.auth-box button:hover {
+    background: #2f6bb8;
+}
+
+.auth-error {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    min-height: 1.2em;
+}
+
+.auth-box.shake {
+    animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
 /* 移动端适配 */
 @media (max-width: 600px) {
     .navbar {
@@ -261,5 +342,9 @@ body {
 
     .compact-grid {
         grid-template-columns: 1fr;
+    }
+
+    .auth-box {
+        padding: 24px 20px;
     }
 }
