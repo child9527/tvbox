@@ -75,7 +75,7 @@
     });
 })();
 
-/* ---------- 原有功能 ---------- */
+/* ---------- 软件分类筛选 ---------- */
 function filterType(btn) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(b => b.classList.remove('active'));
@@ -87,6 +87,23 @@ function filterType(btn) {
     cards.forEach(card => {
         const cardType = card.getAttribute('data-type');
         if (cardType === selectedType) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+/* ---------- 音源分类筛选（guoyue2010 / pdone） ---------- */
+function filterSourceType(btn) {
+    const buttons = btn.parentElement.querySelectorAll('.filter-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const selectedType = btn.innerText.trim();
+    const cards = document.querySelectorAll('.source-card');
+    cards.forEach(card => {
+        if (card.getAttribute('data-type') === selectedType) {
             card.classList.remove('hidden');
         } else {
             card.classList.add('hidden');
