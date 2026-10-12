@@ -1,85 +1,72 @@
-/* ============================================================
-   统一样式表
-   ============================================================ */
-
-/* 基础重置与全局 */
-* {
-    box-sizing: border-box;
-}
-
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-                 "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue",
-                 Arial, sans-serif;
-    background: #1e1e1e;
+    padding: 0;
+    background: #1a1a1a;
     color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.5;
 }
 
-/* 顶部导航栏 */
+/* ---------- 导航栏 ---------- */
 .navbar {
-    width: 100%;
-    background: #2b2b2b;
-    border-bottom: 2px solid #4aa3ff;
+    background: #111;
     padding: 12px 20px;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 20px;
-    align-items: center;
-    box-shadow: 0 0 12px rgba(74, 163, 255, 0.3);
+    gap: 16px;
+    border-bottom: 1px solid #333;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .navbar a {
-    color: #e0e0e0;
+    color: #4aa3ff;
     text-decoration: none;
-    font-size: 16px;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: background 0.2s, color 0.2s;
+    font-size: 0.95rem;
 }
 
 .navbar a:hover {
-    background: #4aa3ff;
-    color: #000;
+    text-decoration: underline;
 }
 
-/* 内容区块 */
+/* ---------- 主内容区 ---------- */
 .section {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 0 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
 }
 
-.section > h2 {
-    margin-top: 0;
+.section h2 {
+    margin: 0 0 20px;
+    font-size: 1.6rem;
+    color: #fff;
 }
 
 .section-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 28px 0 14px;
     color: #4aa3ff;
-    font-size: 1.3rem;
-    margin: 30px 0 15px 0;
-    border-left: 4px solid #4aa3ff;
-    padding-left: 10px;
 }
 
-/* 分类筛选按钮栏 */
+/* ---------- 筛选按钮 ---------- */
 .filter-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .filter-btn {
     background: #2b2b2b;
     color: #e0e0e0;
     border: 1px solid #4aa3ff;
-    padding: 8px 16px;
     border-radius: 20px;
+    padding: 6px 16px;
     cursor: pointer;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    transition: background 0.2s;
 }
 
 .filter-btn:hover {
@@ -90,23 +77,27 @@ body {
     background: #4aa3ff;
     color: #000;
     font-weight: bold;
-    box-shadow: 0 0 8px rgba(74, 163, 255, 0.6);
 }
 
-/* 软件卡片 */
+/* ---------- 软件卡片 ---------- */
+#software-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
 .card {
     background: #2b2b2b;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #4aa3ff;
-    box-shadow: 0 0 12px rgba(74, 163, 255, 0.4);
-    margin-bottom: 20px;
+    border: 1px solid #3a3a3a;
+    border-radius: 12px;
+    padding: 16px;
     display: flex;
     align-items: flex-start;
     transition: opacity 0.3s ease;
 }
 
-.card.hidden {
+.card.hidden,
+.source-card.hidden {
     display: none !important;
 }
 
@@ -120,39 +111,41 @@ body {
 }
 
 .name {
-    font-size: 20px;
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #ffffff;
+    color: #fff;
+    margin-bottom: 4px;
 }
 
 .version,
 .size {
-    color: #999999;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #aaa;
 }
 
 .desc {
-    margin: 8px 0;
-    color: #cccccc;
+    font-size: 0.9rem;
+    color: #ccc;
+    margin: 8px 0 12px;
 }
 
 .btn {
     display: inline-block;
-    margin: 5px 5px 0 0;
-    padding: 8px 12px;
     background: #3a7bd5;
-    color: white;
-    border-radius: 5px;
+    color: #fff;
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: background 0.2s;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-right: 8px;
+    margin-bottom: 6px;
 }
 
 .btn:hover {
-    background: #2f6bb8;
+    background: #2a6bc5;
 }
 
-/* 紧凑卡片网格 */
+/* ---------- 音源复制卡片网格 ---------- */
 .compact-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -179,60 +172,65 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
 .copy-btn {
-    font-size: 0.85rem;
-    padding: 6px 12px;
     background: #3a7bd5;
-    color: #ffffff;
+    color: #fff;
     border: none;
     border-radius: 6px;
+    padding: 6px 12px;
     cursor: pointer;
-    transition: background 0.2s;
+    font-size: 0.85rem;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .copy-btn:hover {
-    background: #2f6bb8;
+    background: #2a6bc5;
 }
 
-/* 单独成行的卡片 */
+/* ---------- 宽卡片（规则文本） ---------- */
 .wide-card {
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 12px;
+    background: #2b2b2b;
+    border: 1px solid #4aa3ff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
 }
 
-/* Toast 提示浮窗 */
+.wide-card .source-name {
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+/* ---------- Toast ---------- */
 .toast {
+    display: none;
     position: fixed;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(74, 163, 255, 0.95);
-    color: #000;
-    font-weight: bold;
-    padding: 10px 20px;
-    border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    display: none;
-    z-index: 1000;
-    max-width: 90%;
-    text-align: center;
-    word-break: break-all;
+    background: #28a745;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 9999;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* 底部 */
+/* ---------- Footer ---------- */
 .footer {
-    text-align: center;
-    padding: 20px;
-    color: #888888;
     margin-top: 40px;
-    font-size: 0.9rem;
+    text-align: center;
+    color: #666;
+    font-size: 0.85rem;
 }
 
-/* ========== 密码门 ========== */
+/* ---------- 密码门 ---------- */
 .auth-gate {
     position: fixed;
     inset: 0;
@@ -240,7 +238,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: 10000;
 }
 
 .auth-gate.hidden {
@@ -250,50 +248,44 @@ body {
 .auth-box {
     background: #2b2b2b;
     border: 1px solid #4aa3ff;
-    box-shadow: 0 0 24px rgba(74, 163, 255, 0.45);
     border-radius: 12px;
-    padding: 32px 28px;
-    width: 90%;
-    max-width: 360px;
+    padding: 28px 32px;
     text-align: center;
+    min-width: 280px;
 }
 
 .auth-box h2 {
-    margin: 0 0 20px;
-    color: #ffffff;
-    font-size: 1.25rem;
+    margin: 0 0 18px;
+    color: #fff;
+    font-size: 1.2rem;
 }
 
 .auth-box input {
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #4aa3ff;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #e0e0e0;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #fff;
     font-size: 1rem;
-    outline: none;
     margin-bottom: 12px;
-}
-
-.auth-box input:focus {
-    box-shadow: 0 0 0 2px rgba(74, 163, 255, 0.4);
 }
 
 .auth-box button {
     width: 100%;
-    padding: 12px;
-    background: #3a7bd5;
-    color: #fff;
+    padding: 10px;
+    background: #4aa3ff;
+    color: #000;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 1rem;
+    font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s;
 }
 
 .auth-box button:hover {
-    background: #2f6bb8;
+    background: #3a93ef;
 }
 
 .auth-error {
@@ -304,47 +296,11 @@ body {
 }
 
 .auth-box.shake {
-    animation: shake 0.4s ease;
+    animation: shake 0.4s;
 }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-8px); }
     40%, 80% { transform: translateX(8px); }
-}
-
-/* 移动端适配 */
-@media (max-width: 600px) {
-    .navbar {
-        padding: 10px 12px;
-        gap: 8px 12px;
-    }
-
-    .navbar a {
-        font-size: 14px;
-        padding: 5px 8px;
-    }
-
-    .section {
-        margin: 24px auto;
-        padding: 0 12px;
-    }
-
-    .card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .icon {
-        margin-bottom: 12px;
-        margin-right: 0;
-    }
-
-    .compact-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .auth-box {
-        padding: 24px 20px;
-    }
 }
