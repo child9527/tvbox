@@ -690,6 +690,7 @@
       "ext": {
         "commonConfig": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/peizhi.json",
         "siteUrl": [
+          "https://woggpan.888484.xyz",
           "https://www.wogg.net",
           "https://wogg.xxooo.cf",
           "http://woggpan.xxooo.cf"
@@ -707,11 +708,26 @@
       "ext": {
         "commonConfig": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/peizhi.json",
         "siteUrl": [
-          "https://123.666291.xyz",
+          "https://333.333291.xyz/",
+          "https://www.muou.asia",
           "https://666.666291.xyz",
-          "https://www.muou.site"
+          "https://123.666291.xyz"
         ],
         "filter": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/wogg.json"
+      }
+    },
+    {
+      "key": "花卷",
+      "name": "❀花卷",
+      "type": 3,
+      "api": "csp_HuaJuan",
+      "searchable": 1,
+      "changeable": 0,
+      "ext": {
+        "commonConfig": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/peizhi.json",
+        "siteUrl": [
+          "https://www.hjzhencai.top/"
+        ]
       }
     },
     {
@@ -788,7 +804,7 @@
       "ext": {
         "commonConfig": "https://gh-proxy.com/https://raw.githubusercontent.com/yoursmile66/TVBox/main/json/peizhi.json",
         "siteUrl": [
-          "https://tv.yydsys.top",
+          "https://yydsys.de5.net",
           "https://tv.yydsys.cc",
           "https://tv.214521.xyz"
         ],

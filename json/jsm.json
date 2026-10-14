@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;7d204aeb2bc2d6c89aaa18460492b67d",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;bf32cf121ae92e49326a9fed7a82b76b",
   "lives": [
     {
       "name": "migu",
@@ -1202,6 +1202,18 @@
       "type": 3,
       "api": "csp_QingtingFM",
       "searchable": 0,
+      "quickSearch": 0,
+      "changeable": 0,
+      "style": {
+        "type": "list"
+      }
+    },
+    {
+      "key": "听友听书",
+      "name": "听友 • 听书",
+      "type": 3,
+      "api": "csp_TingTingyou",
+      "searchable": 1,
       "quickSearch": 0,
       "changeable": 0,
       "style": {
