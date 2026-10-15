@@ -1,0 +1,34 @@
+name: 临时TVBox客户端UA下载测试
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 使用 okhttp 客户端 UA 下载到根目录
+        run: |
+          URL="https://9877.kstore.space/sun.json"
+          
+          echo "正在以 TVBox 客户端身份尝试下载: $URL"
+          
+          curl -sL "$URL" \
+            -H "User-Agent: okhttp/3.12.0" \
+            -o sun.json
+
+          echo "下载完成，文件大小和前 200 字符："
+          ls -lh sun.json
+          head -c 200 sun.json
+          echo ""
+
+      - name: 提交并推送测试文件（存放在根目录，避开 json/ 目录）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sun.json
+          git commit -m "临时下载测试 sun.json 到根目录 [skip ci]" || echo "无变更"
+          git push origin main
