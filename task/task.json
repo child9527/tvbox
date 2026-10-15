@@ -5,7 +5,7 @@
     "md5": "8422cb8083b11826c8a73aa9b154bc76",
     "last_modified": "2026-10-15 04:22:30",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:37",
+    "timestamp": "2026-10-15 13:36:36",
     "md5_changed": false
   },
   {
@@ -14,7 +14,7 @@
     "md5": "1c836b0c4ee6c890df19d60441e5c2c6",
     "last_modified": "2026-10-10 05:24:00",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:37",
+    "timestamp": "2026-10-15 13:36:37",
     "md5_changed": false
   },
   {
@@ -23,7 +23,7 @@
     "md5": "3d45ad6287f7863c9bab755fde430247",
     "last_modified": "2026-09-19 15:32:31",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:37",
+    "timestamp": "2026-10-15 13:36:37",
     "md5_changed": false
   },
   {
@@ -32,7 +32,7 @@
     "md5": "6085049618a6bc8b59b6876f8b06cb2c",
     "last_modified": "2026-10-15 04:22:32",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:38",
+    "timestamp": "2026-10-15 13:36:38",
     "md5_changed": false
   },
   {
@@ -41,7 +41,7 @@
     "md5": "6ba9c81a00ac64e5fc5f654436c5a448",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:39",
+    "timestamp": "2026-10-15 13:36:39",
     "md5_changed": false
   },
   {
@@ -49,8 +49,8 @@
     "url": "https://raw.githubusercontent.com/chitue/dongliTV/refs/heads/main/api",
     "md5": null,
     "last_modified": null,
-    "status": "invalid_json",
-    "timestamp": "2026-10-15 13:31:40"
+    "status": "decrypt_failed",
+    "timestamp": "2026-10-15 13:36:40"
   },
   {
     "name": "xm",
@@ -58,7 +58,7 @@
     "md5": "514a185e322a6564ab72693eb3342077",
     "last_modified": "2026-09-18 08:56:40",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:40",
+    "timestamp": "2026-10-15 13:36:57",
     "md5_changed": false
   },
   {
@@ -67,7 +67,7 @@
     "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
     "last_modified": "2026-09-16 11:59:45",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:41",
+    "timestamp": "2026-10-15 13:36:58",
     "md5_changed": false
   },
   {
@@ -76,7 +76,7 @@
     "md5": "b1647fe5d779fdedc9b1f75b515a267f",
     "last_modified": "2026-09-19 15:32:32",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:43",
+    "timestamp": "2026-10-15 13:37:00",
     "md5_changed": false
   },
   {
@@ -85,7 +85,7 @@
     "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
     "last_modified": "2026-09-16 11:59:48",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:44",
+    "timestamp": "2026-10-15 13:37:01",
     "md5_changed": false
   },
   {
@@ -94,7 +94,7 @@
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:44",
+    "timestamp": "2026-10-15 13:37:01",
     "md5_changed": false
   },
   {
@@ -103,7 +103,7 @@
     "md5": "a54892e61b5f0b0dfbc9a63196a5c6e9",
     "last_modified": "2026-10-15 09:57:36",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:45",
+    "timestamp": "2026-10-15 13:37:02",
     "md5_changed": false
   },
   {
@@ -112,17 +112,17 @@
     "md5": "b606028c027b2daa688fd5fd7cf0aedd",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:46",
+    "timestamp": "2026-10-15 13:37:03",
     "md5_changed": false
   },
   {
     "name": "fty",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/fty.json",
-    "md5": "bc0453e6bc382dc944b9a92730aebeda",
-    "last_modified": "2026-10-13 07:21:46",
+    "md5": "1fdc08839773c5af592c2f3aa67b6560",
+    "last_modified": "2026-10-15 13:37:04",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:46",
-    "md5_changed": false
+    "timestamp": "2026-10-15 13:37:04",
+    "md5_changed": true
   },
   {
     "name": "jsm",
@@ -130,7 +130,7 @@
     "md5": "77eda4493ad0838ba428f912f2621e80",
     "last_modified": "2026-10-15 04:22:38",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:46",
+    "timestamp": "2026-10-15 13:37:04",
     "md5_changed": false
   },
   {
@@ -139,7 +139,7 @@
     "md5": "1cef4778f2a198edaf450f24e3149dab",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-15 13:31:47",
+    "timestamp": "2026-10-15 13:37:05",
     "md5_changed": false
   }
 ]
