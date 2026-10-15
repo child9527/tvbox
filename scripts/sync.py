@@ -43,7 +43,7 @@ def test_mirror(mirror):
 def pick_best_mirror():
     mirrors = load_mirrors()
     if not mirrors:
-        return "https://gh-proxy.com/"
+        return "https://v4.gh-proxy.org/"
     results = {}
     with ThreadPoolExecutor(max_workers=len(mirrors)) as ex:
         futures = [ex.submit(test_mirror, m) for m in mirrors]
