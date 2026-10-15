@@ -3,7 +3,7 @@ name: Parse TVBox Config
 on:
   workflow_dispatch:  # 支持手动触发
   schedule:
-    - cron: '0 */6 * * *'  # 可选：每6小时自动运行一次，不需要可删掉
+    - cron: '0 */6 * * *'  # 每6小时自动运行一次
 
 jobs:
   parse:
@@ -22,32 +22,60 @@ jobs:
 
       - name: 安装依赖
         run: |
-          pip install requests
+          pip install requests beautifulsoup4
 
-      - name: 运行解析脚本并生成 temp.json
+      - name: 模拟后端请求并提取纯净 JSON
         run: |
           python - << 'EOF'
           import requests
-          import re
-          import html
+          import json
+          from bs4 import BeautifulSoup
 
-          url = "https://my9.ltd/tvin/"
-          payload = {"action": "parse_url", "url": "https://16151.kstore.space"}
-          response = requests.post(url, data=payload)
+          # 1. 向解析网站发送 POST 请求（模拟你点击“在线解析”）
+          target_url = "https://my9.ltd/tvin/"
+          payload = {
+              "action": "parse_url",
+              "url": "https://16151.kstore.space"
+          }
           
-          html_content = response.text
+          print(f"正在请求解析后端: {target_url}")
+          response = requests.post(target_url, data=payload)
+          response.raise_for_status()
 
-          # 提取服务器解析后返回的 JSON 内容（适配网页中的 textarea 或 pre 标签）
-          match = re.search(r'<textarea[^>]*>(.*?)</textarea>', html_content, re.DOTALL)
-          if match:
-              json_text = html.unescape(match.group(1))
+          # 2. 解析返回的 HTML 页面
+          soup = BeautifulSoup(response.text, 'html.parser')
+
+          # 3. 在页面中查找包含原始 JSON 数据的区块（通常在类名为 json-raw 或 pre/code 标签中）
+          json_text = None
+          
+          # 尝试查找 .json-raw 元素
+          raw_div = soup.find(class_="json-raw")
+          if raw_div:
+              json_text = raw_div.get_text()
           else:
-              # 如果没有 textarea，则保存完整页面源码或根据实际情况提取
-              json_text = html_content
+              # 备用方案：查找所有 <pre> 或 <code> 标签
+              for pre in soup.find_all(['pre', 'code']):
+                  text = pre.get_text()
+                  if text.strip().startswith('{') and text.strip().endswith('}'):
+                      json_text = text
+                      break
 
-          with open("temp.json", "w", encoding="utf-8") as f:
-              f.write(json_text)
-          print("✅ temp.json 生成成功")
+          if not json_text:
+              # 如果都没找到，尝试直接从文本中用正则匹配大括号包裹的 JSON 内容
+              import re
+              match = re.search(r'(\{[\s\S]*\})', response.text)
+              if match:
+                  json_text = match.group(1)
+
+          if json_text:
+              # 验证是否为合法的 JSON 并进行格式化
+              parsed_data = json.loads(json_text)
+              with open("temp.json", "w", encoding="utf-8") as f:
+                  json.dump(parsed_data, f, ensure_ascii=False, indent=2)
+              print("✅ 成功提取并保存纯净的 temp.json")
+          else:
+              print("✗ 未能在页面中找到解析后的 JSON 数据")
+              exit(1)
           EOF
 
       - name: 自动提交更改到仓库
@@ -55,4 +83,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add temp.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: 更新 temp.json" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: 自动更新 temp.json" && git push)
