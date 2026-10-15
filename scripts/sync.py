@@ -324,9 +324,13 @@ def main():
         if raw_content.startswith("\ufeff"):
             raw_content = raw_content[1:]
 
-        # ② 判断是否加密 → 解密/清洗
+        # ② 解密与清洗逻辑（如果无法直接解析为 JSON，则尝试解密）
         content = raw_content
-        if is_encrypted(content):
+        try:
+            cleaned_test = clean_comments(content)
+            commentjson.loads(cleaned_test) if 'commentjson' in globals() else json.loads(cleaned_test)
+        except Exception:
+            print(f"  🔒 检测到 [{name}] 内容非标准JSON，尝试解密...")
             content = decrypt(content, original_url=target_url)
             if not content:
                 print(f"❌ [{name}] 本地与网页端双重解密均失败或结果非标准JSON，跳过该任务")
