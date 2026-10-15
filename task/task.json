@@ -81,15 +81,6 @@
     "md5_changed": false
   },
   {
-    "name": "one",
-    "url": "https://raw.githubusercontent.com/child9527/tvbox/main/json/one.json",
-    "md5": "6ae654c4e3d9f356864e2fa5b4eabaa3",
-    "last_modified": "2026-09-16 11:59:48",
-    "status": "ok",
-    "timestamp": "2026-10-15 14:32:29",
-    "md5_changed": false
-  },
-  {
     "name": "js",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/js.json",
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
