@@ -61,3 +61,103 @@ def pick_best_mirror():
     if not results:
         return mirrors[0]
     return sorted(results, key=results.get)[0]
+
+# ============================================================
+# 2. 路径处理逻辑（强制替换镜像版）
+# ============================================================
+def parse_github_raw(url):
+    m = re.match(
+        r'https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.*)',
+        url
+    )
+    if not m:
+        return None
+    owner, repo, branch, path = m.groups()
+    base_dir = os.path.dirname(path)
+    return owner, repo, branch, base_dir
+
+def replace_dot_slash(task_url, best_mirror, text):
+    info = parse_github_raw(task_url)
+
+    if info:
+        owner, repo, branch, base_dir = info
+        dir_part = f"{base_dir}/" if base_dir else ""
+        prefix = f'{best_mirror}https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{dir_part}'
+    else:
+        prefix = task_url.rsplit('/', 1)[0] + "/"
+
+    prefix = re.sub(r'(?<!:)/{2,}', '/', prefix)
+
+    out = []
+    i = 0
+    n = len(text)
+
+    while i < n:
+        if text[i] == '"' and i+2 < n and text[i+1] == '.' and text[i+2] == '/':
+            out.append('"')
+            start = i + 3
+            j = start
+
+            while j < n and text[j] not in [';', '"']:
+                j += 1
+
+            url_part = text[start:j]
+            end_char = text[j]
+
+            url_part = url_part.lstrip('/')
+
+            new_url = prefix + url_part
+            out.append(new_url)
+            out.append(end_char)
+
+            i = j + 1
+        else:
+            out.append(text[i])
+            i += 1
+
+    return "".join(out)
+
+def replace_relative_paths(content, best_mirror):
+    pattern = r'(?:https?://[^"\'\s]+/)*(https://raw\.githubusercontent\.com/)'
+    content = re.sub(pattern, r'%s\1' % best_mirror, content)
+    return content
+
+# ============================================================
+# JSON 清理与解密
+# ============================================================
+def extract_raw(url):
+    if not isinstance(url, str):
+        return False, url, ""
+    
+    pat = r'^https?://(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
+    m = re.match(pat, url)
+    if not m:
+        return False, url, ""
+    
+    raw = m.group(0)
+    raw = re.sub(
+        r'https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)',
+        r'https://raw.githubusercontent.com/\1/\2/\3/\4',
+        raw
+    )
+    raw = raw.replace("/refs/heads/", "/")
+    return True, raw, ""
+
+def clean_comments(text):
+    text = text.replace("\r", "")
+    text = re.sub(r"/\*[\s\S]*?\*/", "", text)
+    lines = []
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("//") or s.startswith("#"):
+            continue
+        lines.append(line)
+    t = "\n".join(lines)
+    t = re.sub(r",\s*([\}\]])", r"\1", t)
+    return t
+
+def is_encrypted(text):
+    text = text.strip()
+    if all(c in "0123456789abcdefABCDEF" for c in text):
+        return ("2423" in text and "2324" in text)
+    return False
