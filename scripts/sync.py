@@ -155,7 +155,7 @@ def is_encrypted(text):
         return ("2423" in text and "2324" in text)
     return False
 
-def decrypt(text, original_url=""):
+def decrypt(text, original_url="", best_mirror="https://v4.gh-proxy.org/"):
     tmp_in = "tmp_in.txt"
     tmp_out = "tmp_out.json"
     
@@ -192,17 +192,26 @@ def decrypt(text, original_url=""):
     if local_success:
         return decrypted_content
 
-    # 方式 2：如果本地解密失败或生成的不是标准 JSON，尝试网页端解析兜底
+    # 方式 2：如果本地解密失败或生成的不是标准 JSON，尝试网页端解析兜底（自动拼接镜像加速）
     if original_url:
-        print(f"  🔄 正在尝试网页端解析兜底: {original_url}")
+        # 如果是 GitHub 原始链接，为其加上镜像加速，防止网页端后端请求超时
+        parse_target_url = original_url
+        if "raw.githubusercontent.com" in parse_target_url or "github.com" in parse_target_url:
+            if not parse_target_url.startswith("http"):
+                parse_target_url = "https://" + parse_target_url
+            # 如果还没加过镜像，则拼接上最快镜像
+            if not parse_target_url.startswith(best_mirror):
+                parse_target_url = best_mirror + parse_target_url
+
+        print(f"  🔄 正在尝试网页端解析兜底 (带镜像): {parse_target_url}")
         try:
             from bs4 import BeautifulSoup
             target_url = "https://my9.ltd/tvin/"
             payload = {
                 "action": "parse_url",
-                "url": original_url
+                "url": parse_target_url
             }
-            response = requests.post(target_url, data=payload, headers=HEADERS, timeout=15)
+            response = requests.post(target_url, data=payload, headers=HEADERS, timeout=20)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 json_text = None
@@ -331,7 +340,7 @@ def main():
             commentjson.loads(cleaned_test) if 'commentjson' in globals() else json.loads(cleaned_test)
         except Exception:
             print(f"  🔒 检测到 [{name}] 内容非标准JSON，尝试解密...")
-            content = decrypt(content, original_url=target_url)
+            content = decrypt(content, original_url=target_url, best_mirror=best_mirror)
             if not content:
                 print(f"❌ [{name}] 本地与网页端双重解密均失败或结果非标准JSON，跳过该任务")
                 t["status"] = "decrypt_failed"
