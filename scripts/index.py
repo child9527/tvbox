@@ -152,7 +152,7 @@ LIVES_DIR = "lives"
 GITHUB_RAW_PREFIX = "https://github.com/child9527/tvbox/raw/refs/heads/main/lives/"
 
 # 镜像前缀
-GH_PROXY = "https://gh-proxy.com/"
+GH_PROXY = "https://v4.gh-proxy.org/"
 
 # 输出文件
 OUTPUT = "index.html"
