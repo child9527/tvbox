@@ -1,6 +1,8 @@
-https://gh-proxy.com
-https://wget.la
-https://ghproxy.net
+https://v4.gh-proxy.org/
+https://v6.gh-proxy.org/
+https://gh-proxy.org/
+https://cdn.gh-proxy.org/
+https://axisnow.gh-proxy.org/
 https://ghfast.top
 https://gh.ddlc.top
 https://ghproxy.vip
