@@ -29,7 +29,7 @@ def load_mirrors():
     return mirrors
 
 def test_mirror(mirror):
-    test_url = mirror + "https://raw.githubusercontent.com/alantang1977/X/main/X.json"
+    test_url = mirror + "https://github.com/child9527/tvbox/raw/refs/heads/main/Readme.md"
     try:
         start = time.time()
         r = requests.get(test_url, headers=HEADERS, timeout=4)
