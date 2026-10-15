@@ -11,6 +11,8 @@ HEADERS = {
 }
 TASK_FILE = os.path.join("task", "task.json")
 MIRROR_FILE = os.path.join("scripts", "mirror.txt")
+JSON_DIR = "json"
+REPO_RAW_PREFIX = "https://raw.githubusercontent.com/child9527/tvbox/main/json/"
 
 # ============================================================
 # 1. 镜像测速
@@ -194,12 +196,10 @@ def decrypt(text, original_url="", best_mirror="https://v4.gh-proxy.org/"):
 
     # 方式 2：如果本地解密失败或生成的不是标准 JSON，尝试网页端解析兜底（自动拼接镜像加速）
     if original_url:
-        # 如果是 GitHub 原始链接，为其加上镜像加速，防止网页端后端请求超时
         parse_target_url = original_url
         if "raw.githubusercontent.com" in parse_target_url or "github.com" in parse_target_url:
             if not parse_target_url.startswith("http"):
                 parse_target_url = "https://" + parse_target_url
-            # 如果还没加过镜像，则拼接上最快镜像
             if not parse_target_url.startswith(best_mirror):
                 parse_target_url = best_mirror + parse_target_url
 
@@ -237,165 +237,343 @@ def decrypt(text, original_url="", best_mirror="https://v4.gh-proxy.org/"):
     return ""
 
 # ============================================================
-# 加载任务
+# 工具：判断 URL / 本地文件状态
 # ============================================================
-def load_tasks():
+def default_url(name):
+    return f"{REPO_RAW_PREFIX}{name}.json"
+
+def is_self_hosted_url(url, name):
+    """是否为指向本仓库 json/{name}.json 的占位 URL（无需远程拉取）"""
+    if not url or not name:
+        return False
+    u = url.strip()
+    candidates = [
+        f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{name}.json",
+        f"https://raw.githubusercontent.com/child9527/tvbox/refs/heads/main/json/{name}.json",
+        f"https://github.com/child9527/tvbox/raw/main/json/{name}.json",
+        f"https://github.com/child9527/tvbox/raw/refs/heads/main/json/{name}.json",
+    ]
+    return u in candidates
+
+def is_effectively_empty_json(filepath):
+    """空文件或仅空白，视为占位，不触发下载"""
+    if not os.path.isfile(filepath):
+        return True
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            text = f.read().strip()
+        return text == "" or text in ("{}", "[]", "null")
+    except Exception:
+        return False
+
+def load_task_json():
     try:
         with open(TASK_FILE, "r", encoding="utf-8") as f:
-            old_tasks = json.load(f)
+            data = json.load(f)
+        if not isinstance(data, list):
+            print("❌ task.json 根节点必须是数组")
+            raise SystemExit(1)
+        return data
     except FileNotFoundError:
-        old_tasks = []
+        return []
     except Exception as e:
         print(f"❌ task.json 解析失败: {e}")
         print("❌ 为避免覆盖 url，本次直接退出")
         raise SystemExit(1)
 
-    os.makedirs("json", exist_ok=True)
-    local_files = [f for f in os.listdir("json") if f.lower().endswith(".json")]
-    local_names_set = {os.path.splitext(f)[0].lower(): f for f in local_files}
+def scan_local_json():
+    """返回 {lower_name: base_name}，base_name 保留原始大小写（去扩展名）"""
+    os.makedirs(JSON_DIR, exist_ok=True)
+    result = {}
+    for fname in os.listdir(JSON_DIR):
+        if not fname.lower().endswith(".json"):
+            continue
+        base = os.path.splitext(fname)[0]
+        if not base:
+            continue
+        result[base.lower()] = base
+    return result
 
-    old_tasks_map = {}
-    for t in old_tasks:
-        name = os.path.splitext(t.get("name", ""))[0].strip()
-        if name:
-            t["name"] = name
-            old_tasks_map[name.lower()] = t
+def detect_trigger():
+    """
+    根据 Actions 环境推断触发来源：
+      json     - push json/**
+      task     - 由 check_task / task.json 变更联动
+      schedule - 定时
+      manual   - workflow_dispatch 等，按全量同步处理
+    """
+    event = os.getenv("GITHUB_EVENT_NAME", "")
+    if event == "schedule":
+        return "schedule"
+    if event == "workflow_run":
+        return "task"
+    if event == "push":
+        # sync.yml 的 push 只监听 json/**
+        return "json"
+    if event == "workflow_dispatch":
+        return "manual"
+    return "manual"
 
-    synced_tasks = []
+def fetch_and_write(task, best_mirror):
+    """
+    按 task['url'] 拉取、解密、写入 json/{name}.json。
+    成功返回 True，并更新 task 字段；失败返回 False。
+    """
+    name = task.get("name", "")
+    filename = f"{name}.json"
+    filepath = os.path.join(JSON_DIR, filename)
+    url = task.get("url")
+    now_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    task["timestamp"] = now_time
 
-    for lower_name, filename in local_names_set.items():
-        base_name = os.path.splitext(filename)[0]
+    if not url:
+        task["status"] = "missing_url"
+        return False
 
-        raw_url = old_tasks_map.get(lower_name, {}).get(
-            "url",
-            f"https://raw.githubusercontent.com/child9527/tvbox/main/json/{filename}"
-        )
+    is_gh, raw, _ = extract_raw(url)
+    target_url = raw if is_gh else url
+    print(f"📥 正在拉取 [{name}]，目标地址: {target_url}")
 
-        if lower_name in old_tasks_map:
-            task = old_tasks_map[lower_name]
-            task["name"] = base_name
-            if not task.get("url"):
-                task["url"] = raw_url
-            synced_tasks.append(task)
-        else:
-            synced_tasks.append({
-                "name": base_name,
-                "url": raw_url,
-                "md5": None,
-                "last_modified": None,
-                "status": "local",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-            })
+    try:
+        r = requests.get(target_url, headers=HEADERS, timeout=10)
+        if r.status_code != 200:
+            print(f"❌ 请求失败，HTTP 状态码: {r.status_code}")
+            task["status"] = f"http{r.status_code}"
+            return False
+        raw_content = r.content.decode("utf-8", errors="ignore").strip()
+        task["status"] = "ok"
+    except Exception as e:
+        print(f"❌ 请求异常 [{name}]: {e}")
+        task["status"] = "error"
+        return False
 
-    return synced_tasks, old_tasks_map
+    if raw_content.startswith("\ufeff"):
+        raw_content = raw_content[1:]
+
+    content = raw_content
+    try:
+        cleaned_test = clean_comments(content)
+        commentjson.loads(cleaned_test)
+    except Exception:
+        print(f"  🔒 检测到 [{name}] 内容非标准JSON，尝试解密...")
+        content = decrypt(content, original_url=target_url, best_mirror=best_mirror)
+        if not content:
+            print(f"❌ [{name}] 本地与网页端双重解密均失败或结果非标准JSON，跳过该任务")
+            task["status"] = "decrypt_failed"
+            return False
+
+    cleaned = clean_comments(content)
+
+    try:
+        obj = commentjson.loads(cleaned)
+    except Exception:
+        try:
+            obj = json.loads(cleaned)
+        except Exception:
+            print(f"❌ [{name}] JSON 解析失败！抓取到的响应前 300 字符为:\n{cleaned[:300]}")
+            task["status"] = "invalid_json"
+            return False
+
+    final_str = json.dumps(obj, ensure_ascii=False, indent=2)
+    final_str = replace_dot_slash(task["url"], best_mirror, final_str)
+    final_str = replace_relative_paths(final_str, best_mirror)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(final_str)
+
+    remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
+    md5_changed = (remote_md5 != task.get("md5"))
+    task["md5_changed"] = md5_changed
+    if md5_changed:
+        task["md5"] = remote_md5
+        task["last_modified"] = now_time
+
+    return True
 
 # ============================================================
 # 主逻辑
 # ============================================================
 def main():
+    trigger = detect_trigger()
+    print(f"🔔 触发来源: {trigger}")
+
     best_mirror = pick_best_mirror()
     print(f"当前最快镜像为：{best_mirror}")
 
-    tasks, old_tasks_map = load_tasks()
-
-    for t in tasks:
-        name = t.get("name", "")
-        filename = f"{name}.json"
-        filepath = os.path.join("json", filename)
-
-        url = t.get("url")
-        now_time = time.strftime("%Y-%m-%d %H:%M:%S")
-        t["timestamp"] = now_time
-
-        if not url:
-            t["status"] = "missing_url"
+    old_tasks = load_task_json()
+    old_tasks_map = {}
+    for t in old_tasks:
+        name = os.path.splitext(str(t.get("name", "")))[0].strip()
+        if not name:
             continue
+        t["name"] = name
+        old_tasks_map[name.lower()] = t
 
-        # ① 下载远程 JSON
-        is_gh, raw, _ = extract_raw(url)
-        target_url = raw if is_gh else url
-        print(f"📥 正在拉取 [{name}]，目标地址: {target_url}")
+    local_map = scan_local_json()  # lower -> base_name
+    task_keys = set(old_tasks_map.keys())
+    local_keys = set(local_map.keys())
 
-        try:
-            r = requests.get(target_url, headers=HEADERS, timeout=10)
-            if r.status_code != 200:
-                print(f"❌ 请求失败，HTTP 状态码: {r.status_code}")
-                t["status"] = f"http{r.status_code}"
-                continue
-            raw_content = r.content.decode("utf-8", errors="ignore").strip()
-            t["status"] = "ok"
-        except Exception as e:
-            print(f"❌ 请求异常 [{name}]: {e}")
-            t["status"] = "error"
-            continue
+    # 最终 task 列表（按处理结果重建）
+    new_tasks = []
+    deleted_files = []       # 需要从双端删除的文件名 name.json
+    content_changed = False  # 是否有需要加密推送到 Gitee 的内容变更
+    registry_only = False    # 是否仅做了 task 注册（空 json 占位）
 
-        # 去除 BOM 头
-        if raw_content.startswith("\ufeff"):
-            raw_content = raw_content[1:]
+    # ----------------------------------------------------------
+    # 场景分流
+    # ----------------------------------------------------------
+    # json 触发：本地 json 增删是权威信号
+    #   - 本地有、task 无 → 仅注册，不下载
+    #   - 本地无、task 有 → 视为用户删除本地文件 → 从 task 移除并双端删除
+    #   - 两边都有 → 本轮不强制全量下载（定时任务负责刷新）
+    #
+    # task 触发：task.json 增删是权威信号
+    #   - task 有、本地无 → 下载生成本地 json
+    #   - task 无、本地有 → 删除本地 json 并双端删除
+    #   - 两边都有 → 若 url 变化则重下，否则跳过（提高效率）
+    #
+    # schedule / manual：以 task.json 为准全量检查刷新
+    # ----------------------------------------------------------
 
-        # ② 解密与清洗逻辑（如果无法直接解析为 JSON，则尝试解密）
-        content = raw_content
-        try:
-            cleaned_test = clean_comments(content)
-            commentjson.loads(cleaned_test) if 'commentjson' in globals() else json.loads(cleaned_test)
-        except Exception:
-            print(f"  🔒 检测到 [{name}] 内容非标准JSON，尝试解密...")
-            content = decrypt(content, original_url=target_url, best_mirror=best_mirror)
-            if not content:
-                print(f"❌ [{name}] 本地与网页端双重解密均失败或结果非标准JSON，跳过该任务")
-                t["status"] = "decrypt_failed"
-                continue
+    if trigger == "json":
+        # 1) 本地存在的文件
+        for lower, base_name in sorted(local_map.items(), key=lambda x: x[1]):
+            filepath = os.path.join(JSON_DIR, f"{base_name}.json")
+            if lower in old_tasks_map:
+                task = dict(old_tasks_map[lower])
+                task["name"] = base_name
+                task["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                new_tasks.append(task)
+            else:
+                # 【增】本地新增空/占位 json → 只写 task，不下载、不双端、不 index
+                print(f"📝 本地新增 [{base_name}]，仅注册到 task.json（不下载）")
+                new_tasks.append({
+                    "name": base_name,
+                    "url": default_url(base_name),
+                    "md5": None,
+                    "last_modified": None,
+                    "status": "local",
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                })
+                registry_only = True
 
-        cleaned = clean_comments(content)
+        # 2) task 有但本地没有 → 用户删了本地 json
+        for lower, task in old_tasks_map.items():
+            if lower not in local_keys:
+                fname = f"{task['name']}.json"
+                print(f"🗑️ 本地已删除 [{task['name']}]，从 task 移除并标记双端删除")
+                deleted_files.append(fname)
+                content_changed = True  # 需要同步删除到 Gitee
 
-        try:
-            obj = commentjson.loads(cleaned)
-        except Exception:
-            try:
-                obj = json.loads(cleaned)
-            except Exception as e:
-                print(f"❌ [{name}] JSON 解析失败！抓取到的响应前 300 字符为:\n{cleaned[:300]}")
-                t["status"] = "invalid_json"
-                continue
+    elif trigger == "task":
+        # 1) task.json 中的每一项
+        for lower, task in old_tasks_map.items():
+            task = dict(task)
+            name = task["name"]
+            filepath = os.path.join(JSON_DIR, f"{name}.json")
 
-        # ③ 存入本地
-        final_str = json.dumps(obj, ensure_ascii=False, indent=2)
-        final_str = replace_dot_slash(t["url"], best_mirror, final_str)
-        final_str = replace_relative_paths(final_str, best_mirror)
+            if lower not in local_keys:
+                # 【增】task 新增（本地尚无文件）→ 拉取并生成
+                print(f"➕ task 新增 [{name}]，开始拉取...")
+                ok = fetch_and_write(task, best_mirror)
+                new_tasks.append(task)
+                if ok:
+                    content_changed = True
+            else:
+                # 两边都有：url 变了才重下；自托管占位跳过
+                url = task.get("url") or ""
+                if is_self_hosted_url(url, name) or task.get("status") == "local":
+                    if is_effectively_empty_json(filepath):
+                        print(f"⏭️ [{name}] 为本地占位，跳过下载")
+                        task["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                        new_tasks.append(task)
+                        continue
+                # url 相对上次有变化，或尚无 md5 → 拉取
+                prev = old_tasks_map.get(lower, {})
+                need_fetch = (
+                    not task.get("md5")
+                    or (url and url != prev.get("url"))
+                )
+                if need_fetch:
+                    print(f"🔄 [{name}] 需要更新，开始拉取...")
+                    ok = fetch_and_write(task, best_mirror)
+                    if ok and task.get("md5_changed"):
+                        content_changed = True
+                else:
+                    task["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    task["md5_changed"] = False
+                new_tasks.append(task)
 
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(final_str)
+        # 2) 本地有但 task 已无 → 用户从 task 删了字段
+        for lower, base_name in local_map.items():
+            if lower not in task_keys:
+                filepath = os.path.join(JSON_DIR, f"{base_name}.json")
+                print(f"🗑️ task 已移除 [{base_name}]，删除本地文件并标记双端删除")
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
+                deleted_files.append(f"{base_name}.json")
+                content_changed = True
 
-        # ④ 对比 MD5
-        remote_md5 = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
-        md5_changed = (remote_md5 != t.get("md5"))
+    else:
+        # schedule / manual：以 task.json 为源，全量刷新；本地多余文件仅注册不删
+        for lower, task in old_tasks_map.items():
+            task = dict(task)
+            name = task["name"]
+            url = task.get("url") or ""
+            filepath = os.path.join(JSON_DIR, f"{name}.json")
 
-        if not md5_changed:
-            t["md5_changed"] = False
-            continue
+            # 自托管占位且文件为空 → 不下载
+            if is_self_hosted_url(url, name) or task.get("status") == "local":
+                if is_effectively_empty_json(filepath):
+                    print(f"⏭️ [{name}] 本地占位，定时任务跳过下载")
+                    task["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    new_tasks.append(task)
+                    continue
 
-        t["md5_changed"] = True
-        t["md5"] = remote_md5
-        t["last_modified"] = now_time
+            ok = fetch_and_write(task, best_mirror)
+            new_tasks.append(task)
+            if ok and task.get("md5_changed"):
+                content_changed = True
 
+        # 本地有、task 无 → 仅注册（不删用户文件）
+        for lower, base_name in local_map.items():
+            if lower not in task_keys:
+                print(f"📝 本地存在但 task 无记录 [{base_name}]，补注册")
+                new_tasks.append({
+                    "name": base_name,
+                    "url": default_url(base_name),
+                    "md5": None,
+                    "last_modified": None,
+                    "status": "local",
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                })
+                registry_only = True
+
+    # 写回 task.json
     os.makedirs(os.path.dirname(TASK_FILE), exist_ok=True)
     with open(TASK_FILE, "w", encoding="utf-8") as f:
-        json.dump(tasks, f, ensure_ascii=False, indent=2)
-
-    # ⑤ 检查被删除的文件，并传递给 GitHub Actions Output
-    old_task_names = set(old_tasks_map.keys())
-    current_task_names = {t["name"].lower() for t in tasks}
-    deleted_names = old_task_names - current_task_names
-
-    deleted_files = [f"{old_tasks_map[name]['name']}.json" for name in deleted_names if name in old_tasks_map]
+        json.dump(new_tasks, f, ensure_ascii=False, indent=2)
 
     if deleted_files:
-        print(f"🗑️ 检测到已被删除的文件: {', '.join(deleted_files)}")
+        print(f"🗑️ 待双端删除: {', '.join(deleted_files)}")
 
+    # 输出给 GitHub Actions
     github_output = os.getenv("GITHUB_OUTPUT")
     if github_output:
+        # 仅注册、无内容变更、无删除 → 不需要 Gitee 部署
+        need_deploy = "true" if (content_changed or deleted_files) else "false"
+        # 有删除或有实质内容变更时，才值得跑 index（由后续 workflow_run 触发，此处仅标记）
+        should_index = "true" if (content_changed or deleted_files) else "false"
         with open(github_output, "a", encoding="utf-8") as gh_out:
             gh_out.write(f"deleted_files={' '.join(deleted_files)}\n")
+            gh_out.write(f"need_deploy={need_deploy}\n")
+            gh_out.write(f"should_index={should_index}\n")
+            gh_out.write(f"registry_only={'true' if registry_only and not content_changed and not deleted_files else 'false'}\n")
+
+    print(f"✅ 完成。tasks={len(new_tasks)}, deleted={len(deleted_files)}, "
+          f"content_changed={content_changed}, registry_only={registry_only}")
 
 if __name__ == "__main__":
     main()
