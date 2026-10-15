@@ -47,6 +47,7 @@ jobs:
         env:
           GITEE_API_URL: "https://gitee.com/api/v5/repos/child9527/mybox/contents/json"
           DELETED_FILES: "${{ steps.sync_json.outputs.deleted_files }}"
+          NEED_DEPLOY: "${{ steps.sync_json.outputs.need_deploy }}"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -54,7 +55,9 @@ jobs:
           changed_files=()
 
           echo "🔍 检查 GitHub 本地是否有变化..."
-          
+          echo "   need_deploy=${NEED_DEPLOY}"
+          echo "   deleted_files=${DELETED_FILES}"
+
           # 如果有被删除的文件，在 Git 中记录删除状态
           if [ -n "$DELETED_FILES" ]; then
             for df in $DELETED_FILES; do
@@ -67,46 +70,60 @@ jobs:
           # 1. 暂存所有 json 变动以及 task/task.json 变动
           git add -A json/ task/task.json
 
-          # 检查 json/*.json 是否有更新
-          for file in json/*.json; do
-            if [ -n "$(git status --porcelain "$file")" ]; then
-              echo "📌 本地 json 变更: $file"
-              changed_files+=("$file")
-            fi
-          done
-
-          echo "🌐 从 Gitee API 获取 json 目录文件列表..."
-          gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/devnull || true)
-
-          echo "📁 Gitee 现有文件:"
-          echo "$gitee_json_list"
-
-          echo "🔎 检查 Gitee 是否缺少文件..."
-          for file in json/*.json; do
-            base="$(basename "$file")"
-            if ! echo "$gitee_json_list" | grep -q "^$base$"; then
-              echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
-              if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
+          # 检查 json/*.json 是否有更新（仅当需要部署时收集）
+          if [ "$NEED_DEPLOY" = "true" ]; then
+            for file in json/*.json; do
+              [ -f "$file" ] || continue
+              if [ -n "$(git status --porcelain "$file")" ]; then
+                echo "📌 本地 json 变更: $file"
                 changed_files+=("$file")
               fi
-            fi
-          done
+            done
+
+            echo "🌐 从 Gitee API 获取 json 目录文件列表..."
+            gitee_json_list=$(curl -s "$GITEE_API_URL" | jq -r '.[].name?' 2>/devnull || true)
+
+            echo "🔎 检查 Gitee 是否缺少文件..."
+            for file in json/*.json; do
+              [ -f "$file" ] || continue
+              base="$(basename "$file")"
+              # 跳过空占位文件（不推到 Gitee）
+              if [ ! -s "$file" ]; then
+                continue
+              fi
+              if ! echo "$gitee_json_list" | grep -q "^$base$"; then
+                echo "📌 Gitee 缺少: $base → 强制加入 changed_files"
+                if [[ ! " ${changed_files[*]} " =~ " ${file} " ]]; then
+                  changed_files+=("$file")
+                fi
+              fi
+            done
+          fi
 
           # 2. 提交并推送到 GitHub 仓库
           has_git_changes=false
           if [ -n "$(git status --porcelain)" ]; then
             has_git_changes=true
-            
+
             SYNC_TIME=$(jq -r '.[0].timestamp // empty' task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
-            
-            git commit -m "更新于 ${SYNC_TIME} [skip ci]"
-            
-            # 拉取远程最新变更并变基，防止 push 被拒绝
+
+            if [ "$NEED_DEPLOY" = "true" ]; then
+              git commit -m "更新于 ${SYNC_TIME} [skip ci]"
+            else
+              git commit -m "注册本地 json 到 task.json ${SYNC_TIME} [registry-only] [skip ci]"
+            fi
+
             git pull --rebase origin main
             git push origin main
           fi
 
-          # 如果既没有 git 变更，且 Gitee 无缺失也不需要删除操作，则退出
+          # 无需部署且无删除 → 结束
+          if [ "$NEED_DEPLOY" != "true" ]; then
+            echo "ℹ️ 仅注册/无实质内容变更，跳过 Gitee 加密与推送"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           if [ ${#changed_files[@]} -eq 0 ] && [ "$has_git_changes" = "false" ] && [ -z "$DELETED_FILES" ]; then
             echo "🎉 无需处理：本地无变化、Gitee 无缺失且无删除项"
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -126,6 +143,11 @@ jobs:
 
           for f in $CHANGED; do
             if [ -f "$f" ]; then
+              # 空文件不加密推送
+              if [ ! -s "$f" ]; then
+                echo "⏭️ 跳过空文件: $f"
+                continue
+              fi
               base="${f%.*}"
               bin="${base}.bin"
               python scripts/tvbox.py "$f" "$bin" enc || true
@@ -162,7 +184,6 @@ jobs:
         env:
           DELETED_FILES: "${{ steps.diff_check.outputs.deleted_files }}"
         run: |
-          # 使用 --depth 1 浅克隆加速
           git clone --depth 1 git@gitee.com:child9527/mybox.git gitee_temp
           cd gitee_temp
 
@@ -190,14 +211,11 @@ jobs:
             done
           fi
 
-          # 3. 暂存所有变更
           git add -A json/
 
-          # 4. 检查 Gitee 工作区是否有变更并推送
           if [ -n "$(git status --porcelain)" ]; then
             SYNC_TIME=$(jq -r '.[0].timestamp // empty' ../task/task.json 2>/devnull || date +'%Y-%m-%d %H:%M:%S')
             git commit -m "同步加密 JSON 与删除变更 (${SYNC_TIME}) [skip ci]"
-            
             git push origin master
             echo "✅ 成功更新至 Gitee！"
           else
