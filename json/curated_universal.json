@@ -1,5 +1,5 @@
 {
-  "wallpaper": "https://gh-proxy.com/https://raw.githubusercontent.com/jifeng250/tvbox-sources/main/wallpaper.jpg",
+  "wallpaper": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/jifeng250/tvbox-sources/main/wallpaper.jpg",
   "updateTime": "2026-08-14 16:06",
   "warningText": "通用精选仓(18源+8解析接口)·兼容所有TVBox壳子",
   "sites": [
@@ -626,7 +626,7 @@
       "key": "IPTV4-直播",
       "name": "📺 优选直播(本网测速)",
       "type": 0,
-      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/jifeng250/tvbox-sources/main/live/iptv4-fast.txt",
+      "url": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/jifeng250/tvbox-sources/main/live/iptv4-fast.txt",
       "playerType": 2,
       "epg": "https://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}",
       "ua": "Mozilla/5.0",
