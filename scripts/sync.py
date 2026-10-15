@@ -122,7 +122,6 @@ def extract_raw(url):
     if not isinstance(url, str):
         return False, url, ""
     
-    # 修复处的正则：必须以 http(s):// 开头，且严格匹配 github.com 或 raw.githubusercontent.com 域名
     pat = r'^https?://(raw\.githubusercontent\.com|github\.com)/[^\s"\'<>]+'
     m = re.match(pat, url)
     if not m:
@@ -156,35 +155,86 @@ def is_encrypted(text):
         return ("2423" in text and "2324" in text)
     return False
 
-def decrypt(text):
+def decrypt(text, original_url=""):
     tmp_in = "tmp_in.txt"
     tmp_out = "tmp_out.json"
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     tvbox_script = os.path.join(script_dir, "tvbox.py")
     
+    decrypted_content = ""
+    local_success = False
+    
+    # 方式 1：尝试用 tvbox.py 解密并验证是否为标准 JSON 格式
     try:
         with open(tmp_in, "w", encoding="utf-8") as f:
             f.write(text)
         subprocess.run(["python", tvbox_script, tmp_in, tmp_out], check=True)
-        res = open(tmp_out, "r", encoding="utf-8").read()
-        return res
+        if os.path.exists(tmp_out):
+            res = open(tmp_out, "r", encoding="utf-8").read()
+            if res.strip():
+                try:
+                    cleaned_test = clean_comments(res)
+                    commentjson.loads(cleaned_test) if 'commentjson' in globals() else json.loads(cleaned_test)
+                    decrypted_content = res
+                    local_success = True
+                    print("  ✓ 本地 tvbox.py 解密并验证 JSON 成功")
+                except Exception:
+                    print("  ⚠️ 本地 tvbox.py 解密完成，但输出的不是标准的 JSON 格式，尝试网页端解密...")
+    except Exception as e:
+        print(f"  ⚠️ 本地 tvbox.py 解密报错: {e}，尝试网页端解密...")
     finally:
         for f in [tmp_in, tmp_out]:
             if os.path.exists(f):
                 try: os.remove(f)
                 except: pass
 
+    if local_success:
+        return decrypted_content
+
+    # 方式 2：如果本地解密失败或生成的不是标准 JSON，尝试网页端解析兜底
+    if original_url:
+        print(f"  🔄 正在尝试网页端解析兜底: {original_url}")
+        try:
+            from bs4 import BeautifulSoup
+            target_url = "https://my9.ltd/tvin/"
+            payload = {
+                "action": "parse_url",
+                "url": original_url
+            }
+            response = requests.post(target_url, data=payload, headers=HEADERS, timeout=15)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                json_text = None
+                
+                raw_div = soup.find(class_="json-raw")
+                if raw_div:
+                    json_text = raw_div.get_text()
+                else:
+                    for pre in soup.find_all(['pre', 'code']):
+                        t_str = pre.get_text()
+                        if t_str.strip().startswith('{') and t_str.strip().endswith('}'):
+                            json_text = t_str
+                            break
+                
+                if json_text:
+                    cleaned_test = clean_comments(json_text)
+                    commentjson.loads(cleaned_test) if 'commentjson' in globals() else json.loads(cleaned_test)
+                    print("  ✓ 网页端解析并验证 JSON 成功")
+                    return json_text
+        except Exception as backend_err:
+            print(f"  ❌ 网页端解析失败: {backend_err}")
+
+    return ""
+
 # ============================================================
 # 加载任务
 # ============================================================
 def load_tasks():
-    # 读取旧的 task.json，解析失败直接退出，避免覆盖 url
     try:
         with open(TASK_FILE, "r", encoding="utf-8") as f:
             old_tasks = json.load(f)
     except FileNotFoundError:
-        # 文件不存在，视为没有旧任务，继续
         old_tasks = []
     except Exception as e:
         print(f"❌ task.json 解析失败: {e}")
@@ -277,7 +327,11 @@ def main():
         # ② 判断是否加密 → 解密/清洗
         content = raw_content
         if is_encrypted(content):
-            content = decrypt(content)
+            content = decrypt(content, original_url=target_url)
+            if not content:
+                print(f"❌ [{name}] 本地与网页端双重解密均失败或结果非标准JSON，跳过该任务")
+                t["status"] = "decrypt_failed"
+                continue
 
         cleaned = clean_comments(content)
 
