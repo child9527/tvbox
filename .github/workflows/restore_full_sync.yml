@@ -1,0 +1,129 @@
+name: Restore full sync.py with okhttp fallback
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore from good commit and patch okhttp fallback
+        run: |
+          set -e
+          curl -fsSL "https://raw.githubusercontent.com/child9527/tvbox/e5576814c2d899217958e0e561e10c05933368e5/scripts/sync.py" -o scripts/sync.py
+
+          python3 << 'PY'
+          from pathlib import Path
+          path = Path("scripts/sync.py")
+          text = path.read_text(encoding="utf-8")
+
+          old_headers = '''HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8"
+}
+'''
+
+          new_headers = '''HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8"
+}
+# 部分源站（如 kstore）会拒绝浏览器 UA，需用 TVBox/okhttp 客户端身份
+TVBOX_HEADERS = {
+    "User-Agent": "okhttp/3.12.0",
+    "Accept": "*/*",
+}
+'''
+
+          if "TVBOX_HEADERS" not in text:
+              if old_headers not in text:
+                  raise SystemExit("HEADERS block not found")
+              text = text.replace(old_headers, new_headers, 1)
+
+          old_fetch = '''    is_gh, raw, _ = extract_raw(url)
+    target_url = raw if is_gh else url
+    print(f"📥 正在拉取 [{name}]，目标地址: {target_url}")
+
+    try:
+        r = requests.get(target_url, headers=HEADERS, timeout=10)
+        if r.status_code != 200:
+            print(f"❌ 请求失败，HTTP 状态码: {r.status_code}")
+            task["status"] = f"http{r.status_code}"
+            return False
+        raw_content = r.content.decode("utf-8", errors="ignore").strip()
+        task["status"] = "ok"
+    except Exception as e:
+        print(f"❌ 请求异常 [{name}]: {e}")
+        task["status"] = "error"
+        return False
+'''
+
+          new_fetch = '''    is_gh, raw, _ = extract_raw(url)
+    target_url = raw if is_gh else url
+    print(f"📥 正在拉取 [{name}]，目标地址: {target_url}")
+
+    raw_content = None
+    last_err = None
+    # 先用浏览器 UA 尝试；失败（非 200 或异常）再回退到 okhttp/TVBox 客户端 UA
+    for label, headers in [("浏览器UA", HEADERS), ("okhttp/TVBox UA", TVBOX_HEADERS)]:
+        try:
+            r = requests.get(target_url, headers=headers, timeout=15)
+            if r.status_code == 200:
+                raw_content = r.content.decode("utf-8", errors="ignore").strip()
+                if label != "浏览器UA":
+                    print(f"  ✓ 使用 {label} 拉取成功")
+                task["status"] = "ok"
+                break
+            else:
+                print(f"  ⚠️ {label} 返回 HTTP {r.status_code}")
+                last_err = f"http{r.status_code}"
+        except Exception as e:
+            print(f"  ⚠️ {label} 请求异常: {e}")
+            last_err = "error"
+    if raw_content is None:
+        print(f"❌ 请求失败，HTTP 状态码/异常: {last_err}")
+        task["status"] = last_err or "error"
+        return False
+'''
+
+          if "okhttp/TVBox UA" not in text:
+              if old_fetch not in text:
+                  raise SystemExit("fetch block not found")
+              text = text.replace(old_fetch, new_fetch, 1)
+
+          path.write_text(text, encoding="utf-8")
+          print("patched ok, size=", path.stat().st_size)
+          PY
+
+          python3 -m py_compile scripts/sync.py
+          echo "syntax ok"
+          wc -l scripts/sync.py
+          grep -n "TVBOX_HEADERS\|okhttp/TVBox UA\|def fetch_and_write" scripts/sync.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scripts/sync.py
+          if git diff --staged --quiet; then
+            echo "无变更"
+          else
+            git commit -m "修复：恢复完整 sync.py + 拉取失败自动回退 okhttp/3.12.0 UA（解决 kstore 403）"
+            git push origin main
+            echo "已推送"
+          fi
+
+      - name: Cleanup this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/restore_full_sync.yml || true
+          if ! git diff --staged --quiet; then
+            git commit -m "清理临时恢复工作流 [skip ci]"
+            git push origin main
+          fi
