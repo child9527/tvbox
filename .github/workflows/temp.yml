@@ -1,0 +1,58 @@
+name: Parse TVBox Config
+
+on:
+  workflow_dispatch:  # 支持手动触发
+  schedule:
+    - cron: '0 */6 * * *'  # 可选：每6小时自动运行一次，不需要可删掉
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: |
+          pip install requests
+
+      - name: 运行解析脚本并生成 temp.json
+        run: |
+          python - << 'EOF'
+          import requests
+          import re
+          import html
+
+          url = "https://my9.ltd/tvin/"
+          payload = {"action": "parse_url", "url": "https://16151.kstore.space"}
+          response = requests.post(url, data=payload)
+          
+          html_content = response.text
+
+          # 提取服务器解析后返回的 JSON 内容（适配网页中的 textarea 或 pre 标签）
+          match = re.search(r'<textarea[^>]*>(.*?)</textarea>', html_content, re.DOTALL)
+          if match:
+              json_text = html.unescape(match.group(1))
+          else:
+              # 如果没有 textarea，则保存完整页面源码或根据实际情况提取
+              json_text = html_content
+
+          with open("temp.json", "w", encoding="utf-8") as f:
+              f.write(json_text)
+          print("✅ temp.json 生成成功")
+          EOF
+
+      - name: 自动提交更改到仓库
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add temp.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: 更新 temp.json" && git push)
