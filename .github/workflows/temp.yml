@@ -1,0 +1,35 @@
+name: kstore 链接下载测试
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 使用 okhttp 客户端 UA 下载到根目录
+        run: |
+          URL="https://16151.kstore.space"
+          
+          echo "正在以 TVBox 客户端身份下载: $URL"
+          
+          # 使用 curl 携带 okhttp 客户端 UA 下载，并存放在根目录
+          curl -sL "$URL" \
+            -H "User-Agent: okhttp/3.12.0" \
+            -o kstore_test.json
+
+          echo "下载完成，文件大小和前 200 字符："
+          ls -lh kstore_test.json
+          head -c 200 kstore_test.json
+          echo ""
+
+      - name: 提交并推送测试文件（根目录，避开 json/ 目录）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kstore_test.json
+          git commit -m "测试下载 kstore 链接到根目录 [skip ci]" || echo "无变更"
+          git push origin main
