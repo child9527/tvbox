@@ -1,5 +1,5 @@
 {
-  "spider": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;bf32cf121ae92e49326a9fed7a82b76b",
+  "spider": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/qist/tvbox/master/jar/spider.jar;md5;bca2498f2d40c694b285471062748cf0",
   "lives": [
     {
       "name": "migu",
@@ -189,6 +189,15 @@
       "name": "一起 • APP",
       "type": 3,
       "api": "csp_AppYQK",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0
+    },
+    {
+      "key": "番茄影视",
+      "name": "番茄 • APP",
+      "type": 3,
+      "api": "csp_AppFQ",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 0

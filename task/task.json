@@ -2,11 +2,11 @@
   {
     "name": "dianshi",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/dianshi.json",
-    "md5": "8422cb8083b11826c8a73aa9b154bc76",
-    "last_modified": "2026-10-15 04:22:30",
+    "md5": "f88fe19af14290706b21ffd3b43f963f",
+    "last_modified": "2026-10-17 03:45:37",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:40",
-    "md5_changed": false
+    "timestamp": "2026-10-17 03:45:37",
+    "md5_changed": true
   },
   {
     "name": "xs",
@@ -14,17 +14,17 @@
     "md5": "a6690d36ab4e47e63ef84e1ba73d6254",
     "last_modified": "2026-10-16 09:25:40",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:40",
-    "md5_changed": true
+    "timestamp": "2026-10-17 03:45:38",
+    "md5_changed": false
   },
   {
     "name": "pj",
     "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json",
-    "md5": "1c836b0c4ee6c890df19d60441e5c2c6",
-    "last_modified": "2026-10-10 05:24:00",
+    "md5": "9c0796e19a72e83b532ec9f6280ecd59",
+    "last_modified": "2026-10-17 03:45:39",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
-    "md5_changed": false
+    "timestamp": "2026-10-17 03:45:39",
+    "md5_changed": true
   },
   {
     "name": "curated",
@@ -32,17 +32,17 @@
     "md5": "3d45ad6287f7863c9bab755fde430247",
     "last_modified": "2026-09-19 15:32:31",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:39",
     "md5_changed": false
   },
   {
     "name": "newwex",
     "url": "https://9280.kstore.vip/newwex.json",
-    "md5": "6085049618a6bc8b59b6876f8b06cb2c",
-    "last_modified": "2026-10-15 04:22:32",
-    "status": "fetch_failed",
-    "timestamp": "2026-10-16 09:25:41",
-    "md5_changed": false
+    "md5": "9d7f97582b3f76475d5aa4070f1db1f0",
+    "last_modified": "2026-10-17 03:45:40",
+    "status": "ok",
+    "timestamp": "2026-10-17 03:45:40",
+    "md5_changed": true
   },
   {
     "name": "mtv6",
@@ -50,7 +50,7 @@
     "md5": "6ba9c81a00ac64e5fc5f654436c5a448",
     "last_modified": "2026-09-16 11:59:47",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:41",
     "md5_changed": false
   },
   {
@@ -59,7 +59,7 @@
     "md5": "a5ec056a10dc8dc7cc821fc07a132d0a",
     "last_modified": "2026-10-15 13:43:57",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:42",
     "md5_changed": false
   },
   {
@@ -68,7 +68,7 @@
     "md5": "514a185e322a6564ab72693eb3342077",
     "last_modified": "2026-09-18 08:56:40",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:47",
     "md5_changed": false
   },
   {
@@ -77,7 +77,7 @@
     "md5": "9f30e6cea2eef88f11d37843acaa8f7b",
     "last_modified": "2026-09-16 11:59:45",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:49",
     "md5_changed": false
   },
   {
@@ -86,7 +86,7 @@
     "md5": "b1647fe5d779fdedc9b1f75b515a267f",
     "last_modified": "2026-09-19 15:32:32",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:50",
     "md5_changed": false
   },
   {
@@ -95,7 +95,7 @@
     "md5": "5aacbbefcb7703fcb10c53e0ccc69ea7",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:51",
     "md5_changed": false
   },
   {
@@ -104,7 +104,7 @@
     "md5": "a54892e61b5f0b0dfbc9a63196a5c6e9",
     "last_modified": "2026-10-15 09:57:36",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:52",
     "md5_changed": false
   },
   {
@@ -113,35 +113,35 @@
     "md5": "b606028c027b2daa688fd5fd7cf0aedd",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:53",
     "md5_changed": false
   },
   {
     "name": "fty",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/fty.json",
-    "md5": "1fdc08839773c5af592c2f3aa67b6560",
-    "last_modified": "2026-10-15 13:37:04",
+    "md5": "725d97a91529763c976d3fbd9eaa636c",
+    "last_modified": "2026-10-17 03:45:54",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
-    "md5_changed": false
+    "timestamp": "2026-10-17 03:45:54",
+    "md5_changed": true
   },
   {
     "name": "jsm",
     "url": "https://raw.githubusercontent.com/qist/tvbox/master/jsm.json",
-    "md5": "77eda4493ad0838ba428f912f2621e80",
-    "last_modified": "2026-10-15 04:22:38",
+    "md5": "ea67fd6fb5aa4c53e41f7b9069ddd645",
+    "last_modified": "2026-10-17 03:45:54",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
-    "md5_changed": false
+    "timestamp": "2026-10-17 03:45:54",
+    "md5_changed": true
   },
   {
     "name": "sun",
     "url": "https://9877.kstore.space/sun.json",
-    "md5": "594d61067ec59cd499e9b5982a0a8c04",
-    "last_modified": "2026-10-15 21:15:30",
+    "md5": "111d935dcd5d6a77f173b85106f5e598",
+    "last_modified": "2026-10-17 03:45:55",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
-    "md5_changed": false
+    "timestamp": "2026-10-17 03:45:55",
+    "md5_changed": true
   },
   {
     "name": "99188",
@@ -149,7 +149,7 @@
     "md5": "1cef4778f2a198edaf450f24e3149dab",
     "last_modified": "2026-09-16 11:59:49",
     "status": "ok",
-    "timestamp": "2026-10-16 09:25:41",
+    "timestamp": "2026-10-17 03:45:56",
     "md5_changed": false
   }
 ]
