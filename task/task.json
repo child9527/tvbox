@@ -9,6 +9,15 @@
     "md5_changed": false
   },
   {
+    "name": "xs",
+    "url": "https://raw.githubusercontent.com/cyao2q/files/refs/heads/master/xs.json",
+    "md5": "8422cb8083b11826c8a73aa9b154bc76",
+    "last_modified": "2026-10-15 04:22:30",
+    "status": "ok",
+    "timestamp": "2026-10-16 04:07:36",
+    "md5_changed": false
+  },
+  {
     "name": "pj",
     "url": "https://raw.githubusercontent.com/mcp2016/TVBox/main/pj.json",
     "md5": "1c836b0c4ee6c890df19d60441e5c2c6",
