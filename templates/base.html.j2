@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>一餐打不死 · {{ page_title | default("Child9527") }}</title>
+<script>
+(function () {
+    try {
+        var raw = localStorage.getItem('child9527_auth');
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (!data || !data.time) return;
+        if (Date.now() - data.time < 90 * 24 * 60 * 60 * 1000) {
+            document.documentElement.classList.add('authed');
+        }
+    } catch (e) {}
+})();
+</script>
 <link rel="stylesheet" href="static/css/style.css">
 </head>
 
