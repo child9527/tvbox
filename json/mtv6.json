@@ -80,16 +80,6 @@
       ]
     },
     {
-      "key": "YunDuo",
-      "name": "☁️┆云朵┆4K",
-      "type": 3,
-      "jar": "https://tc-new.z.wiki/autoupload/iYHTWVx6T8RrCmqdGD6MOdiO_OyvX7mIgxFBfDMDErs/20260628/0oQT/fish06281030.jar",
-      "api": "csp_YunDuo",
-      "searchable": 1,
-      "changeable": 1,
-      "filterable": 1
-    },
-    {
       "key": "电影天堂",
       "name": "🎞️电影天堂┃资源",
       "type": 1,
@@ -109,6 +99,29 @@
       "timeout": 10
     },
     {
+      "key": "五月🏮蓝光",
+      "name": "五月🏮蓝光",
+      "type": 3,
+      "api": "csp_XBPQ",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": {
+        "简介": "最新TV版请到官群下载(http://k.xzwl.top),请勿相信影片中的广告，以免上当受骗。+<divclass=\"texttext-rowtext-row-2\"&&</div>",
+        "影片状态": "状态：&&</span>",
+        "影片类型": "分类：&&</span>",
+        "数组": "pic\">&&</li>",
+        "副标题": "item-statustext-overflow\">&&</p>",
+        "搜索url": "/vodsearch/-------------.html?wd={wd}",
+        "搜索数组": "pic\">&&</ul>",
+        "搜索副标题": "text-overflow\">&&</p>",
+        "线路数组": "role=\"group\"&&</em>",
+        "线路标题": "🌹祥子影视🌹八大平台一网打尽",
+        "分类url": "http://www.wuyevod.com/vodshow/{cateId}-{area}-{by}-{class}-{lang}----{catePg}---{year}.html;;ak",
+        "分类": "电影$vod#电视剧$tv#综艺$zongyi#动漫$dongman"
+      }
+    },
+    {
       "key": "麦田",
       "name": "酷影┃蓝光",
       "type": 3,
@@ -124,41 +137,6 @@
       "playerType": 2,
       "jar": "https://ncstatic.clewm.net/rsrc/2025/0725/20/318ccef14687421637f5aa0ba1021e33.png;md5;939FFBC2941A28CA533F2653FA4B449E",
       "ext": "7lj763gg402i7942503g839jg74h8h88highi40799jh6i6k454419l0l5184k0g549h0kg2i01i838i2h42g891lgg1"
-    },
-    {
-      "api": "csp_QQGuard",
-      "changeable": 0,
-      "ext": "",
-      "filterable": 1,
-      "indexs": 0,
-      "jar": "http://825826.xyz:666/tvbox/TYY2/TYY.jar",
-      "key": "csp_QQ",
-      "name": "腾讯4K",
-      "quickSearch": 1,
-      "searchable": 1,
-      "type": 3
-    },
-    {
-      "key": "😍皮皮影院",
-      "name": "😍皮皮影院",
-      "jar": "http://150.158.52.248/tgyg/XBPQ.jar",
-      "type": 3,
-      "api": "csp_XBPQ",
-      "ext": {
-        "标题": "p:img->alt",
-        "图片": "p:img->data-src",
-        "二级目录": "明星|folder-0-0-H||Поиск|folder-0-0-H",
-        "二级ID": "",
-        "特殊分类链接": "Поиск$https://teenochka4.site#Категории$https://teenochka4.site/{cateId}",
-        "线路数组": "p:.name-left2",
-        "线路标题": "🛺皮皮vip",
-        "播放数组": "p:.list-number1",
-        "播放列表": "p:a",
-        "播放标题": "p:->text",
-        "播放链接": "p:->href",
-        "分类": "明星$yfygdtype/101#电影$yfyxgdtype/1#电视剧$yfyxgdtype/2#动漫$yfyxgdtype/4#综艺$yfyxgdtype/3#短视频$yfyxgdtype/9#即将上映$yfyxgdtype/51#",
-        "分类url": "https://www.yfyxx.cc/{cateId}-{catePg}.html"
-      }
     },
     {
       "key": "苹果",
@@ -189,14 +167,42 @@
       "ext": "https://fastlink.cokey.xyz/f/9Y0jHb/%E4%BC%98%E9%85%B7.js"
     },
     {
+      "key": "XBPQ_枫叶影院2",
+      "name": "枫叶｜4K影院 (XB)",
+      "type": 3,
+      "api": "csp_XBPQ",
+      "ext": {
+        "编码": "UTF-8",
+        "请求头": "User-Agent$Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1#Referer$https://www.tjtcdl.com/",
+        "主页url": "https://www.tjtcdl.com/",
+        "数组": "public-list-div public-list-bj\">&&</div>",
+        "标题": "title=\"&&\"",
+        "副标题": "public-list-prb hide ft2\">&&</span>",
+        "图片": "data-src=\"&&\"[替换:https://gimg0.baidu.com/gimg/app=2001&amp;n=0&amp;g=0n&amp;fmt=jpeg&amp;src=>>https://]",
+        "链接": "href=\"&&\"",
+        "线路数组": "swiper-slide\">&&</a>",
+        "线路标题": "</i>&&</span>",
+        "播放数组": "anthology-list-play size\">&&</ul>",
+        "播放链接": "href=\"&&\"",
+        "播放标题": ">&&</a>",
+        "跳转播放链接": "var player=*\"url\":\"&&\"",
+        "简介": "this-desc\">&&</div>",
+        "嗅探词": "index.m3u8#.mp4?#.m3u8#.mp4#.flv#.mp3#.m4a#.ts",
+        "分类url": "https://www.tjtcdl.com/{cateId}/page/{catePg}.html",
+        "分类": "腾讯vip热播$label/qq#优酷vip热播$label/yk#B站vip热播$label/bli"
+      }
+    },
+    {
       "key": "csp_539影视",
       "name": "🍁┃539┃战争",
       "type": 3,
       "api": "csp_XBPQ",
       "ext": {
-        "简介": "琉🔹芸❤广告勿信👉剧情 ：+detail-content\" style=*>&&",
-        "分类url": "https://www.539539.xyz/index.php/vod/show/area/{area}/class/{class}/id/{cateId}/page/{catePg}/year/{year}.html",
-        "分类": "短剧$25#电视剧$2#电影$1#动漫$4#综艺$3"
+        "请求头": "User-Agent$MOBILE_UA",
+        "编码": "UTF-8",
+        "分类": "电影$1#电视剧$2#综艺$3#动漫$4",
+        "类型": "动作片$6#喜剧片$7#爱情片$8#科幻片$9#奇幻片$10#恐怖片$11#剧情片$12#战争片$20#动画片$26#悬疑片$22#冒险片$23#犯罪片$24#惊悚片$45#歌舞片$46#灾难片$47#网络片$48||国产剧$13#港台剧$14#日剧$15#韩剧$33#欧美剧$16#泰剧$34#新马剧$35#其他剧$25||内地综艺$27#港台综艺$28#日本综艺$29#韩国综艺$36#欧美综艺$30#新马泰综艺$37#其他综艺$38||国产动漫$31#日本动漫$32#韩国动漫$39#港台动漫$40#新马泰动漫$41#欧美动漫$42#其他动漫$43",
+        "分类url": "https://www.ylys.tv/vodshow/{cateId}-{area}-{by}-{class}-{lang}-{letter}---{catePg}---{year}.html"
       }
     },
     {
@@ -303,42 +309,6 @@
       "类型": "影视"
     },
     {
-      "name": "小黄人｜1920",
-      "key": "AppV6Xhr",
-      "type": 3,
-      "jar": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/EasyXC/EasyTVbox/main/jar/app1.png",
-      "api": "csp_AppV6Amns",
-      "searchable": 1,
-      "filterable": 1,
-      "quickSearch": 1,
-      "changeable": 1,
-      "ext": "c45e288565eb2ea7fcb9caa81e70fa9b13ee58fa569055a61c9e79bba88fe5c391421b3ca47d9afa5cbef8294a3ac0dc5b4465957d31fa7370cff9791cf886dce11385fee05779d793e80a1a61a9de0a16bc28239c46d742ede10a9aed1f5188a943d37e32e1867200bc9046a9df535eb593a1e9967e08a61234744d4b103fcf0bbcea5f694979b0f9b180666369a1abbc63449a0558117608acc086c566cadcc3220654195aff732ec7a7216a1b37af22fd52248a76f0b3b90b05c3d8d7cb4dcd8bc199df0c69f00a469b00b2272af9b20b353561c1ebd309c5872fe905a8e5434c9e977eda2b2920c4770c13222a31a533666b2bc3c6025facb2a79eec8e7a8610f3e9181201589d0a257d22436747fdb16233ac7f504e0fd4f91999f4e6dd5104855ea3853b9fa9215eda8d1497dab399efb9a6972bb79aa078358a8685c4ccc82fd5b06c4868f8ebe2714c2ad214e5b370f338f37c59272f0e4464bae30dc62bfea0e5eea60a36a49018c20f7040b0686d4c7c399febbbc0921f896d195f6fee018a2d3b70c9f35a4ead6ea24ce90abe020a72c92b6fa861c5113a79207770dfd9ee4f1a5089d2b3caf1d00457fe44df8ab6a6bc9453d880590cb28f0cdfbb50fe47dba63ba964afd8102a7b090f9731eb01f24fa1cdfb512d320230b7f3d342468d75b34e70e71a439c8e36e8531fd5f1a91859d9b5915805e2c01781ecfbf2b026cace4598c2b380fec8ee5c38461fcc0663a24c96f352667382e496f2cafa1a03ca5ea1e58be26a6d7c0b806b176515ebd6bc4e78982abe49ac1cf07480f879bc5ddb36ee4bf6e25173a31cc709ecb8465413f834a59008e3c7563a6738658dc6e04752895a1ecc418c25276e00cd52e53011912b4d0fc4f66863089741f40032bcace3e55b0f4d741382f41ca6630e1a7223e8153e05c5c9c78625bee232d4386a2b40a0dc9b97f6874da7f25a1e633dfa5771dfcb5bce58fbb6abab44ae787c14aad60507e5592d34b80c1e96f2196b0c1aa7d3841903fcc02f9f6a08257b05a954096f40e6ba4ed16e31e96bdee9e910c14dce140413a24e9315ae8abad82659f3ee0d7e2fcc36991d4188a240362b2aa0330ffe439e8f16f9a5eae4c2a21e538b1b10c620634583ccceb4d9536b8456a00c7888105db41d79c92dfd325b524b4ad2e56b3fde09daac332ff5ea919e9ffcc6a4123ebc7eb3c5c64aa878553ad97fa29bd103044404988cacf1aa7235641a872a584ef6d8dd7fa2e5ec62451d9a35df247007d499fee6d65c8d90303b92752276d62bc32eb15db7fb4ce419abc66471a021b45f1a9184cd94716dbeced0af83f2abf18977638aedadea6bbdfede36af93c10a03c28d15b8a2598f384d041877785816e33739a0ec85c1f2e020da369f3bf633060a812c5ab8312484cf08e1c542789e1f6a631b7039bd19c428caccdda4099c59a5be25c065373c74ac96acac5220fd412d0a098094320deb1069eabe7de71bf440719a6b89b2e072d468e37ee0e339be0ef98e332e2d7faedee0e58d4268470ee448d81d0ec74a0dcb706bb0739860d4b145ba7be16c1e0c4361f2b52a5e1f84dfdfae64a0014efdb84613c1fa2cbdd2686bda5639bda15f5d7caac362f0a957bcb594dcc214ac67c3bdefddf552ff013a51d21e2f25a7efc89f84b383c9f36aedd7c6d62d50a6ffb89e1cd0ec336c0db2f5a6ac3dd5d04702826ca2fbc3c3c1295af8bdba6297f8f86082245fd8c2d9f13718681846dc2a12a19d550076d6aa1982369f0b8ef2c9ee0f105f4840c7711d7922efeb53d7ffc167abd6ecb40314ca4f02a7fb2cec1222d4f725678790803001e11440f0339eee3790a38a2a1df4f8a83c3f2946b6b0460c8903ff7cc7c9717aa20456f54255142b883d7ec08228632333404927dfc178aa6cc1d223449e7f0b197f472827333aa997847a20cff178e427976aef1b3cca978405c68b4a9d16c21f4809266d6d7deb55aa72c862c4c68d16194eb7215bda65d15b36400c75ed2ebbce3296aabaf1e6c5432808cc1f2c0282edab9cda4f54992ec872e6c9990ee15eb1fb0ccc09cced55979c5ba4023cdc7430f1c2922f3baadf9bcc3365667b1c60d2541d84474cfb3770078d1843aca8959b022785"
-    },
-    {
-      "name": "达人｜1920",
-      "key": "AppV6Dr",
-      "type": 3,
-      "jar": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/EasyXC/EasyTVbox/main/jar/app1.png",
-      "api": "csp_AppV6Amns",
-      "searchable": 1,
-      "filterable": 1,
-      "quickSearch": 1,
-      "changeable": 1,
-      "ext": "623f288565eb2ea7fcb9caa81e70fa9b13ee50aa4880a55d5d8cb9e1defc9c54eda93a4de1eda66340969f9e35716a29fe218cce47e0741f0d649e8e75b34c068f00fdc0efffbed58460c680b54fa745d0f2da98e78d858c638d67f5a8358212751d8530c466927a3845558c95862b3f5e460d628c1e49a6513f3bcd9d5ecfda0926eedffdd55ba66aaf982e642388a29a52cbf6d0a6cc7cf85b1d92cd3c72176e5d6b230429df2a8d3a76ac80462f161f25760bb27cb0a2bcf3a979934e1a589de921620a594226305f03c22f41f9fdca723ea3e63d8a54fdb96aab78816d0ff7e910ecae6f0868304dd5906d03c7facc920ffa88fc8cdc3127ee9717da1be094280cda2f611a30b88b49eaa6679044d5785684a5b55488f193d9e6d6fe9612757f064a61311af60cdc11f2e09593faec3b562a44480290fbc9b2779c76b1c5a9ab7f25940e8fb4244d9dd08d5e321e26cd72ecc68f546958dfdac117f2ad42c00334ba0579b92d9d89c011b214d7a5f9ba7074d30f897a770f3dd2382080aad1d2a7a7d61eb9edeb531d52fba68453bff8e070328933161db5e0097bf376e88c206b8c05592736f8c2e2805debb69b5a7e2d758b846b713727433c29d0e5135d7e8dd02f9015070ed6897f744272c111f5823e99b59bbb6a5ddbc86013ffd4dbf3f8f82099b342476616a4ce8ef44c0f3cbb2789e4fe7b783e9b1fb937008059dc810e29c976901abe40c42858aaa3a2f9e27f0be965784f0eacc177011f273d44061302490730d00ac356914e7af0b318db591cd97ef8eb023c3b4a4a397790f9005aa10ce8ec63becfe95fc3de0c3e45c5887ea39b4218652dabd5bf6370d762757d3ce97dd1db720ee327a97c2166352c93d5af231f0ebc2ab22678f294a110d3699ba62c2985b827b25dd27bc1fb8bf851330059567d07446a4a039133e54a2dfaa77f5120d8f2580469cb9b83a209bccecf87f4537817ccbe3d9bb4521f0d6be526b91e9ff1cadf205138706f8760be8fedb624de645ede264972d24a18ec482d7102ff3ca089271b5bca165737247485cd0ec82c2d15dc361cfaa6fa844105fa5e3b38c9233c0baa0561f96cd7b320f2a7ec9dccab8801d27feb56c9019dc710ba64b893a9783ebbc58e94d269aeb0513ce9e4ada9f0c2910d01bfab72aec068ac6709ef629e278d7d73d2ac79e62912f1e6e6f45bff39330cb883cae4b980f8bf0400aef22bf4ff3e103737aea007a3287b7288119eb73699a6dcd2797e7d9ccdd62ede638ec7c89f54324e30e5b99ebd2577b9ca63ce1ed1e4bdc353bce048bb8cd5ecd3ca67ec463318b7328fc0c838d08e2a850ac4e80060b26217ddca7144734a399581572cb40df90586416d3c81d546e80c74a6b61e3870d71b250b1c8b943bce93d83285f62d47d86907cc666c72d175fe83971069bb0ba8fce1b9efdf471a3795b8404c1c49d15d3f4d46c455fa65619f599effc7a7c49c7a7f8d772471815ad723a3fe2ee8d6ad31b4673d6a0b37a1bcd9913ffc86f47476fda0cea7059ffaa348ede98f6d812baeab3a3a19885ca12ccf72fd502a77987177553d595bef44edf37285959cab33bd235be4cf871370b711fc409144827be0b2a866db7e223f6506bb7e8c452106f58ab18e07010167b6604e0a5ab3946b3f542eca8ffd06877a7e747dbb4cf2c3a3c9022aecafe405efa1b846fbc7ce326ecf7f6ce36fba137f6755447c52e2ec8b2823520bb9bbe28cd0896f24d0cdad745f4ee2382132c9c3fb319d3611c9c54ce4511a213b08ce33757eb5d6e6d4ece36ac559e49edb12cdeba8b64d6aca32166d5cdc1048e70d8ee8d138b2c4239f9278c511a9ccd61d7e8d5824ba379822fe9928f2f0861b7eefeac059998d15aeb2509e4e9485834a50a7473df1cf9ebafaea526dcc8f94a37a6736523480bbd283b24f0cf2e685fa9b215b051b113841ff1b0b8a3d0bf06ddf13cb111962b0c531e5aab795eea49543fc183c94fe5690b1112515abf7fcd5c3305ca26e3b926c50749ec02529e8db99427b3baa5529ce3b159b2e92b6f6a3ac9349624ab0c6f2eac1dfb0465209d801a648947da974f1cc025bb2dececd0c5dd6d9909db654d0b34bbd"
-    },
-    {
-      "name": "特狗｜1920",
-      "key": "AppV6Tg",
-      "type": 3,
-      "jar": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/EasyXC/EasyTVbox/main/jar/app1.png",
-      "api": "csp_AppV6Amns",
-      "searchable": 1,
-      "filterable": 1,
-      "quickSearch": 1,
-      "changeable": 1,
-      "ext": "291f288565eb2ea7fcb9caa81e70fa9b13ee50aa4880a55d5da44a22bc07d90a87c2078c271197d29b708c0e51da4326089ccfa0765319fe6aa5788b0e8073f192d9a15ffb277a378829dc70346b083810b66a73e4176fe1ba51cde68ee64c68c04a8d1ed92e586688e09ade2701dfba3ccf720c024287dc3187c946399bdd4ad5785674bcad46f894c081f80e3ac064289ddf0889b44c566d6d0d8b9e4ee774160d3cd5859e6448e5ea2012623a0fa0f97104f39e462f89d3d03f6a6ab9ab4afd799c08cb4621ef0cfca86fb4fda635a0137523cc5c8fe4c2f820857f6168879b8a0f2a92949b3ade404d5c2b5951b09caa7a1b23c373ef5a548de6704b799989da3fed86a6562e0806b571f4e7fe85b1310caa105a87b222bda8c72759b75d4d1e230b51c235015d961f1a8bf67cbfccfaa8b970e3fdac81f13155239b9dbae209dd9e96559a3a25640c2b7932b0c2ecfa327dab44fa646fd6a23ef1fd0df73b645d8dddbf5bc9c39318330189e5fc2335be5e897c3a27d09ad9be406bba1b0f84280d1219b843b87896ae6642fa3be042b62ee11d7fffdc220ce2c0cf83721836a38685353afff339e4b7dd5621f6acc8899fedc64351b518fde91661a9a5b948ee57e4de5d018d21bc2f045ac225ee031b843618002025559e9e66093706adcbd16902307fe1ac031c7293fc5ea0fafb6af4ef975421cd50eea958fac6cc83d2819666fa9cdc1b0d23b256034949e75276e51010f8743f9440edb6bf568819364eba2d68b9aa720fcc91f6465ae92375c6f06043e95c4566acd6483b175f90e9d189b6cde6ad7a7f9d66c386e49c0264cda18df57c073d74154cfc8e24aefab25f323cc84e196daf501cfabeb643a0c9cab0e0c7550875adb0870789b3edc49a9f8f772960bfe9fbc15943a31c3096baf8b1e62f5f01e6bb7f45dc56f24d5d3c7e1dd33c9a7aa0f18ade601a4780121e758db79c03e75436d38e96c463713e37e477bc6770d7b131f440d9a4fe1ba7295c2a211387aa319587c8f5be8cfab47bddd1ef1dffbbca22b3069205674f90a80223d91f005fbda1cf09124152b119bc3fc260725931c6b3e7608c8463e84c46ddd1ff16f78da180b7efb7ddbddaf4e209d3753a07f70b85393bc11eb73ab878cd5e59b846c839bcea083220a08bcb7815e4908cbdfb53d6a7aead5c9a4380c14f8c5e4319fed342d5985d1b907a576756dc28512a16c74bc57e4c6b415070fd1a1a59aa3619de7bc5989e440a5ff8512dd260fb4e0926f479b46d9a232755567b3b52e0765718acbf491c894519ddaa3fa22dc07d40afd142445473592ef60bf398652ad7edd36b05ac951d08f8a3305cfceffe4d104f3f4ebd10f17607575e967e0af17d594f7fb57e43a22b26cd72a667cc8753584897ffe060636ad0c378450dab2c6ad9239d58949d75399e9a212b7d5c13472e0df6425ce49dfce3fb3be3b8bead3329260d63b45eeb4481594fed19da2c72b1017644046b8aab0a1f8dc01ecbbce3fc4ac4cf71c37f6918c69a40ba2ee04661872a06ab8855e29dd2c25a2502406fef84e96164cb3e202ec89b07233931cf444f66ad16fa5fefe53b7d6605d2b7bb3a95b9b71eb9bc56e10b049b96cde60646e78190978d5409475dfcf909599b059f939040ca3888d37cbea9c7814d93ac428f91e8b08044d99cfad3772522f9cefc1c34a33fe2ff464817ed69d4f8bd2417ade9507a033147d121b5483dba44e28b3a150cfc57f856eea30b85e80e28aa1da7f0aa491410885317dc31535b7baaeaa4b06025022088bc6aced130a13d82444de650ca173902aff94aee29a2276ff924ecc9a99de41476d8324362443ab2125574455da3145041d790a7962548f93d56be50a5d696fc3b3db75f74934c727ff813c5c8e75f89e2f4014d22710bcfedcb02ab4f59b25c01def2c9d8476b59310d9dff88473b5fc054076513e3255280594ee6076b89dd42a53b667312c2d34c95f08a80ef474f6eb6a3b2c1a707cf3c8032de400162e08b131edbe0f8be74097daf48c29d7e88a4948271633a6398a42c8567f54840a7ad9a388c9895fc2effa499b74fb9856321e62104"
-    },
-    {
       "key": "蓝鹰",
       "name": "蓝鹰┃秒播",
       "type": 3,
@@ -395,14 +365,6 @@
         "搜索url": "https://www.iysdq.com/vodsearch/{wd}----------{pg}---.html",
         "分类": "电影$1#电视剧$2#综艺$3#动漫$4#短剧$5"
       }
-    },
-    {
-      "key": "战争片子",
-      "name": "战争片子",
-      "type": 3,
-      "api": "csp_AppGet",
-      "jar": "https://cn.oilgasgpts.com/resource/profile/2026/05/18/NJ4ZWwg7_20260518095827A465.jpg;md5;84edf41db6dbaf56b1ccdc7a11cc0ddf",
-      "ext": "https://yzysap.oss-cn-hangzhou.aliyuncs.com/sss.txt|wNCwbXzr0Bm6cS2C|V122|okhttp/3.10.0"
     },
     {
       "key": "天天",

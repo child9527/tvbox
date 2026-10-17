@@ -971,29 +971,6 @@
       "ext": "https://v4.gh-proxy.org/https://raw.githubusercontent.com/yoursmile66/TVBox/main/js/酷我听书.js"
     },
     {
-      "key": "DJ阁舞曲网",
-      "name": "🎵DJ阁舞曲网",
-      "type": 3,
-      "api": "csp_XBPQ",
-      "ext": {
-        "请求头": "User-Agent$PC_UA",
-        "编码": "utf-8",
-        "直接播放": "1",
-        "短视频": "1",
-        "主页url": "https://www.djge.com/dance/opt/ranks",
-        "二次截取": "tracks-items\">&&</ul>",
-        "数组": "lazyload&&</span>",
-        "标题": "target=\"_track\">&&</a>",
-        "图片": "data-src=\"&&\"",
-        "链接": "<a class=\"\" href=\"&&\"",
-        "播放链接": "href=\"&&\"",
-        "嗅探词": ".m4a#.m4a?#.mp3#.mp3?#.m3u8#.mp4#.aac?#zjk02-httpdown.guangyacdn.com",
-        "分类": "精品串烧$1#慢歌串烧$2#酒吧串烧$3#车载串烧$4",
-        "分类url": "https://www.djge.com/dance/lists-id-{cateId}-{catePg}.html",
-        "类型": "1--中文串烧$6#英文串烧$5#粤语串烧$7#中英文串烧$8||2--流行串烧$9#老歌串烧$10||3--包房串烧$11#现场喊麦$12||4--空"
-      }
-    },
-    {
       "key": "哔哩",
       "name": "🅱️哔哩哔哩",
       "type": 3,
