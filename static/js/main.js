@@ -4,7 +4,8 @@
 
 /* ---------- 密码门 ---------- */
 (function () {
-    const PASSWORD = 'bugmenot';
+    // 存的是明文密码的 base64（用户输入 bugmenot，不是这个字符串）
+    const PASSWORD = 'YnVnbWVub3Q=';
     const STORAGE_KEY = 'child9527_auth';
     const EXPIRE_DAYS = 90;
 
@@ -41,7 +42,8 @@
         const box = document.querySelector('.auth-box');
         if (!input) return;
 
-        if (input.value === PASSWORD) {
+        const encoded = btoa(input.value.trim());
+        if (encoded === PASSWORD) {
             setAuthed();
             hideGate();
             if (error) error.textContent = '';
