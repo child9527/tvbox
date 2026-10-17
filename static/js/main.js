@@ -4,7 +4,6 @@
 
 /* ---------- 密码门 ---------- */
 (function () {
-    // 存的是明文密码的 base64（用户输入 bugmenot，不是这个字符串）
     const PASSWORD = 'YnVnbWVub3Q=';
     const STORAGE_KEY = 'child9527_auth';
     const EXPIRE_DAYS = 90;
