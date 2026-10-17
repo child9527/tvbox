@@ -26,11 +26,13 @@
     }
 
     function showGate() {
+        document.documentElement.classList.remove('authed');
         const gate = document.getElementById('auth-gate');
         if (gate) gate.classList.remove('hidden');
     }
 
     function hideGate() {
+        document.documentElement.classList.add('authed');
         const gate = document.getElementById('auth-gate');
         if (gate) gate.classList.add('hidden');
     }
