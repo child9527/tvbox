@@ -241,7 +241,8 @@ body {
     z-index: 10000;
 }
 
-.auth-gate.hidden {
+.auth-gate.hidden,
+html.authed .auth-gate {
     display: none;
 }
 
