@@ -1,0 +1,48 @@
+name: 清空仓库
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clear-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: 彻底清空所有文件与历史记录
+        run: |
+          echo "🚀 开始清空仓库..."
+          
+          # 1. 删除当前目录下除了 .git 和当前工作流之外的所有东西
+          # 注意：我们加了 ! -path './.github/workflows/nuke.yml'，防止把正在运行的脚本自己删掉导致报错
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' -exec rm -rf {} +
+          
+          # 清理 .github 文件夹里除了 workflows 和 nuke.yml 之外的其他东西（如果有的话）
+          find .github -mindepth 1 -maxdepth 2 ! -path '.github/workflows' ! -path '.github/workflows/nuke.yml' -exec rm -rf {} + || true
+
+          # 2. 创建一个全新的孤儿分支（清除所有历史记录）
+          git checkout --orphan clean-start
+          
+          # 3. 把暂存区所有东西清空
+          git rm -rf --cached . || true
+          
+          # 4. 创建一个占位文件，防止提交空目录失败
+          echo "# 全新的开始" > README.md
+          
+          # 5. 配置并提交（这是全新分支的第一次提交）
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git add .github/workflows/nuke.yml
+          git commit -m "🧹 Nuke: 彻底初始化仓库，清空所有历史"
+          
+          # 6. 强制把本地这个没有历史的新分支，覆盖推送到远程的 main 分支
+          git push origin clean-start:main --force
+          
+          echo "✅ 仓库已在服务器端彻底清空！"
